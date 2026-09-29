@@ -5,6 +5,7 @@ import { saveRec, type Rec } from "../../data/repo";
 import { useT } from "../../i18n";
 import { BACKUP_COLLECTIONS, BACKUP_LABELS, backupFileName, buildBackup, parseBackup, type BackupCol, type ParsedBackup } from "../../lib/backup";
 import { downloadText } from "../../lib/download";
+import { putImage } from "../../lib/storage";
 import { useUi } from "../../store/ui";
 import { Help, Sub } from "./parts";
 
@@ -46,6 +47,26 @@ export default function BackupCard() {
     if (!r.ok) { setError(t(r.error.en, r.error.es)); return; }
     setParsed({ name: f.name, p: r.backup });
   }
+  /** Old-app backups carry photos/receipts as data URLs: put them in Storage and point the record at them. */
+  async function withImages(col: BackupCol, rec: Record<string, unknown>): Promise<Rec> {
+    const imgs = parsed?.p.images;
+    if (!imgs) return rec as unknown as Rec;
+    const cid = company!.id;
+    if (col === "estimates" && Array.isArray(rec.photos)) {
+      const out = [];
+      for (const ph of rec.photos as { id: string }[]) {
+        if (!imgs[ph.id]) continue;
+        try { const { url, path } = await putImage(`companies/${cid}/photos/${rec.id}/${ph.id}.jpg`, imgs[ph.id]); out.push({ ...ph, url, path }); } catch { /* photo skipped */ }
+      }
+      rec = { ...rec, photos: out };
+    }
+    if (col === "expenses" && typeof rec.receiptId === "string") {
+      const { receiptId, ...rest } = rec;
+      rec = rest;
+      if (imgs[receiptId]) { try { const { url, path } = await putImage(`companies/${cid}/receipts/${rec.id}.jpg`, imgs[receiptId]); rec = { ...rec, receiptUrl: url, receiptPath: path }; } catch { /* receipt skipped */ } }
+    }
+    return rec as unknown as Rec;
+  }
   async function restore() {
     if (!parsed) return;
     const total = parsed.p.total;
@@ -53,7 +74,7 @@ export default function BackupCard() {
     setProgress({ done, total, failed });
     for (const col of BACKUP_COLLECTIONS) {
       for (const rec of parsed.p.records[col]) {
-        try { await saveRec(company!.id, col, rec as unknown as Rec); } catch { failed++; }
+        try { await saveRec(company!.id, col, await withImages(col, rec)); } catch { failed++; }
         done++;
         if (done % 10 === 0 || done === total) setProgress({ done, total, failed });
       }
@@ -88,7 +109,7 @@ export default function BackupCard() {
               {parsed.p.company?.name ? parsed.p.company.name + " · " : ""}{parsed.p.createdAt ? fmt(parsed.p.createdAt) : ""}
             </div>
             <div className="pills" style={{ marginBottom: 10 }}>{counts.map((k) => <span className="badge b-blue" key={k}>{t(BACKUP_LABELS[k][0], BACKUP_LABELS[k][1])}: {parsed.p.counts[k]}</span>)}</div>
-            {parsed.p.legacy && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t("This is a backup from your old LUMA app. Clients, estimates, invoices, expenses, team, tasks and your prices will be brought over. Photos, receipts and old client links are not included — create a new link from each estimate.", "Esta es una copia de tu app LUMA anterior. Se traen clientes, presupuestos, facturas, gastos, equipo, tareas y tus precios. Las fotos, recibos y los links viejos de clientes no van incluidos — crea un link nuevo desde cada presupuesto.")}</p>}
+            {parsed.p.legacy && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t("This is a backup from your old LUMA app. Clients, estimates, invoices, expenses, team, tasks and your prices will be brought over. Job photos and receipts are uploaded too (this can take a few minutes). Old client links are not included — create a new link from each estimate.", "Esta es una copia de tu app LUMA anterior. Se traen clientes, presupuestos, facturas, gastos, equipo, tareas y tus precios. También se suben las fotos de los trabajos y los recibos (puede tardar unos minutos). Los links viejos de clientes no van incluidos — crea un link nuevo desde cada presupuesto.")}</p>}
             {parsed.p.skipped > 0 && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t(`${parsed.p.skipped} damaged records in the file will be skipped.`, `${parsed.p.skipped} registros dañados del archivo se van a omitir.`)}</p>}
             {progress ? <p style={{ margin: 0 }}>{t("Restoring…", "Restaurando…")} {progress.done} / {progress.total}</p> : (
               <div className="st-actions">
