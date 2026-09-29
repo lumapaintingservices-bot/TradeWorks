@@ -18,6 +18,9 @@ export const isRole = (v: unknown): v is Role => v === "owner" || v === "admin" 
 /** Routes a worker may open (prefix match). Everything else redirects to homeFor("worker"). */
 export const WORKER_ROUTES = ["/calendar", "/team", "/settings"];
 
+/** May this person start a new company of their own? Not when every company they belong to has them as a plain worker. */
+export const canCreateCompany = (roles: Role[]): boolean => roles.length === 0 || roles.some((r) => r !== "worker");
+
 export const homeFor = (role: Role | null | undefined): string => (role === "worker" ? "/calendar" : "/");
 
 const norm = (p: string) => { const q = (p.split(/[?#]/)[0] || "/").replace(/\/+$/, ""); return q === "" ? "/" : q; };

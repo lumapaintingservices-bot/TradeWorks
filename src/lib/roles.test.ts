@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAccess, canChangeRole, canInviteRole, canLinkWorker, can, decideInvite, homeFor, isEmail, navFilter, normEmail, redirectFor,
-  canRemoveMember, workerScope, type MemberLite,
+  canRemoveMember, canCreateCompany, workerScope, type MemberLite,
 } from "./roles";
 
 describe("route permissions", () => {
@@ -128,5 +128,15 @@ describe("worker data scope", () => {
     expect(workerScope("workers")).toEqual({ docId: true });
     expect(workerScope("expenses")).toBeNull();
     expect(workerScope("estimates")).toBeNull();
+  });
+});
+
+describe("canCreateCompany", () => {
+  it("is false only when every company is as a worker", () => {
+    expect(canCreateCompany([])).toBe(true);
+    expect(canCreateCompany(["owner"])).toBe(true);
+    expect(canCreateCompany(["worker", "admin"])).toBe(true);
+    expect(canCreateCompany(["worker"])).toBe(false);
+    expect(canCreateCompany(["worker", "worker"])).toBe(false);
   });
 });

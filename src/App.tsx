@@ -3,7 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react
 import { useAuth } from "./auth/AuthProvider";
 import { backend } from "./auth/backend";
 import { JoinPrompt } from "./auth/InviteBanner";
-import { can, canAccess, homeFor, redirectFor } from "./lib/roles";
+import { can, canAccess, canCreateCompany, homeFor, redirectFor } from "./lib/roles";
 import { useT } from "./i18n";
 import { Logo } from "./ui/Logo";
 import Shell from "./layout/Shell";
@@ -91,6 +91,8 @@ function OnboardingRoute() {
   if (!ready) return null;
   if (user && loadError) return <LoadFailed />;
   if (user && invite && !company && !creating && !skipInvite) return <JoinPrompt onSkip={() => setSkipInvite(true)} />;
+  // a plain worker never sets up a company of their own: back to their calendar
+  if (user && companies.length > 0 && !canCreateCompany(companies.map((c) => c.role))) return <Navigate to={homeFor(companies.find((c) => c.id === activeCompanyId)?.role ?? "worker")} replace />;
   // creating: go back to the company that stays active underneath; a half-finished new company: go to any other one
   const target = creating ? companies.find((c) => c.id === activeCompanyId) : companies.find((c) => c.id !== company?.id);
   const back = () => {
