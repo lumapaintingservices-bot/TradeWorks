@@ -17,7 +17,7 @@ type Props = {
 
 const W = 1000, H = 300;
 const niceMax = (v: number) => { if (!(v > 0)) return 100; const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
-  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; };
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 4 ? 4 : n <= 8 ? 8 : 10) * p; }; // ends divisible by 4 so the 5 grid labels are round
 const shortMoney = (x: number) => (x >= 1000 ? "$" + (x / 1000).toFixed(x >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k" : "$" + Math.round(x));
 const money = (x: number) => x.toLocaleString("en-US", { style: "currency", currency: "USD" });
 

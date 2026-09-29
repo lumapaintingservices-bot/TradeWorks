@@ -1,3 +1,4 @@
+import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -62,7 +63,8 @@ export default function Expenses() {
   const [custom, setCustom] = useState({ from: today.slice(0, 7) + "-01", to: today });
   const [q, setQ] = useState(""); const [cat, setCat] = useState("all"); const [limit, setLimit] = useState(PAGE);
   const [editing, setEditing] = useState<Expense | "new" | null>(null);
-  const [showRec, setShowRec] = useState(false); const [showImport, setShowImport] = useState(false);
+  const [showRec, setShowRec] = useState(false); const [sp, setSp] = useSearchParams();
+  const [showImport, setShowImport] = useState(sp.get("import") === "1");
   const [zoom, setZoom] = useState("");
 
   /* recurring entries are made once a month with a fixed id, so opening the page on two devices never duplicates them */
@@ -177,7 +179,7 @@ export default function Expenses() {
 
       {editing && <ExpenseModal key={editing === "new" ? "new" : editing.id} exp={editing === "new" ? null : editing} onClose={() => setEditing(null)} />}
       {showRec && <RecurringModal onClose={() => setShowRec(false)} />}
-      {showImport && <BankImportModal onClose={() => setShowImport(false)} />}
+      {showImport && <BankImportModal onClose={() => { setShowImport(false); if (sp.get("import")) setSp({}, { replace: true }); }} />}
       {zoom && <div className="ex-zoom" onClick={() => setZoom("")} role="dialog" aria-modal><img src={zoom} alt={t("Receipt", "Recibo")} /><button className="btn sm" onClick={() => setZoom("")}>{t("Close", "Cerrar")}</button></div>}
     </div>
   );
