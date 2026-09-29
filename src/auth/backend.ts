@@ -1,6 +1,6 @@
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut,
-  sendPasswordResetEmail, onAuthStateChanged, updateProfile, sendEmailVerification,
+  sendPasswordResetEmail, onAuthStateChanged, updateProfile, sendEmailVerification, GoogleAuthProvider, signInWithPopup,
 } from "firebase/auth";
 import {
   arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, setDoc, updateDoc, where, writeBatch,
@@ -24,6 +24,8 @@ export interface Backend {
   onUser(cb: (u: User | null) => void): () => void;
   signUp(name: string, email: string, pw: string): Promise<void>;
   signIn(email: string, pw: string): Promise<void>;
+  /** "Continue with Google" (Firebase only). Creates the profile on first use. */
+  signInWithGoogle(): Promise<void>;
   signOut(): Promise<void>;
   reset(email: string): Promise<void>;
   /** Re-reads the account (e-mail verified?) and returns it. */
@@ -66,6 +68,12 @@ const fbBackend: Backend = {
     sendEmailVerification(cred.user).catch(() => {});
   },
   async signIn(email, pw) { await signInWithEmailAndPassword(auth, email, pw); },
+  async signInWithGoogle() {
+    const { user } = await signInWithPopup(auth, new GoogleAuthProvider());
+    // first time: create the profile (name / email only; an existing profile is left alone)
+    const ref = doc(db, "users", user.uid);
+    if (!(await getDoc(ref)).exists()) await setDoc(ref, { name: user.displayName || "", email: user.email || "", lang: "en", theme: "light", companies: [], activeCompanyId: null });
+  },
   signOut: () => fbSignOut(auth),
   reset: (email) => sendPasswordResetEmail(auth, email),
   async refreshUser() {
@@ -218,6 +226,7 @@ const demoBackend: Backend = {
     if (!u || u.pw !== pw) throw new Error("auth/invalid-credential");
     write(K.session, { uid: u.uid, name: u.name, email: u.email, emailVerified: true }); emit();
   },
+  async signInWithGoogle() { throw new Error("auth/google-unavailable"); },
   async signOut() { localStorage.removeItem(K.session); emit(); },
   async reset() { /* demo: nothing to send */ },
   async refreshUser() { return read<User | null>(K.session, null); },
