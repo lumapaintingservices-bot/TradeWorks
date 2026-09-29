@@ -61,3 +61,49 @@ describe("portalApply", () => {
   });
   it("tokens are 24 chars and unique", () => { expect(newToken()).toHaveLength(24); expect(newToken()).not.toBe(newToken()); });
 });
+
+describe("change orders on the client link", () => {
+  const withCo = () => ({
+    ...est(), signature: { name: "Ana", img: "AA", date: "2026-09-01", via: "link", at: "x" }, status: "Accepted" as const,
+    changeOrders: [
+      { id: "co1", n: 1, desc: "Add pantry", descEs: "Despensa", amount: 250, hours: 4, status: "sent", sigImg: "SECRETIMG" },
+      { id: "co2", n: 2, desc: "Draft only", descEs: "Solo borrador", amount: 99, hours: 1, status: "draft" },
+      { id: "co3", n: 3, desc: "Done", descEs: "Hecho", amount: 40, hours: 1, status: "signed", signedName: "Ana", signedAt: "2026-09-10", sigImg: "SECRETIMG" },
+    ],
+  });
+  const sig = { name: "Ana Perez", img: "data:image/png;base64,BB", at: "2026-09-29T10:00:00Z" };
+
+  it("snapshot lists sent/signed change orders without images or drafts", () => {
+    const m = portalSnapshot(withCo(), s, brand);
+    expect(m.e.changeOrders.map((c) => c.id)).toEqual(["co1", "co3"]);
+    expect(m.e.changeOrders[0]).toEqual({ id: "co1", n: 1, desc: "Add pantry", descEs: "Despensa", amount: 250, status: "sent", signedName: "", signedAt: "" });
+    expect(m.e.changeOrders[1]).toMatchObject({ signedName: "Ana", signedAt: "2026-09-10" });
+    const j = JSON.stringify(m);
+    expect(j).not.toContain("SECRETIMG"); expect(j).not.toContain("Draft only");
+  });
+  it("client approval signs the change order once, logs it and reports news", () => {
+    const a = portalApply(withCo(), { coSign: { co1: sig } });
+    const co = a.e.changeOrders.find((c) => c.id === "co1")!;
+    expect(co).toMatchObject({ status: "signed", signedName: "Ana Perez", signedAt: "2026-09-29", sigImg: sig.img, via: "link" });
+    expect(a.changed).toBe(true); expect(a.news).toMatch(/change order #1/);
+    expect(a.e.activity!.filter((x) => /Change order #1 approved/.test(x.text))).toHaveLength(1);
+    expect(a.e.portalSeen!.co!.co1).toBe(1);
+    const b = portalApply(a.e, { coSign: { co1: sig } });
+    expect(b.changed).toBe(false);
+    // even if the owner reopens it, the same approval is never applied twice
+    const reopened = { ...a.e, changeOrders: a.e.changeOrders.map((c) => (c.id === "co1" ? { ...c, status: "sent" } : c)) };
+    expect(portalApply(reopened, { coSign: { co1: sig } }).changed).toBe(false);
+  });
+  it("ignores drafts, unknown ids and empty signatures; keeps an owner signature", () => {
+    const a = portalApply(withCo(), { chat: withCo().chat, coSign: { co2: sig, nope: sig, co1: { name: "x", img: "", at: "" } } });
+    expect(a.changed).toBe(false);
+    expect(a.e.changeOrders.find((c) => c.id === "co2")!.status).toBe("draft");
+    const b = portalApply(withCo(), { coSign: { co3: { ...sig, name: "Someone else" } } });
+    expect(b.e.changeOrders.find((c) => c.id === "co3")).toMatchObject({ signedName: "Ana", signedAt: "2026-09-10" });
+    expect(b.e.activity!.some((x) => /approved from the link/.test(x.text))).toBe(false);
+  });
+  it("works alongside older portalSeen records without co", () => {
+    const e = withCo(); e.portalSeen = { views: 0, picks: "{}", sign: true };
+    expect(portalApply(e, { coSign: { co1: sig } }).e.changeOrders[0].status).toBe("signed");
+  });
+});

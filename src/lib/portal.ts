@@ -16,6 +16,8 @@ export type PortalModel = {
 export type ClientState = {
   views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
   chat?: ChatMsg[]; paid?: { method: string; at: string };
+  /** Change orders the client approved on the link, by change order id. */
+  coSign?: Record<string, { name: string; img: string; at: string }>;
 };
 export type PortalDoc = { id: string; owner: string; estId: string; number?: string; data: string; client?: ClientState };
 
@@ -33,7 +35,10 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
   // hidden lines travel only as numbers: the total adds up but the client never gets the wording
   x.items = (x.items || []).map((it) => (it.hidden ? { id: it.id, qty: num(it.qty), rate: num(it.rate), hidden: true, desc: "", descEs: "", unit: "" } : it));
   if (x.signature) x.signature = { name: x.signature.name || "", img: "", date: x.signature.date || "", via: "", at: "" };
-  x.changeOrders = (e.changeOrders || []).map((c) => ({ n: c.n, status: c.status, amount: num(c.amount) }));
+  // change orders travel without images; drafts stay private until the owner sends them
+  x.changeOrders = (e.changeOrders || []).filter((c) => c.id && c.status !== "draft").map((c) => ({
+    id: c.id, n: c.n, desc: c.desc || "", descEs: c.descEs || "", amount: num(c.amount), status: c.status, signedName: c.signedName || "", signedAt: c.signedAt || "",
+  }));
   const f = e.discountMode === "code" ? findDiscount(s, e.discountCode) : null;
   return { v: 1, e: x, s: { business: b, pricing: s.pricing, tax: s.tax, discounts: f ? [f] : [],
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
@@ -115,6 +120,19 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
     seen.paid = c.paid.at; changed = true; e.payClaim = { method: c.paid.method || "", at: c.paid.at };
     logAct(e, TT(`Client says the deposit was sent (${c.paid.method || ""})`, `El cliente dice que envió el depósito (${c.paid.method || ""})`));
     news = TT(`${who} says the deposit was sent`, `${who} dice que envió el depósito`);
+  }
+  const cos = c.coSign || {}, seenCo = (seen.co ||= {});
+  for (const id of Object.keys(cos)) {
+    const sg = cos[id];
+    if (!sg || !sg.img || seenCo[id]) continue;
+    const co = (e.changeOrders || []).find((x) => x.id === id);
+    if (!co || co.status === "draft") continue; // unknown or not offered to the client: ignore
+    seenCo[id] = 1; changed = true;
+    if (co.status === "signed") continue; // the owner already signed it here
+    co.status = "signed"; co.signedName = sg.name || e.clientName; co.signedAt = String(sg.at || nowISO()).slice(0, 10); co.sigImg = sg.img;
+    (co as { via?: string }).via = "link";
+    logAct(e, TT(`Change order #${co.n} approved from the link ($${num(co.amount)})`, `Orden de cambio #${co.n} aprobada desde el enlace ($${num(co.amount)})`));
+    news = TT(`${who} approved change order #${co.n}!`, `¡${who} aprobó la orden de cambio #${co.n}!`);
   }
   if (changed) e.updatedAt = undefined;
   return { e: changed ? e : est, changed, news };

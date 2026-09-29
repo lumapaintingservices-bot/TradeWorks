@@ -22,6 +22,10 @@ export default function PortalPage() {
   const [msg, setMsg] = useState("");
   const [toast, setToast] = useState("");
   const pad = useRef<PadHandle>(null);
+  const coPad = useRef<PadHandle>(null);
+  const [coId, setCoId] = useState("");
+  const [coName, setCoName] = useState("");
+  const [coDirty, setCoDirty] = useState(false);
   const viewed = useRef(false);
   const msgsEnd = useRef<HTMLDivElement>(null);
 
@@ -50,6 +54,13 @@ export default function PortalPage() {
       .then(() => say(T("Thank you! Your estimate is signed.", "¡Gracias! Su presupuesto está firmado."))).catch(() => say(T("No connection. Try again.", "Sin conexión. Inténtalo de nuevo.")));
   };
   const send = () => { const t = msg.trim(); if (!t) return; setMsg(""); patchTop("portal", token, { append: { "client.chat": { from: "client", text: t, at: now() } } }).catch(() => { setMsg(t); say(T("No connection. Try again.", "Sin conexión. Inténtalo de nuevo.")); }); };
+  const approveCo = () => {
+    if (!coName.trim() || !coPad.current?.dirty()) { say(T("Type your name and sign with your finger.", "Escriba su nombre y firme con el dedo.")); return; }
+    const id = coId;
+    patchTop("portal", token, { set: { [`client.coSign.${id}`]: { name: coName.trim(), img: coPad.current.data(), at: now() } } })
+      .then(() => { setCoId(""); setCoDirty(false); say(T("Thank you! The change is approved.", "¡Gracias! El cambio está aprobado.")); })
+      .catch(() => say(T("No connection. Try again.", "Sin conexión. Inténtalo de nuevo.")));
+  };
   const copy = (t: string) => { navigator.clipboard?.writeText(t).then(() => say(T("Copied.", "Copiado."))).catch(() => say(t)); };
 
   const hiddenAmt = tot.lines.filter((l) => l.kind === "custom" && (l.item as { hidden?: boolean }).hidden).reduce((a, l) => a + l.amount, 0);
@@ -69,6 +80,10 @@ export default function PortalPage() {
   const wa = (b.phone || "").replace(/\D/g, "");
   const deposit = tot.deposit;
   const paid = !!c.paid;
+  const cos = e.changeOrders || [];
+  const coDone = (x: (typeof cos)[number]) => x.status === "signed" || !!c.coSign?.[x.id || ""];
+  const coApproved = cos.filter(coDone).reduce((a, x) => a + num(x.amount), 0);
+  const coOpen = cos.find((x) => x.id === coId);
 
   return (
     <div className="pt" style={{ ["--brand" as string]: b.brandColor || "#EF6A2C" }}>
@@ -77,6 +92,7 @@ export default function PortalPage() {
           {opts.length > 0 && <button onClick={() => go("ptOpt")}>{T("Options", "Opciones")}</button>}
           <button onClick={() => go("ptSum")}>{T("Summary", "Resumen")}</button>
           <button onClick={() => go("ptSign")}>{T("Sign", "Firmar")}</button>
+          {cos.length > 0 && <button onClick={() => go("ptCo")}>{T("Changes", "Cambios")}</button>}
           <button onClick={() => go("ptChat")}>{T("Questions", "Preguntas")}</button>
         </div>
         <div className="seg">{(["en", "es"] as const).map((l) => <button key={l} className={L === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}</div>
@@ -146,6 +162,19 @@ export default function PortalPage() {
           </>}
         </section>
 
+        {cos.length > 0 && <section className="pt-sec" id="ptCo">
+          <h2>{T("Change orders", "Órdenes de cambio")}</h2>
+          <p className="pt-hint">{T("Extra work agreed after the estimate. Review each one and approve it with your signature.", "Trabajo extra acordado después del presupuesto. Revise cada uno y apruébelo con su firma.")}</p>
+          {cos.map((x) => { const done = coDone(x), d = es ? x.descEs || x.desc : x.desc || x.descEs; return (
+            <div className={"pt-co" + (done ? " on" : "")} key={x.id}>
+              <div className="pt-co-h"><b>{T("Change", "Cambio")} #{x.n}</b><b>{money(x.amount)}</b></div>
+              <p>{d}</p>
+              {done ? <span className="pt-ok">✓ {T("Approved", "Aprobado")}{(x.signedName || c.coSign?.[x.id || ""]?.name) ? ` · ${x.signedName || c.coSign?.[x.id || ""]?.name}` : ""}</span>
+                : <button className="pt-btn" onClick={() => { setCoId(x.id || ""); setCoName(""); setCoDirty(false); }}>{T("Review & approve", "Revisar y aprobar")}</button>}
+            </div>); })}
+          {coApproved > 0 && <div className="pt-row big"><span>{T("New contract total", "Nuevo total del contrato")}</span><b>{money(tot.total + coApproved)}</b></div>}
+        </section>}
+
         <section className="pt-sec" id="ptChat">
           <h2>{T("Questions?", "¿Preguntas?")}</h2>
           <p className="pt-hint">{T("Write to us here — we'll answer as soon as we can.", "Escríbanos aquí — le respondemos lo antes posible.")}</p>
@@ -163,6 +192,19 @@ export default function PortalPage() {
           <p>{b.name}{b.area ? ` · ${b.area}` : ""}</p><p className="pt-pow">Powered by TradeWorks</p>
         </footer>
       </main>
+      {coOpen && (
+        <div className="pt-modal" onMouseDown={(ev) => ev.target === ev.currentTarget && setCoId("")}>
+          <div className="pt-modal-card" role="dialog" aria-modal aria-label={T("Approve change", "Aprobar cambio")}>
+            <div className="pt-co-h"><h2>{T("Change", "Cambio")} #{coOpen.n}</h2><button className="pt-link" onClick={() => setCoId("")}>{T("Close", "Cerrar")}</button></div>
+            <p>{es ? coOpen.descEs || coOpen.desc : coOpen.desc || coOpen.descEs}</p>
+            <div className="pt-dep"><span>{T("Extra cost", "Costo adicional")}</span><b>{money(coOpen.amount)}</b></div>
+            <p className="pt-hint">{T(`By signing you approve this change for ${money(coOpen.amount)}.`, `Al firmar aprueba este cambio por ${money(coOpen.amount)}.`)}</p>
+            <label className="pt-f">{T("Your full name", "Su nombre completo")}<input value={coName} onChange={(ev) => setCoName(ev.target.value)} autoComplete="name" /></label>
+            <div className="pt-f"><span>{T("Sign with your finger", "Firme con el dedo")}</span><SignaturePad ref={coPad} onChange={setCoDirty} />
+              <button className="pt-link" onClick={() => coPad.current?.clear()} disabled={!coDirty}>{T("Clear", "Borrar")}</button></div>
+            <button className="pt-btn wide" onClick={approveCo}>{T("Approve change", "Aprobar cambio")}</button>
+          </div>
+        </div>)}
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );

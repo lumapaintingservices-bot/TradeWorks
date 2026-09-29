@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useSettings } from "../data/hooks";
+import CalendarCard from "./settings/CalendarCard";
 import { useT } from "../i18n";
 import { useUi, type ThemePref } from "../store/ui";
 
@@ -91,6 +92,7 @@ export default function Settings() {
       </div>
       <BusinessCard />
       <ClientLinkCard />
+      <CalendarCard />
       {company && (
         <div className="card" style={{ maxWidth: 640, marginTop: 16 }}>
           <div className="card-h"><h2>{t("Request-form link", "Enlace del formulario de solicitud")}</h2></div>

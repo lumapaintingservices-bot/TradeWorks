@@ -43,3 +43,11 @@
 .pt-cta{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid #ECEEF2;padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;justify-content:space-between;gap:12px}
 .pt-cta span{display:block;font-size:12px;color:#6B7280}.pt-cta b{font-size:20px}
 @media(min-width:900px){.pt-cta{display:none}.pt{padding-bottom:24px}}
+.pt-co{border:1.5px solid #ECEEF2;border-radius:14px;padding:14px;margin-bottom:10px}
+.pt-co.on{border-color:#12B76A}
+.pt-co-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+.pt-co p{margin:4px 0 12px}
+.pt-modal{position:fixed;inset:0;z-index:60;background:rgba(11,13,18,.5);display:grid;place-items:center;padding:16px;overflow-y:auto}
+.pt-modal-card{background:#fff;color:#0B0D12;border-radius:18px;width:100%;max-width:520px;padding:22px;max-height:calc(100vh - 32px);overflow-y:auto}
+.pt-modal-card *{box-sizing:border-box}.pt-modal-card h2{font-size:18px;margin:0}
+@media(max-width:640px){.pt-modal{align-items:end;padding:0}.pt-modal-card{max-width:none;border-radius:18px 18px 0 0}}

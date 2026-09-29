@@ -3,6 +3,8 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import Shell from "./layout/Shell";
 import AuthPage from "./pages/AuthPage";
+import Calendar from "./pages/Calendar";
+import { useCalendarFeedSync } from "./pages/settings/calendarFeed";
 import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
 import EstimateDoc from "./pages/estimate/EstimateDoc";
@@ -15,13 +17,15 @@ import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
 
+function FeedSync() { useCalendarFeedSync(); return null; }
+
 function Gate() {
   const { ready, user, company } = useAuth();
   const loc = useLocation();
   if (!ready) return null;
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname + loc.search }} />;
   if (!company?.onboarded) return <Navigate to="/onboarding" replace />;
-  return <Shell />;
+  return <><FeedSync /><Shell /></>;
 }
 
 function Bare() {
@@ -57,7 +61,7 @@ export default function App() {
       <Route element={<Gate />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={P("Pipeline", "Embudo", "leads", 4)} />
-        <Route path="/calendar" element={P("Calendar", "Calendario", "chart", 4)} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/estimates" element={<Estimates />} />
         <Route path="/estimates/:id" element={<EstimateEditor />} />
         <Route path="/invoices" element={P("Invoices", "Facturas", "invoices", 4)} />
