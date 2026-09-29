@@ -81,6 +81,12 @@ export default function BackupCard() {
     }
     const logo = parsed.p.images?.__logo;
     if (logo && !company!.logoUrl) { try { const { url } = await putImage(`companies/${company!.id}/logo/logo.png`, logo); await saveCompany({ name: company!.name, logoUrl: url }); } catch { /* logo can be uploaded from Settings */ } }
+    const pr = parsed.p.profile;
+    if (pr) {
+      const fill: Record<string, string> = {};
+      for (const k of ["address", "hours", "hoursEs"] as const) if (pr[k] && !company![k]) fill[k] = pr[k]!;
+      if (Object.keys(fill).length) { try { await saveCompany({ name: company!.name, ...fill }); } catch { /* fill them in Settings */ } }
+    }
     setProgress(null); setParsed(null);
     if (file.current) file.current.value = "";
     if (failed) setError(t(`Restored, but ${failed} records could not be saved. Try again.`, `Restaurado, pero ${failed} registros no se pudieron guardar. Inténtalo otra vez.`));

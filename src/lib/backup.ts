@@ -69,6 +69,8 @@ export type ParsedBackup = {
   total: number; skipped: number; legacy?: boolean;
   /** Photos / receipts carried by an old-app backup: id -> data URL (uploaded to Storage on restore). */
   images?: Record<string, string>;
+  /** Business address / hours from an old-app backup, filled into the company when empty. */
+  profile?: { address?: string; hours?: string; hoursEs?: string };
   company?: { id?: string; name?: string }; createdAt?: string;
 };
 export type ParseResult = { ok: true; backup: ParsedBackup } | { ok: false; error: { en: string; es: string } };
@@ -101,5 +103,5 @@ export function parseBackup(text: string): ParseResult {
   }
   const co = isObj(raw.company) ? { id: str(raw.company.id) ? (raw.company.id as string) : undefined, name: str(raw.company.name) ? (raw.company.name as string) : undefined } : undefined;
   if (total === 0) return { ok: false, error: { en: "This backup has nothing we can restore.", es: "Esta copia no tiene nada que se pueda restaurar." } };
-  return { ok: true, backup: { records, counts, total, skipped, legacy, images: legacy && isObj(raw.images) ? (raw.images as Record<string, string>) : undefined, company: co, createdAt: str(raw.createdAt) ? (raw.createdAt as string) : undefined } };
+  return { ok: true, backup: { records, counts, total, skipped, legacy, images: legacy && isObj(raw.images) ? (raw.images as Record<string, string>) : undefined, profile: legacy && isObj(raw.profile) ? (raw.profile as { address?: string; hours?: string; hoursEs?: string }) : undefined, company: co, createdAt: str(raw.createdAt) ? (raw.createdAt as string) : undefined } };
 }

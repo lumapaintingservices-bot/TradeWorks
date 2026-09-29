@@ -1,3 +1,4 @@
+import { payMethodsOf } from "../lib/payMethods";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -38,7 +39,7 @@ export default function InvoiceDoc() {
         <button className="btn pri" onClick={() => window.print()}>{T("Print / Save as PDF", "Imprimir / Guardar PDF")}</button>
       </div></div>
       <InvoiceSheet v={v} e={e} s={s} lang={lang} compact={compact} biz={company} services={servicesLine(e, s, lang)}
-        pay={{ zelle: s.payZelle || "", zelleName: s.payZelleName || "", note: s.payNote || "" }} />
+        pay={{ zelle: s.payZelle || "", zelleName: s.payZelleName || "", note: s.payNote || "", methods: payMethodsOf(s.payMethods) }} />
     </div>
   );
 }

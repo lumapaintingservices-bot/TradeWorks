@@ -7,13 +7,13 @@ import type { ChatMsg, Estimate, Settings } from "./types";
 export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "actualMaterialCost", "activity", "snooze", "portalSeen",
   "chat", "chatUnread", "extraHrs", "crewNotes", "leadSource", "portalViews", "reviewAsked", "portal", "laborMode", "payClaim", "createdAt", "updatedAt", "companyId"];
 
-export type Brand = { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string };
+export type Brand = { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string };
 export type PortalModel = {
   v: 1; e: Estimate;
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
        showcase?: { id: string; url: string; caption: string }[];
        services?: { en: string; es: string };
-       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string };
+       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string; payMethods?: string[] };
 };
 export type ClientState = {
   views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
@@ -51,7 +51,7 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
     services: { en: servicesLine(e, s, "en"), es: servicesLine(e, s, "es") },
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
     showcase: (s.showcase || []).filter((x) => x.url).map((x) => ({ id: x.id, url: x.url, caption: x.caption || "" })),
-    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "" } };
+    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "", ...(s.payMethods ? { payMethods: s.payMethods } : {}) } };
 }
 
 /** Settings shaped for calcEstimate, using only what the snapshot carries. */

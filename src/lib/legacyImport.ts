@@ -36,6 +36,10 @@ function settingsFrom(db: Record<string, unknown>): Record<string, unknown> {
   if (typeof biz.services === "string") s.services = biz.services;
   const pay = isObj(db.payment) ? db.payment : {};
   if (typeof pay.detail === "string") s.payNote = pay.detail;
+  if (Array.isArray(pay.methods)) {
+    const keys = arr(pay.methods).map((m) => String(m.en || "").toLowerCase()).map((n) => (n.includes("cash") ? "cash" : n.includes("card") ? "card" : n.includes("zelle") ? "zelle" : n.includes("check") ? "check" : "")).filter(Boolean);
+    if (keys.length) s.payMethods = [...new Set(keys)];
+  }
   // Custom service rates: keep the ones that differ from the catalog (new app stores only the overrides).
   if (Array.isArray(db.services)) {
     const rates: Record<string, number> = {};
@@ -65,6 +69,7 @@ export function convertLegacy(db: Record<string, unknown>): Record<string, unkno
   return {
     app: "TradeWorks", version: 1, createdAt: new Date().toISOString(), legacy: true, images,
     company: { id: "", name: isObj(db.business) && typeof db.business.name === "string" ? db.business.name : "" },
+    profile: (["address", "hours", "hoursEs"] as const).reduce<Record<string, string>>((o, k) => { const v = isObj(db.business) ? db.business[k] : undefined; if (typeof v === "string" && v.trim()) o[k] = v.trim(); return o; }, {}),
     data: {
       clients: live(db.clients, ["photos"]),
       estimates: est,
