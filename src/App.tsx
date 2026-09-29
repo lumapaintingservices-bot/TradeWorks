@@ -5,6 +5,7 @@ import Shell from "./layout/Shell";
 import AuthPage from "./pages/AuthPage";
 import Calendar from "./pages/Calendar";
 import { useCalendarFeedSync } from "./pages/settings/calendarFeed";
+import ClientProfile from "./pages/ClientProfile";
 import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
 import EstimateDoc from "./pages/estimate/EstimateDoc";
@@ -72,6 +73,7 @@ export default function App() {
         <Route path="/estimates/:id" element={<EstimateEditor />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/clients" element={<Clients />} />
+        <Route path="/clients/:id" element={<ClientProfile />} />
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/reports" element={P("Reports", "Reportes", "chart", 6)} />
         <Route path="/team" element={<Team />} />
