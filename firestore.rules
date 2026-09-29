@@ -1,0 +1,71 @@
+rules_version = '2';
+// TradeWorks Firestore rules. Paste this whole file in Firebase console > Firestore Database > Rules > Publish.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function member(cid) { return signedIn() && exists(/databases/$(db)/documents/companies/$(cid)/members/$(request.auth.uid)); }
+    function role(cid) { return get(/databases/$(db)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role; }
+    function admin(cid) { return member(cid) && role(cid) in ['owner', 'admin']; }
+
+    // Each person only reads/writes their own profile.
+    match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
+
+    match /companies/{cid} {
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow read: if member(cid);
+      allow update: if admin(cid);
+
+      match /members/{uid} {
+        allow read: if member(cid);
+        // the person who created the company adds themselves as its first owner
+        allow create: if signedIn() && request.auth.uid == uid
+          && get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid == request.auth.uid;
+        allow update, delete: if admin(cid);
+      }
+
+      // clients, estimates, invoices, expenses, settings, workers... owners/admins everything;
+      // workers only their own kind of data (tasks, hours, clock)
+      match /{col}/{id} {
+        allow read: if admin(cid) || (member(cid) && col in ['tasks', 'hours', 'clock']);
+        allow write: if admin(cid) || (member(cid) && col in ['hours', 'clock']);
+      }
+    }
+
+    // Client link: anyone with the secret token can open it; the client may only change the `client` field.
+    match /portal/{token} {
+      allow get: if true;
+      allow create: if admin(request.resource.data.owner);
+      allow delete: if admin(resource.data.owner);
+      allow update: if admin(resource.data.owner)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client']);
+      match /photos/{pid} {
+        allow get: if true;
+        allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner);
+      }
+    }
+
+    // Lead form: anyone can send a request (validated); only the company can read or manage it.
+    match /leads/{lid} {
+      allow create: if exists(/databases/$(db)/documents/companies/$(request.resource.data.owner))
+        && request.resource.data.keys().hasOnly(['owner', 'name', 'phone', 'email', 'city', 'address', 'service', 'message', 'heard', 'lang', 'photos', 'details', 'at', 'page'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
+        && request.resource.data.photos is list && request.resource.data.photos.size() <= 5;
+      allow read, update, delete: if admin(resource.data.owner);
+      match /photos/{pid} {
+        allow create: if request.resource.data.keys().hasOnly(['data', 'at']) && !exists(/databases/$(db)/documents/leads/$(lid));
+        allow read, delete: if admin(get(/databases/$(db)/documents/leads/$(lid)).data.owner);
+      }
+    }
+
+    // Public business card used by the lead form (name, phone, logo, brand color). No private data.
+    match /public/{cid} { allow get: if true; allow write: if admin(cid); }
+
+    // Live calendar feed (.ics) read by the Cloudflare worker.
+    match /calfeed/{token} {
+      allow get: if true;
+      allow create, update: if admin(request.resource.data.owner);
+      allow delete: if admin(resource.data.owner);
+    }
+  }
+}
