@@ -37,7 +37,7 @@
 .ex-prev{width:64px;height:64px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line);padding:0;background:var(--surface-2);cursor:zoom-in}
 .ex-prev img{width:100%;height:100%;object-fit:cover;display:block}
 .ex-check{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2);margin:0 0 14px}
-.ex-check input{width:auto;height:auto}
+.ex-check input{width:18px;height:18px;padding:0;flex:none}
 .ex-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 .ex-hint{font-size:13px;margin-bottom:12px}
 .ex-none{padding:16px 0}
@@ -46,7 +46,7 @@
 
 .ex-rec{display:flex;flex-direction:column}
 .ex-rec-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px 14px;align-items:center;padding:12px 0;border-top:1px solid var(--line-2)}
-.ex-rec-row:first-child{border-top:0;padding-top:0}
+.ex-rec-row:first-child{border-top:0;padding-top:4px}
 .ex-rec-row.off .ex-rec-main,.ex-rec-row.off .ex-rec-amt{opacity:.55}
 .ex-rec-main{display:flex;flex-direction:column;min-width:0}
 .ex-rec-main .muted{font-size:12.5px}
@@ -64,8 +64,8 @@
 .bk-list{max-height:52vh;overflow-y:auto;border-top:1px solid var(--line-2)}
 .bk-row{display:grid;grid-template-columns:28px 104px minmax(150px,1.3fr) minmax(170px,1fr) minmax(130px,.8fr) 84px;gap:10px;align-items:start;padding:10px 4px;border-bottom:1px solid var(--line-2)}
 .bk-row.off{opacity:.6}
-.bk-row.dup{background:var(--tile-amber)}
-.bk-on{width:18px;height:18px;margin-top:11px}
+.bk-row.dup{background:color-mix(in srgb,var(--warn) 10%,transparent)}
+.bk-on{width:18px;height:18px;padding:0;margin-top:11px}
 .bk-date{padding-top:11px;white-space:nowrap;font-size:13.5px}
 .bk-vendor small{display:block;font-size:11.5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
 .bk-cat{display:flex;flex-direction:column;gap:4px}

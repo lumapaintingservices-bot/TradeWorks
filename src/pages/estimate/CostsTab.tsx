@@ -1,3 +1,4 @@
+import { useJobExpenses } from "../../data/jobExpenses";
 import { useT } from "../../i18n";
 import { calcMaterials, jobEconomics } from "../../lib/estimate";
 import { money } from "../../lib/money";
@@ -7,7 +8,8 @@ import type { TabProps } from "./types";
 
 export default function CostsTab({ e, set, s, lang }: TabProps) {
   const t = useT();
-  const x = jobEconomics(e, s);
+  const listed = useJobExpenses(e.id, e);
+  const x = jobEconomics(e, s, listed);
   const m = calcMaterials(e, s);
   const good = x.mode === "solo" ? x.perHour >= x.targetHourly : x.margin >= x.target;
   const col = good ? "var(--ok)" : "var(--warn)";

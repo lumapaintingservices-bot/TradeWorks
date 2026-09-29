@@ -17,6 +17,7 @@ import InvoiceDoc from "./pages/InvoiceDoc";
 import Invoices from "./pages/Invoices";
 import Pipeline from "./pages/Pipeline";
 import Team from "./pages/Team";
+import Expenses from "./pages/Expenses";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -70,7 +71,7 @@ export default function App() {
         <Route path="/estimates/:id" element={<EstimateEditor />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/clients" element={<Clients />} />
-        <Route path="/expenses" element={P("Expenses", "Gastos", "chart", 5)} />
+        <Route path="/expenses" element={<Expenses />} />
         <Route path="/reports" element={P("Reports", "Reportes", "chart", 6)} />
         <Route path="/team" element={<Team />} />
         <Route path="/settings" element={<Settings />} />

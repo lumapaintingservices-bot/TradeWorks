@@ -430,7 +430,7 @@ function BankImportModal({ onClose }: { onClose(): void }) {
                   {isMarketingCat(x.cat) && <select value={x.src} onChange={(e) => setItem(i, { src: e.target.value, changed: true })}><option value="">{t("Source…", "Origen…")}</option>{sources.map((s) => <option key={s} value={s}>{s}</option>)}</select>}
                 </div>
                 <select className="bk-job" value={x.estId} onChange={(e) => setItem(i, { estId: e.target.value })}>
-                  <option value="">{t("No job — business expense", "Sin trabajo — gasto del negocio")}</option>{jobs.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}</select>
+                  <option value="">{t("No job", "Sin trabajo")}</option>{jobs.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}</select>
                 <b className="bk-amt">{money(x.amount)}</b>
               </div>))}</div>)}
           <label className="ex-check bk-learn"><input type="checkbox" checked={learn} onChange={(e) => setLearn(e.target.checked)} /> {t("Remember my categories for next time (by vendor)", "Recordar mis categorías para la próxima vez (por proveedor)")}</label>

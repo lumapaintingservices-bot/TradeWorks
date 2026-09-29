@@ -94,8 +94,8 @@ export type Settings = {
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
   calOn?: boolean; calToken?: string;
-  recurring?: { id: string; vendor: string; amount: number; category: string; method?: string; note?: string; day: number; active: boolean }[];
-  bankRules?: { match: string; category: string; vendor?: string }[];
-  expCats?: string[];
+  recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];
+  bankRules?: { match: string; category: string; source?: string; vendor?: string }[];
+  expCats?: (string | { id: string; name: string })[];
   showcase?: { id: string; url: string; caption: string }[];
 };
