@@ -1,3 +1,4 @@
+import { useWorkerOptions } from "../data/workers";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClients, useEstimates, useInvoices, useSettings, useTasks } from "../data/hooks";
@@ -24,7 +25,6 @@ const shiftMonth = (key: string, delta: number) => { const d = new Date(num(key.
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
 
 /** Phase 5 will supply the team; until then there is nobody to assign, so the selector stays hidden. */
-const NO_WORKERS: { id: string; name: string }[] = [];
 
 export default function Calendar() {
   const t = useT();
@@ -37,7 +37,7 @@ export default function Calendar() {
   const { rows: invoices } = useInvoices();
   const { rows: clients } = useClients();
   const { settings } = useSettings();
-  const workers = NO_WORKERS;
+  const workers = useWorkerOptions();
   const [month, setMonth] = useState(monthKey(todayISO()));
   const [day, setDay] = useState<string | null>(null);
   const [draft, setDraft] = useState<(Task & { isNew?: boolean }) | null>(null);

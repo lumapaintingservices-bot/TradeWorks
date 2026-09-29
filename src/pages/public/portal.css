@@ -51,3 +51,14 @@
 .pt-modal-card{background:#fff;color:#0B0D12;border-radius:18px;width:100%;max-width:520px;padding:22px;max-height:calc(100vh - 32px);overflow-y:auto}
 .pt-modal-card *{box-sizing:border-box}.pt-modal-card h2{font-size:18px;margin:0}
 @media(max-width:640px){.pt-modal{align-items:end;padding:0}.pt-modal-card{max-width:none;border-radius:18px 18px 0 0}}
+.pt-gal{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+.pt-gal figure{margin:0}
+.pt-gal button{display:block;width:100%;padding:0;border:0;background:#F3F4F6;border-radius:12px;overflow:hidden;cursor:zoom-in;aspect-ratio:4/3}
+.pt-gal img{width:100%;height:100%;object-fit:cover;display:block}
+.pt-gal figcaption{font-size:12.5px;color:#6B7280;margin-top:4px}
+@media(min-width:560px){.pt-gal{grid-template-columns:repeat(3,1fr)}}
+.pt-zoom{position:fixed;inset:0;z-index:70;background:rgba(11,13,18,.92);display:grid;place-items:center;padding:56px 12px 64px}
+.pt-zoom img{max-width:100%;max-height:100%;border-radius:8px}
+.pt-zoom .cap{position:absolute;left:0;right:0;bottom:16px;text-align:center;color:#fff;font-size:14px;padding:0 60px}
+.pt-zoom button{position:absolute;border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:999px;width:44px;height:44px;font-size:22px;line-height:1;display:grid;place-items:center;cursor:pointer}
+.pt-zoom .x{top:10px;right:10px}.pt-zoom .prev{left:10px;top:50%;transform:translateY(-50%)}.pt-zoom .next{right:10px;top:50%;transform:translateY(-50%)}

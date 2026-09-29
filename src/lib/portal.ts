@@ -32,6 +32,11 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
   const x = JSON.parse(JSON.stringify(e)) as Estimate;
   PORTAL_STRIP.forEach((k) => delete (x as unknown as Record<string, unknown>)[k]);
   if (!x.showMaterials) x.materialsList = [];
+  // job photos travel only when shown on the link, and only what the client needs (no storage paths, no showcase flags)
+  x.photos = e.showPhotos ? (e.photos || []).filter((ph) => ph.url).map((ph) => ({ id: ph.id, kind: ph.kind || "", caption: ph.caption || "", url: ph.url })) : [];
+  x.showPhotos = !!(e.showPhotos && x.photos.length);
+  // job-day work data (checklist ticks, crew tasks, paint colors) stays with the contractor
+  delete x.check; delete x.jobTasks; delete x.colors;
   // hidden lines travel only as numbers: the total adds up but the client never gets the wording
   x.items = (x.items || []).map((it) => (it.hidden ? { id: it.id, qty: num(it.qty), rate: num(it.rate), hidden: true, desc: "", descEs: "", unit: "" } : it));
   if (x.signature) x.signature = { name: x.signature.name || "", img: "", date: x.signature.date || "", via: "", at: "" };

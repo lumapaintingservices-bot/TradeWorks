@@ -25,6 +25,31 @@ describe("portalSnapshot", () => {
   });
 });
 
+describe("portalSnapshot photos", () => {
+  const photos = [
+    { id: "p1", kind: "before", caption: "Old doors", url: "https://x/p1.jpg", path: "companies/c/photos/e/p1.jpg", inWork: true },
+    { id: "p2", kind: "after", caption: "", url: "https://x/p2.jpg", path: "companies/c/photos/e/p2.jpg" },
+    { id: "p3", kind: "detail", caption: "no url yet", path: "companies/c/photos/e/p3.jpg" },
+  ];
+  it("passes id, kind, caption and url when shown on the link", () => {
+    const m = portalSnapshot({ ...est(), photos, showPhotos: true }, s, brand);
+    expect(m.e.showPhotos).toBe(true);
+    expect(m.e.photos).toEqual([{ id: "p1", kind: "before", caption: "Old doors", url: "https://x/p1.jpg" }, { id: "p2", kind: "after", caption: "", url: "https://x/p2.jpg" }]);
+    expect(JSON.stringify(m)).not.toContain("companies/c/photos");
+  });
+  it("sends no photos when the toggle is off or nothing has a url", () => {
+    const off = portalSnapshot({ ...est(), photos, showPhotos: false }, s, brand);
+    expect(off.e.photos).toEqual([]); expect(off.e.showPhotos).toBe(false);
+    expect(JSON.stringify(off)).not.toContain("p1.jpg");
+    const none = portalSnapshot({ ...est(), photos: [photos[2]], showPhotos: true }, s, brand);
+    expect(none.e.photos).toEqual([]); expect(none.e.showPhotos).toBe(false);
+  });
+  it("keeps job-day work data private", () => {
+    const m = portalSnapshot({ ...est(), check: { a: "2026-01-01" }, jobTasks: [{ id: "t", day: 1, text: "Buy tape" }], colors: [{ area: "a", brand: "b", color: "c", sheen: "d", code: "e" }] }, s, brand);
+    expect(m.e.check).toBeUndefined(); expect(m.e.jobTasks).toBeUndefined(); expect(m.e.colors).toBeUndefined();
+  });
+});
+
 describe("option picks", () => {
   it("live total follows the client's picks", () => {
     const m = portalSnapshot(est(), s, brand);

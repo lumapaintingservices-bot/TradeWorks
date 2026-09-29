@@ -26,6 +26,7 @@ export default function PortalPage() {
   const [coId, setCoId] = useState("");
   const [coName, setCoName] = useState("");
   const [coDirty, setCoDirty] = useState(false);
+  const [zoom, setZoom] = useState(-1);
   const viewed = useRef(false);
   const msgsEnd = useRef<HTMLDivElement>(null);
 
@@ -76,6 +77,10 @@ export default function PortalPage() {
   const opts = (e.upgrades || []).filter(isSelectable);
   const scope = scopeGroups(nl2list(es ? e.scopeEs : e.scopeEn)), terms = nl2list(es ? e.termsEs : e.termsEn);
   const spec = es ? e.specEs || e.spec : e.spec || e.specEs;
+  const photos = e.showPhotos ? (e.photos || []).filter((x) => x.url) : [];
+  const kindOf = (k: string) => (k === "before" ? T("Before", "Antes") : k === "after" ? T("After", "Después") : k === "detail" ? T("Detail", "Detalle") : "");
+  const photoCap = (x: (typeof photos)[number]) => [kindOf(x.kind), x.caption].filter(Boolean).join(" — ");
+  const zp = zoom >= 0 ? photos[zoom] : undefined;
   const chat = c.chat || [];
   const wa = (b.phone || "").replace(/\D/g, "");
   const deposit = tot.deposit;
@@ -91,6 +96,7 @@ export default function PortalPage() {
         <div className="pt-nav">
           {opts.length > 0 && <button onClick={() => go("ptOpt")}>{T("Options", "Opciones")}</button>}
           <button onClick={() => go("ptSum")}>{T("Summary", "Resumen")}</button>
+          {photos.length > 0 && <button onClick={() => go("ptPhotos")}>{T("Photos", "Fotos")}</button>}
           <button onClick={() => go("ptSign")}>{T("Sign", "Firmar")}</button>
           {cos.length > 0 && <button onClick={() => go("ptCo")}>{T("Changes", "Cambios")}</button>}
           <button onClick={() => go("ptChat")}>{T("Questions", "Preguntas")}</button>
@@ -130,6 +136,13 @@ export default function PortalPage() {
           {tot.taxAmt > 0 && <div className="pt-row"><span>{T("Tax", "Impuesto")}</span><b>{money(tot.taxAmt)}</b></div>}
           <div className="pt-row big"><span>{T("Total", "Total")}</span><b>{money(tot.total)}</b></div>
         </section>
+
+        {photos.length > 0 && <section className="pt-sec" id="ptPhotos">
+          <h2>{T("Photos of your project", "Fotos de su proyecto")}</h2>
+          <div className="pt-gal">{photos.map((x, i) => (
+            <figure key={x.id}><button type="button" onClick={() => setZoom(i)} aria-label={T("Zoom", "Ampliar")}><img src={x.url} alt={photoCap(x) || T("Project photo", "Foto del proyecto")} loading="lazy" /></button>
+              {photoCap(x) && <figcaption>{photoCap(x)}</figcaption>}</figure>))}</div>
+        </section>}
 
         {scope.length > 0 && <section className="pt-sec"><h2>{T("What's included", "Qué incluye")}</h2>
           {scope.map((g, i) => g.day
@@ -204,6 +217,14 @@ export default function PortalPage() {
               <button className="pt-link" onClick={() => coPad.current?.clear()} disabled={!coDirty}>{T("Clear", "Borrar")}</button></div>
             <button className="pt-btn wide" onClick={approveCo}>{T("Approve change", "Aprobar cambio")}</button>
           </div>
+        </div>)}
+      {zp && (
+        <div className="pt-zoom" role="dialog" aria-modal aria-label={T("Photo", "Foto")} onClick={() => setZoom(-1)}>
+          <img src={zp.url} alt={photoCap(zp)} onClick={(ev) => ev.stopPropagation()} />
+          <button type="button" className="x" aria-label={T("Close", "Cerrar")} onClick={() => setZoom(-1)}>×</button>
+          {zoom > 0 && <button type="button" className="prev" aria-label={T("Previous", "Anterior")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom - 1); }}>‹</button>}
+          {zoom < photos.length - 1 && <button type="button" className="next" aria-label={T("Next", "Siguiente")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom + 1); }}>›</button>}
+          {photoCap(zp) && <div className="cap">{photoCap(zp)}</div>}
         </div>)}
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
