@@ -1,5 +1,5 @@
 /** Client link (portal) logic — port of portalSnapshot / portalApply from the prototype. */
-import { calcEstimate, findDiscount } from "./estimate";
+import { calcEstimate, findDiscount, servicesLine } from "./estimate";
 import { num } from "./money";
 import type { ChatMsg, Estimate, Settings } from "./types";
 
@@ -12,6 +12,7 @@ export type PortalModel = {
   v: 1; e: Estimate;
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
        showcase?: { id: string; url: string; caption: string }[];
+       services?: { en: string; es: string };
        reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string };
 };
 export type ClientState = {
@@ -47,6 +48,7 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
   }));
   const f = e.discountMode === "code" ? findDiscount(s, e.discountCode) : null;
   return { v: 1, e: x, s: { business: b, pricing: s.pricing, tax: s.tax, discounts: f ? [f] : [],
+    services: { en: servicesLine(e, s, "en"), es: servicesLine(e, s, "es") },
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
     showcase: (s.showcase || []).filter((x) => x.url).map((x) => ({ id: x.id, url: x.url, caption: x.caption || "" })),
     payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "" } };
@@ -55,13 +57,14 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
 /** Settings shaped for calcEstimate, using only what the snapshot carries. */
 export const modelSettings = (m: PortalModel): Settings => ({ pricing: m.s.pricing, tax: m.s.tax, discounts: m.s.discounts } as unknown as Settings);
 
-export const isSelectable = (u: Estimate["upgrades"][number]) => !!(u.desc || u.descEs);
+/** An option the client can toggle: not already part of the owner's price (unless the client added it), and worded. */
+export const isSelectable = (u: Estimate["upgrades"][number]) => (!u.included || !!u.byClient) && !!(u.desc || u.descEs);
 export const isOwnerSigned = (m: PortalModel) => !!(m.e.signature && m.e.signature.name);
 
 /** The estimate as the client currently sees it: their option picks applied. */
 export function effective(m: PortalModel, client?: ClientState): Estimate {
   const picks = client?.picks || {};
-  return { ...m.e, upgrades: (m.e.upgrades || []).map((u) => (u.id in picks ? { ...u, included: !!picks[u.id] } : u)) };
+  return { ...m.e, upgrades: (m.e.upgrades || []).map((u) => (isSelectable(u) && u.id in picks && !isOwnerSigned(m) ? { ...u, included: !!picks[u.id] } : u)) };
 }
 export const clientTotal = (m: PortalModel, client?: ClientState) => calcEstimate(effective(m, client), modelSettings(m)).total;
 
