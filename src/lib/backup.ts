@@ -1,3 +1,4 @@
+import { convertLegacy, isLegacyBackup } from "./legacyImport";
 /** Backup file: build (export) and validate/normalise (restore). Pure — no I/O. */
 export const BACKUP_COLLECTIONS = ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings"] as const;
 export type BackupCol = (typeof BACKUP_COLLECTIONS)[number];
@@ -65,14 +66,16 @@ const SHAPE: Record<BackupCol, (r: Record<string, unknown>) => boolean> = {
 export type ParsedBackup = {
   records: Record<BackupCol, BackupRec[]>;
   counts: Record<BackupCol, number>;
-  total: number; skipped: number;
+  total: number; skipped: number; legacy?: boolean;
   company?: { id?: string; name?: string }; createdAt?: string;
 };
 export type ParseResult = { ok: true; backup: ParsedBackup } | { ok: false; error: { en: string; es: string } };
 
 export function parseBackup(text: string): ParseResult {
   let raw: unknown;
+  let legacy = false;
   try { raw = JSON.parse(text); } catch { return { ok: false, error: { en: "This file is not a backup (it can't be read).", es: "Este archivo no es una copia de seguridad (no se puede leer)." } }; }
+  if (isLegacyBackup(raw)) { raw = convertLegacy(raw); legacy = true; }
   if (!isObj(raw) || raw.app !== "TradeWorks" || !isObj(raw.data)) return { ok: false, error: { en: "This file is not a TradeWorks backup.", es: "Este archivo no es una copia de seguridad de TradeWorks." } };
   if (raw.version !== 1) return { ok: false, error: { en: "This backup comes from a different version of TradeWorks.", es: "Esta copia viene de otra versión de TradeWorks." } };
   const records = {} as Record<BackupCol, BackupRec[]>, counts = {} as Record<BackupCol, number>;
@@ -96,5 +99,5 @@ export function parseBackup(text: string): ParseResult {
   }
   const co = isObj(raw.company) ? { id: str(raw.company.id) ? (raw.company.id as string) : undefined, name: str(raw.company.name) ? (raw.company.name as string) : undefined } : undefined;
   if (total === 0) return { ok: false, error: { en: "This backup has nothing we can restore.", es: "Esta copia no tiene nada que se pueda restaurar." } };
-  return { ok: true, backup: { records, counts, total, skipped, company: co, createdAt: str(raw.createdAt) ? (raw.createdAt as string) : undefined } };
+  return { ok: true, backup: { records, counts, total, skipped, legacy, company: co, createdAt: str(raw.createdAt) ? (raw.createdAt as string) : undefined } };
 }
