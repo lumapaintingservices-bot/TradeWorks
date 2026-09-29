@@ -5,6 +5,8 @@ export type User = { uid: string; name: string; email: string; emailVerified?: b
 export type Company = {
   id: string; name: string; phone: string; email: string; website: string; area: string; logoUrl: string;
   brandColor: string; trade: string; ownerUid: string;
+  /** Printed on client documents. */
+  address?: string; hours?: string; hoursEs?: string;
   pricing: { door: number; drawer: number; depositPct: number };
   onboarded: boolean;
   /* --- TradeWorks subscription (see docs/08-billing-setup.md). Dates are ISO strings written by the billing

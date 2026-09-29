@@ -3,6 +3,7 @@ import { calcEstimate } from "../lib/estimate";
 import { fmtDate } from "../lib/format";
 import { invKindLabel, planAmounts, type InvoiceRec } from "../lib/invoices";
 import { money, num } from "../lib/money";
+import { PAY_METHODS, payMethodsOf } from "../lib/payMethods";
 import { safeImgSrc } from "../lib/safeUrl";
 import { isScopeHead, nl2list } from "../lib/scope";
 import type { Estimate, Settings } from "../lib/types";
@@ -12,7 +13,7 @@ import "./DocSheet.css";
     invoiceSheet / changeInvoiceSheet. Always light, always in the CLIENT's language, with the contractor's branding. */
 
 export type SheetBiz = { name: string; phone: string; email?: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string };
-export type PayInfo = { zelle: string; zelleName: string; note: string };
+export type PayInfo = { zelle: string; zelleName: string; note: string; methods?: string[] };
 type Lang = "en" | "es";
 type Base = { e: Estimate; s: Settings; biz: SheetBiz; lang: Lang; compact?: boolean; pay: PayInfo; services: string; sigImg?: string };
 
@@ -133,8 +134,8 @@ const Exclusions = ({ e, T }: { e: Estimate; T: Tx }) => {
   const out = [e.frameMode === "none" && T.framesNo, e.boxMode === "none" && T.boxesNo].filter(Boolean) as string[];
   return out.length ? <Sec title={T.notIncluded}><ul className="scope">{out.map((x) => <li key={x}>{x}</li>)}</ul></Sec> : null;
 };
-const Payment = ({ T, pay }: { T: Tx; pay: PayInfo }) => (
-  <Sec title={T.payment}><div className="pay-row">{pay.zelle && <span className="pay-chip">Zelle</span>}</div>
+const Payment = ({ T, pay, es }: { T: Tx; pay: PayInfo; es: boolean }) => (
+  <Sec title={T.payment}><div className="pay-row">{payMethodsOf(pay.methods).map((k) => <span className="pay-chip" key={k}>{PAY_METHODS[k][es ? 1 : 0]}</span>)}</div>
     {(pay.zelle || pay.note) && <div className="doc-notes">{[pay.zelle && `Zelle: ${pay.zelle}${pay.zelleName ? " · " + pay.zelleName : ""}`, pay.note].filter(Boolean).join("\n")}</div>}</Sec>
 );
 const Photos = ({ e, T }: { e: Estimate; T: Tx }) => {
@@ -193,7 +194,7 @@ export function EstimateSheet({ e, s, biz, lang, compact, pay, services, sigImg 
       {t.optional.length > 0 && <Sec title={T.upgrades}><ul className="doc-ups">{t.optional.map((u) => { const q = num(u.qty); return (
         <li key={u.id}><span>{(es ? u.descEs || u.desc : u.desc || u.descEs) || "—"}{q > 1 && <> <span className="doct-sub">{q} × {money(u.rate)}</span></>}</span><span className="v">{money(q * num(u.rate))}</span></li>); })}</ul>
         <div className="doc-ups-note">{T.upgradeNote}</div></Sec>}
-      <Payment T={T} pay={pay} />
+      <Payment T={T} pay={pay} es={es} />
       <Sig T={T} lang={lang} img={e.signature ? sigImg ?? e.signature.img : undefined} name={e.signature?.name} date={e.signature ? e.signature.date : undefined} />
       <Photos e={e} T={T} />
       <Foot biz={biz} right={(es ? biz.hoursEs || biz.hours : biz.hours) || ""} />
@@ -219,7 +220,7 @@ export function InvoiceSheet({ v, e, s, biz, lang, compact, pay, services }: Bas
         <table className="doct"><thead><tr><th>{T.desc}</th><th className="r">{T.amount}</th></tr></thead>
           <tbody><tr><td><div className="doct-desc">{desc || title}</div>{co && co.signedName && <div className="doct-sub">{T.approvedBy}{co.signedName}, {fmtDate(co.signedAt, lang)}</div>}</td><td className="n r">{money(v.amount)}</td></tr></tbody></table>
         <Totals><Row cls="due" label={T.dueNow} v={money(v.amount)} /></Totals>
-        <Payment T={T} pay={pay} />
+        <Payment T={T} pay={pay} es={es} />
         {co && co.sigImg && <Sig T={T} lang={lang} img={co.sigImg} name={co.signedName} date={co.signedAt || " "} />}
         <Foot biz={biz} right={T.thanks} />
       </div>
@@ -243,7 +244,7 @@ export function InvoiceSheet({ v, e, s, biz, lang, compact, pay, services }: Bas
       {terms.length > 0 && <Sec title={T.terms}><ul className="scope">{terms.map((x, i) => <li key={i}>{x}</li>)}</ul></Sec>}
       <Exclusions e={e} T={T} />
       {notes && <Sec title={T.notes}><div className="doc-notes">{notes}</div></Sec>}
-      <Payment T={T} pay={pay} />
+      <Payment T={T} pay={pay} es={es} />
       <Photos e={e} T={T} />
       <Foot biz={biz} right={T.thanks} />
     </div>

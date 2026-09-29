@@ -2,6 +2,7 @@ import { useRole } from "../auth/AuthProvider";
 import { can } from "../lib/roles";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { prepareLogo } from "../lib/image";
+import { PAY_METHODS, PAY_METHOD_KEYS, payMethodsOf } from "../lib/payMethods";
 import { deleteImage, putImage } from "../lib/storage";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -112,7 +113,7 @@ function BusinessCard() {
   const t = useT();
   const toast = useUi((x) => x.toast);
   const { company, saveCompany } = useAuth();
-  const [f, setF] = useState(company ? { name: company.name, phone: company.phone, email: company.email, website: company.website, area: company.area, brandColor: company.brandColor || "#EF6A2C" } : null);
+  const [f, setF] = useState(company ? { name: company.name, phone: company.phone, email: company.email, website: company.website, area: company.area, address: company.address || "", hours: company.hours || "", hoursEs: company.hoursEs || "", brandColor: company.brandColor || "#EF6A2C" } : null);
   if (!company || !f) return null;
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   return (
@@ -127,6 +128,11 @@ function BusinessCard() {
           <label className="f">{t("Website", "Sitio web")}<input value={f.website} onChange={set("website")} /></label>
           <label className="f">{t("Area served", "Zona de servicio")}<input value={f.area} onChange={set("area")} /></label>
         </div>
+        <label className="f">{t("Business address", "Dirección del negocio")}<input value={f.address} placeholder="4401 NW 87th Ave, Doral, FL 33178" onChange={set("address")} /></label>
+        <div className="grid2">
+          <label className="f">{t("Opening hours (English)", "Horario (inglés)")}<input value={f.hours} placeholder="Mon–Fri 9am–7pm · Sat–Sun 10am–4pm" onChange={set("hours")} /></label>
+          <label className="f">{t("Opening hours (Spanish)", "Horario (español)")}<input value={f.hoursEs} placeholder="Lun–Vie 9am–7pm · Sáb–Dom 10am–4pm" onChange={set("hoursEs")} /></label>
+        </div>
         <label className="f">{t("Brand color (client pages and documents)", "Color de marca (páginas y documentos del cliente)")}
           <input type="color" value={f.brandColor} onChange={set("brandColor")} style={{ width: 80, padding: 4 }} /></label>
         <button className="btn pri" disabled={!f.name.trim()} onClick={async () => { await saveCompany({ ...f, name: f.name.trim() }); toast(t("Saved", "Guardado")); }}>{t("Save", "Guardar")}</button>
@@ -140,7 +146,8 @@ function ClientLinkCard() {
   const toast = useUi((x) => x.toast);
   const { settings, update, loading } = useSettings();
   const [f, setF] = useState({ payZelle: "", payZelleName: "", payNote: "", reviewUrl: "", instagramUrl: "" });
-  useEffect(() => { if (!loading) setF({ payZelle: settings.payZelle || "", payZelleName: settings.payZelleName || "", payNote: settings.payNote || "", reviewUrl: settings.reviewUrl || "", instagramUrl: settings.instagramUrl || "" }); }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [methods, setMethods] = useState<string[]>(PAY_METHOD_KEYS);
+  useEffect(() => { if (!loading) setF({ payZelle: settings.payZelle || "", payZelleName: settings.payZelleName || "", payNote: settings.payNote || "", reviewUrl: settings.reviewUrl || "", instagramUrl: settings.instagramUrl || "" }); setMethods(payMethodsOf(settings.payMethods)); }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   return (
     <div className="card">
@@ -151,12 +158,16 @@ function ClientLinkCard() {
           <label className="f">{t("Zelle email or phone", "Correo o teléfono de Zelle")}<input value={f.payZelle} onChange={set("payZelle")} /></label>
           <label className="f">{t("Name on the Zelle account", "Nombre en la cuenta Zelle")}<input value={f.payZelleName} onChange={set("payZelleName")} /></label>
         </div>
+        <div className="f"><span>{t("Payment methods shown on documents", "Formas de pago que salen en los documentos")}</span>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 6 }}>
+            {PAY_METHOD_KEYS.map((k) => <label className="chk" key={k}><input type="checkbox" checked={methods.includes(k)} onChange={(e) => setMethods(e.target.checked ? [...methods, k] : methods.filter((x) => x !== k))} />{t(PAY_METHODS[k][0], PAY_METHODS[k][1])}</label>)}
+          </div></div>
         <label className="f">{t("Note for the client (optional)", "Nota para el cliente (opcional)")}<input value={f.payNote} onChange={set("payNote")} /></label>
         <div className="grid2">
           <label className="f">{t("Reviews link", "Enlace de reseñas")}<input value={f.reviewUrl} onChange={set("reviewUrl")} /></label>
           <label className="f">Instagram<input value={f.instagramUrl} onChange={set("instagramUrl")} /></label>
         </div>
-        <button className="btn pri" onClick={async () => { await update(f); toast(t("Saved", "Guardado")); }}>{t("Save", "Guardar")}</button>
+        <button className="btn pri" onClick={async () => { await update({ ...f, payMethods: PAY_METHOD_KEYS.filter((k) => methods.includes(k)) }); toast(t("Saved", "Guardado")); }}>{t("Save", "Guardar")}</button>
       </div>
     </div>
   );

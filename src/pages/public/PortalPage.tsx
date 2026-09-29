@@ -1,3 +1,4 @@
+import { payMethodsOf } from "../../lib/payMethods";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { EstimateSheet } from "../../components/DocSheet";
@@ -246,7 +247,7 @@ export default function PortalPage() {
           </section>}
 
           <section className="pt-sec"><details className="pt-doc"><summary>{P.fullDoc}</summary><div className="pt-docin">
-            <EstimateSheet e={docE as typeof e} s={calcS} lang={L} biz={b} services={(es ? s.services?.es : s.services?.en) || ""} pay={{ zelle: s.payZelle, zelleName: s.payZelleName, note: s.payNote }} />
+            <EstimateSheet e={docE as typeof e} s={calcS} lang={L} biz={b} services={(es ? s.services?.es : s.services?.en) || ""} pay={{ zelle: s.payZelle, zelleName: s.payZelleName, note: s.payNote, methods: payMethodsOf(s.payMethods) }} />
           </div></details></section>
         </div>
 

@@ -58,8 +58,8 @@ export default function MembersCard() {
     const [rEn, rEs] = roleLabel(inv.role);
     const base = location.origin;
     return lang === "es"
-      ? `¡Hola! Te invito a unirte a ${inv.companyName} en TradeWorks como ${rEs}.\n1. Abre ${base}/signup y crea tu cuenta con exactamente este correo: ${inv.email}\n2. Verifica tu correo (te llega un enlace), entra en ${base}/login y toca "Unirme".`
-      : `Hi! I'm inviting you to join ${inv.companyName} on TradeWorks as ${rEn}.\n1. Open ${base}/signup and create your account with exactly this email: ${inv.email}\n2. Verify your email (you get a link), sign in at ${base}/login and tap "Join".`;
+      ? `¡Hola! Te invito a unirte a ${inv.companyName} en TradeWorks como ${rEs}.\n1. Abre ${base}/signup y crea tu cuenta con exactamente este correo: ${inv.email}\n2. Verifica tu correo (te llega un enlace; si no lo ves, revisa la carpeta de spam), entra en ${base}/login y toca "Unirme".`
+      : `Hi! I'm inviting you to join ${inv.companyName} on TradeWorks as ${rEn}.\n1. Open ${base}/signup and create your account with exactly this email: ${inv.email}\n2. Verify your email (you get a link; if you don't see it, check your spam folder), sign in at ${base}/login and tap "Join".`;
   };
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast(t("Copied", "Copiado")); }

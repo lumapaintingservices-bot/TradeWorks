@@ -90,7 +90,7 @@ export type Settings = {
   services: string; servicesEs: string;
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
   numbering: { nextEst: number; nextInv?: number };
-  payZelle: string; payZelleName: string; payNote: string;
+  payZelle: string; payZelleName: string; payNote: string; payMethods?: string[];
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
   calOn?: boolean; calToken?: string;

@@ -6,7 +6,7 @@ import { InviteBanner } from "../auth/InviteBanner";
 import { RoleBadge } from "../auth/RoleBadge";
 import { setTop } from "../data/repo";
 import { backend } from "../auth/backend";
-import { can, homeFor, roleLabel, type Role } from "../lib/roles";
+import { can, canCreateCompany, homeFor, roleLabel, type Role } from "../lib/roles";
 import { useT } from "../i18n";
 import { useUi } from "../store/ui";
 import { Icon } from "../ui/Icon";
@@ -67,10 +67,10 @@ function WorkspaceList({ onDone, signOut }: { onDone(): void; signOut?: boolean 
           {c.id === company?.id && <span className="ws-check"><Icon name="check" size={16} /></span>}
         </button>
       ))}
-      <button className="ws-opt add" onClick={() => { onDone(); createCompany(); nav("/onboarding"); }}>
+      {canCreateCompany(companies.map((c) => c.role)) && <button className="ws-opt add" onClick={() => { onDone(); createCompany(); nav("/onboarding"); }}>
         <span className="ws-logo add"><Icon name="plus" size={16} /></span>
         <span className="ws-opt-name">{t("New company", "Nueva empresa")}</span>
-      </button>
+      </button>}
       {signOut && <button className="ws-opt out" onClick={() => { onDone(); backend.signOut(); }}>
         <span className="ws-logo add"><Icon name="user" size={16} /></span>
         <span className="ws-opt-name">{t("Sign out", "Salir")}</span>

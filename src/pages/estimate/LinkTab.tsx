@@ -10,8 +10,9 @@ import type { Estimate, Settings } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
 
-export const brandOf = (c: { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string }): Brand =>
-  ({ name: c.name, phone: c.phone, email: c.email, website: c.website, area: c.area, logoUrl: c.logoUrl, brandColor: c.brandColor });
+export const brandOf = (c: { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string }): Brand =>
+  ({ name: c.name, phone: c.phone, email: c.email, website: c.website, area: c.area, logoUrl: c.logoUrl, brandColor: c.brandColor,
+    ...(c.address ? { address: c.address } : {}), ...(c.hours ? { hours: c.hours } : {}), ...(c.hoursEs ? { hoursEs: c.hoursEs } : {}) });
 
 export const linkOf = (token: string) => `${location.origin}/p/${token}`;
 

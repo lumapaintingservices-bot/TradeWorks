@@ -3,8 +3,8 @@ import { parseBackup } from "./backup";
 import { isLegacyBackup } from "./legacyImport";
 
 const old = {
-  version: 1, business: { name: "LUMA", website: "lumapaintingservices.com" },
-  pricing: { doorRate: 95 }, payment: { detail: "Zelle: 786" }, numbering: { estPrefix: "EST-2026-", nextEst: 7 },
+  version: 1, business: { name: "LUMA", website: "lumapaintingservices.com", address: "4401 NW 87th Ave", hours: "Mon–Fri 9–7" },
+  pricing: { doorRate: 95 }, payment: { detail: "Zelle: 786", methods: [{ en: "Cash", es: "Efectivo" }, { en: "Credit card", es: "x" }, { en: "Zelle", es: "Zelle" }] }, numbering: { estPrefix: "EST-2026-", nextEst: 7 },
   clients: [{ id: "c1", name: "Ana", photos: [{ id: "p" }] }, { id: "c2", name: "Gone", deleted: true }],
   estimates: [{ id: "e1", number: "EST-2026-006", items: [], photos: [{ id: "p" }], portal: { token: "t" }, clientId: "c1" }],
   invoices: [{ id: "i1", number: "INV-2026-001", estId: "e1", amount: 500, kind: "deposit", status: "Paid" }],
@@ -46,6 +46,8 @@ describe("legacy LUMA backup import", () => {
     expect(s.pricing.doorRate).toBe(95);
     expect(s.pricing.drawerRate).toBe(55);
     expect(s.payNote).toBe("Zelle: 786");
+    expect(s.payMethods).toEqual(["cash", "card", "zelle"]);
+    expect(r.backup.profile).toEqual({ address: "4401 NW 87th Ave", hours: "Mon–Fri 9–7" });
     expect(s.websiteUrl).toBe("https://lumapaintingservices.com");
     expect(s.numbering.nextEst).toBe(1001);
   });
