@@ -14,19 +14,23 @@ import { useUi } from "../store/ui";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
+import { DOW_EN, DOW_ES, MONTH_EN, MONTH_ES, monthKey, p2, shiftMonth } from "./calendar/dates";
+import { WorkerCalendar } from "./calendar/WorkerCalendar";
+import { useAuth } from "../auth/AuthProvider";
 import "./Calendar.css";
 
-const DOW_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], DOW_ES = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-const MONTH_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const MONTH_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
-const p2 = (n: number) => String(n).padStart(2, "0");
-const monthKey = (iso: string) => iso.slice(0, 7);
-const shiftMonth = (key: string, delta: number) => { const d = new Date(num(key.slice(0, 4)), num(key.slice(5, 7)) - 1 + delta, 1); return `${d.getFullYear()}-${p2(d.getMonth() + 1)}`; };
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
 
-/** Phase 5 will supply the team; until then there is nobody to assign, so the selector stays hidden. */
-
+/**
+ * Calendar. Owners / admins get the full page (OwnerCalendar). A worker gets WorkerCalendar (only their own tasks), a
+ * separate component tree, so a worker never mounts hooks for estimates, invoices, clients or settings.
+ */
 export default function Calendar() {
+  const { role } = useAuth();
+  return role === "worker" ? <WorkerCalendar /> : <OwnerCalendar />;
+}
+
+function OwnerCalendar() {
   const t = useT();
   const lang = useUi((s) => s.lang);
   const es = lang === "es";

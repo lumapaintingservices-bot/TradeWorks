@@ -2,7 +2,6 @@
  * Worker-role data helpers (pure: no React, no Firebase). They mirror firestore.rules, which are NOT filters:
  * a worker's app must issue exactly the queries the rules allow (see roles.ts workerScope()).
  */
-import { addDaysISO } from "./calendar";
 import { todayISO } from "./estimate";
 import { num, r2 } from "./money";
 import { workerScope, type Role } from "./roles";
@@ -68,9 +67,3 @@ export function splitTasks<T extends Pick<Task, "date" | "time" | "title" | "don
   const s = sortTasks(tasks);
   return { open: s.filter((k) => !k.done), done: s.filter((k) => k.done).reverse() };
 }
-
-/** Today .. today+days, inclusive: used for "next 7 days" style hints. */
-export const upcoming = <T extends Pick<Task, "date" | "done">>(tasks: T[], days = 7, today: string = todayISO()): T[] => {
-  const to = addDaysISO(today, days);
-  return tasks.filter((k) => !k.done && k.date >= today && k.date <= to);
-};
