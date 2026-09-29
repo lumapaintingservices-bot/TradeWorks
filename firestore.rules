@@ -1,34 +1,139 @@
 rules_version = '2';
 // TradeWorks Firestore rules. Paste this whole file in Firebase console > Firestore Database > Rules > Publish.
+//
+// Roles (companies/{cid}/members/{uid}.role), mirrored in src/lib/roles.ts:
+//   owner  everything, incl. members and roles
+//   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
+//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record
+// The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
 service cloud.firestore {
   match /databases/{db}/documents {
     function signedIn() { return request.auth != null; }
-    function member(cid) { return signedIn() && exists(/databases/$(db)/documents/companies/$(cid)/members/$(request.auth.uid)); }
-    function role(cid) { return get(/databases/$(db)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role; }
+    function memberPath(cid, uid) { return /databases/$(db)/documents/companies/$(cid)/members/$(uid); }
+    function member(cid) { return signedIn() && exists(memberPath(cid, request.auth.uid)); }
+    function role(cid) { return get(memberPath(cid, request.auth.uid)).data.role; }
+    function isOwner(cid) { return member(cid) && role(cid) == 'owner'; }
     function admin(cid) { return member(cid) && role(cid) in ['owner', 'admin']; }
+    function isWorker(cid) { return member(cid) && role(cid) == 'worker'; }
+    // the workers/{id} record a worker login is linked to ('' when not linked yet: then nothing matches)
+    function myWorkerId(cid) { return get(memberPath(cid, request.auth.uid)).data.get('workerId', ''); }
+    function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
+    function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
+    function isInvitee(email) { return signedIn() && myEmail() != '' && myEmail() == email; }
 
-    // Each person only reads/writes their own profile.
+    // Each person only reads/writes their own profile (name, language, list of companies, active company).
+    // users.companies is only a hint: a company counts only if its members/{uid} doc exists.
     match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
 
     match /companies/{cid} {
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // every member (incl. workers) reads the company doc: name, logo, brand color
       allow read: if member(cid);
-      allow update: if admin(cid);
+      // owners and admins edit business info; ownerUid and createdAt can never change (admins cannot "change owners")
+      allow update: if admin(cid)
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
+      // only the owner who created the company can delete it (there is no button for it yet)
+      allow delete: if isOwner(cid) && resource.data.ownerUid == request.auth.uid;
 
+      // ---- team members: companies/{cid}/members/{uid} = { role, workerId?, name, email, createdAt } ----
       match /members/{uid} {
-        allow read: if member(cid);
-        // the person who created the company adds themselves as its first owner
+        // owners/admins list everybody; anyone reads their own doc (that is how the app learns the role)
+        allow read: if admin(cid) || (signedIn() && request.auth.uid == uid);
+
+        // A member doc can only be created by the person it is for, and only in one of two ways:
+        //  1. the company creator adds themselves as its first owner
+        //  2. they hold a matching invite (invites/{their e-mail}) for this company, with the SAME role / workerId,
+        //     and their e-mail is verified (otherwise anyone could sign up with someone else's e-mail)
+        // There is no other way in: nobody can add themselves as admin/owner, and admins cannot add members directly.
         allow create: if signedIn() && request.auth.uid == uid
-          && get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid == request.auth.uid;
-        allow update, delete: if admin(cid);
+          && request.resource.data.keys().hasOnly(['role', 'workerId', 'name', 'email', 'createdAt'])
+          && request.resource.data.role in ['owner', 'admin', 'worker']
+          && (
+            (companyOwnerUid(cid) == request.auth.uid && request.resource.data.role == 'owner')
+            || (
+              request.auth.token.email_verified == true
+              && myEmail() != ''
+              && exists(/databases/$(db)/documents/invites/$(myEmail()))
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.companyId == cid
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.role == request.resource.data.role
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.get('workerId', null) == request.resource.data.get('workerId', null)
+              && request.resource.data.email == myEmail()
+            )
+          );
+
+        // Role changes. Nobody edits their own doc, so nobody can promote themselves.
+        //  owner: any member except the company creator; only role / workerId may change
+        //  admin: only the worker link (workerId) of a member who is and stays a worker
+        allow update: if
+          (isOwner(cid) && uid != companyOwnerUid(cid)
+            && request.resource.data.role in ['owner', 'admin', 'worker']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'workerId']))
+          || (admin(cid) && uid != request.auth.uid
+            && resource.data.role == 'worker' && request.resource.data.role == 'worker'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workerId']));
+
+        // Removing: never the company creator. A member may leave; owners remove anyone else; admins remove workers.
+        allow delete: if uid != companyOwnerUid(cid) && (
+          (signedIn() && request.auth.uid == uid)
+          || isOwner(cid)
+          || (admin(cid) && resource.data.role == 'worker')
+        );
       }
 
-      // clients, estimates, invoices, expenses, settings, workers... owners/admins everything;
-      // workers only their own kind of data (tasks, hours, clock)
+      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock ...
+      // owners/admins everything. A worker only touches what is linked to their workerId (rules are not filters:
+      // the app must query with the same filter, see src/lib/roles.ts workerScope()).
       match /{col}/{id} {
-        allow read: if admin(cid) || (member(cid) && col in ['tasks', 'hours', 'clock']);
-        allow write: if admin(cid) || (member(cid) && col in ['hours', 'clock']);
+        allow read: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            ((col == 'tasks' || col == 'hours') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, my hours
+            || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
+          )));
+
+        allow create: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && request.resource.data.workerId == myWorkerId(cid))
+            || (col == 'clock' && id == myWorkerId(cid))
+          )));
+
+        allow update: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid))
+            || (col == 'clock' && id == myWorkerId(cid))
+            // tick a task assigned to me as done (nothing else on it may change)
+            || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))
+          )));
+
+        allow delete: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid))
+            || (col == 'clock' && id == myWorkerId(cid))
+          )));
       }
+    }
+
+    // ---- invites/{emailLower} = { companyId, companyName, role, workerId?, invitedBy, invitedByName?, createdAt } ----
+    // The app cannot send e-mail: the inviter shares a link; whoever signs up / in with EXACTLY that (verified) e-mail
+    // sees "You were invited to X - Join", which creates their members doc (rule above) and deletes the invite.
+    function inviteShape(d) {
+      return d.keys().hasOnly(['companyId', 'companyName', 'role', 'workerId', 'invitedBy', 'invitedByName', 'createdAt'])
+        && d.companyId is string && d.companyName is string && d.role in ['owner', 'admin', 'worker']
+        && d.invitedBy == request.auth.uid;
+    }
+    // owners invite any role; admins invite workers only
+    function mayInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    // same limits for changing / revoking an existing invite
+    function mayManageInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    match /invites/{email} {
+      // the invited person reads their own; owners/admins list their company's (query where companyId == cid)
+      allow read: if isInvitee(email) || (resource != null && admin(resource.data.companyId));
+      allow create: if signedIn() && email == email.lower() && inviteShape(request.resource.data) && mayInvite(request.resource.data);
+      // re-inviting the same e-mail overwrites: allowed only when you may manage the old invite AND the new one
+      allow update: if signedIn() && inviteShape(request.resource.data) && mayInvite(request.resource.data) && mayManageInvite(resource.data);
+      // revoke (owner / admin for workers) or consume (the invited person, when joining or when already a member)
+      allow delete: if isInvitee(email) || (signedIn() && mayManageInvite(resource.data));
     }
 
     // Client link: anyone with the secret token can open it; the client may only change the `client` field.

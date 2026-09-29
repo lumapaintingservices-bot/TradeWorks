@@ -13,6 +13,11 @@ export const JOB_TYPES: { id: JobType; en: string; es: string; hint: [string, st
 export const jobTypeOf = (e?: Pick<Estimate, "jobType"> | null): JobType => (e && e.jobType) || "cabinets";
 export const jobTypeLabel = (id: JobType, es = false) => { const t = JOB_TYPES.find((x) => x.id === id) || JOB_TYPES[0]; return es ? t.es : t.en; };
 export const svcById = (id?: string) => SERVICES.find((s) => s.id === id) || null;
+/** Rate a NEW "other work" line starts with: the contractor's override from Settings (settings.serviceRates) or the catalog default. */
+export const serviceRate = (s: Pick<Settings, "serviceRates">, sv: { id: string; rate: number }): number => {
+  const o = s.serviceRates?.[sv.id];
+  return typeof o === "number" && isFinite(o) && o >= 0 ? o : sv.rate;
+};
 
 export const payPlanOn = (e: Pick<Estimate, "payPlanOn" | "payPlan">) => !!(e && e.payPlanOn && e.payPlan && e.payPlan.length >= 2);
 export const defaultPlan = () => [

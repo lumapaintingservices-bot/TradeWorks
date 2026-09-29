@@ -1,0 +1,81 @@
+// Minimal Firestore REST client (service-account authenticated). Only what billing needs.
+import { getServiceAccountToken, parseServiceAccount } from "./jwt.js";
+
+/** JS value -> Firestore REST value. Dates become timestamps; integers integerValue; other numbers doubleValue. */
+export function toFsValue(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (v instanceof Date) return { timestampValue: v.toISOString() };
+  if (typeof v === "boolean") return { booleanValue: v };
+  if (typeof v === "number") return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === "string") return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toFsValue) } };
+  if (typeof v === "object") return { mapValue: { fields: toFsFields(v) } };
+  throw new Error("Unsupported Firestore value: " + typeof v);
+}
+export const toFsFields = (obj) => Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, toFsValue(v)]));
+
+export function fromFsValue(v) {
+  if (!v) return null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("nullValue" in v) return null;
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(fromFsValue);
+  if ("mapValue" in v) return fromFsFields(v.mapValue.fields || {});
+  return null;
+}
+export const fromFsFields = (fields) => Object.fromEntries(Object.entries(fields || {}).map(([k, v]) => [k, fromFsValue(v)]));
+
+/** Firestore project id: env FIREBASE_PROJECT_ID, else the service account's own project_id. */
+export function projectIdOf(env) {
+  if (env.FIREBASE_PROJECT_ID) return env.FIREBASE_PROJECT_ID;
+  const sa = parseServiceAccount(env.FIREBASE_SERVICE_ACCOUNT);
+  if (!sa.project_id) throw new Error("Set FIREBASE_PROJECT_ID");
+  return sa.project_id;
+}
+
+const segs = (path) => path.split("/").map(encodeURIComponent).join("/");
+
+/** A tiny client bound to one env. `fetchImpl` can be injected in tests. */
+export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {}) {
+  const projectId = projectIdOf(env);
+  const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents`;
+  const auth = async () => ({ Authorization: "Bearer " + (await getServiceAccountToken(env.FIREBASE_SERVICE_ACCOUNT, { fetchImpl, now: now() })), "Content-Type": "application/json" });
+
+  return {
+    projectId,
+    /** -> { id, data } or null when the document does not exist */
+    async get(path) {
+      const res = await fetchImpl(`${base}/${segs(path)}`, { headers: await auth() });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`Firestore get ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+      const doc = await res.json();
+      return { id: doc.name.split("/").pop(), data: fromFsFields(doc.fields) };
+    },
+    /** Updates ONLY the given fields (updateMask); fails if the document does not exist. */
+    async patch(path, data) {
+      const mask = Object.keys(data).map((k) => "updateMask.fieldPaths=" + encodeURIComponent(k)).join("&");
+      const res = await fetchImpl(`${base}/${segs(path)}?${mask}&currentDocument.exists=true`, {
+        method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(data) }),
+      });
+      if (!res.ok) throw new Error(`Firestore patch ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+    },
+    /** First document of `collection` where `field == value` -> { id, data } or null. */
+    async findOne(collection, field, value) {
+      const res = await fetchImpl(`${base}:runQuery`, {
+        method: "POST", headers: await auth(),
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: collection }],
+          where: { fieldFilter: { field: { fieldPath: field }, op: "EQUAL", value: toFsValue(value) } },
+          limit: 1,
+        } }),
+      });
+      if (!res.ok) throw new Error(`Firestore query ${collection}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+      const rows = await res.json();
+      const hit = rows.find((r) => r.document);
+      return hit ? { id: hit.document.name.split("/").pop(), data: fromFsFields(hit.document.fields) } : null;
+    },
+  };
+}

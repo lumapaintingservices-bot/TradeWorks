@@ -1,0 +1,10 @@
+.inv-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 16px;background:var(--acc-soft);border-bottom:1px solid var(--line);color:var(--ink)}
+.inv-txt{font-size:13.5px;line-height:1.4;min-width:0;flex:1 1 260px}
+.inv-txt b{font-weight:600}
+.inv-act{display:flex;gap:8px;flex-wrap:wrap}
+.inv-full h1{margin-bottom:10px}
+.inv-p{margin-bottom:18px;font-size:14.5px;line-height:1.5}
+.inv-col{display:grid;gap:8px}
+.link-btn{border:0;background:none;color:var(--acc);font-size:13.5px;padding:0;text-align:left}
+.onb-back{padding:12px 16px 0;background:var(--bg)}
+.onb-back + .auth{min-height:calc(100vh - 56px)}

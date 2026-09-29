@@ -5,6 +5,7 @@ import { useJobExpenses } from "../../data/jobExpenses";
 import { nextEstimateNumber, useClients, useEstimates, useSettings } from "../../data/hooks";
 import { useT } from "../../i18n";
 import { calcEstimate, jobEconomics, uid } from "../../lib/estimate";
+import { leadSourceList } from "../../lib/leadSources";
 import { money } from "../../lib/money";
 import { STATUSES, type Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -162,7 +163,7 @@ export default function EstimateEditor() {
               <label className="f">{t("Start date", "Fecha de inicio")}<input type="date" value={e.startDate} onChange={(ev) => set({ startDate: ev.target.value })} /></label>
               <label className="f">{t("Days on site", "Días en sitio")}<input type="number" min={1} value={e.days} onChange={(ev) => set({ days: Number(ev.target.value) || 1 })} /></label>
             </div>
-            <label className="f">{t("Where the lead came from", "De dónde vino el cliente")}<input value={e.leadSource} onChange={(ev) => set({ leadSource: ev.target.value })} /></label>
+            <label className="f">{t("Where the lead came from", "De dónde vino el cliente")}<input list="tw-lead-sources" value={e.leadSource} onChange={(ev) => set({ leadSource: ev.target.value })} /><datalist id="tw-lead-sources">{leadSourceList(s).map((x) => <option key={x} value={x} />)}</datalist></label>
           </div></div>
           <div className="card"><div className="card-h"><h2>{t("Totals", "Totales")}</h2></div><div className="card-b">
             <div className="totline"><span>{t("Subtotal", "Subtotal")}</span><b>{money(tot.subtotal)}</b></div>

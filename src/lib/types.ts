@@ -99,4 +99,6 @@ export type Settings = {
   bankRules?: { match: string; category: string; source?: string; vendor?: string }[];
   expCats?: (string | { id: string; name: string })[];
   showcase?: { id: string; url: string; caption: string }[];
+  /** Overrides of the default service-catalog rates (service id -> $ per unit), edited in Settings. */
+  serviceRates?: Record<string, number>;
 };

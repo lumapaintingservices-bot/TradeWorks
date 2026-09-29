@@ -1,6 +1,6 @@
 import { useT } from "../../i18n";
 import { SERVICE_CATALOG } from "../../lib/settings";
-import { applyTypePreset, defaultPlan, JOB_TYPES, uid } from "../../lib/estimate";
+import { applyTypePreset, defaultPlan, JOB_TYPES, serviceRate, uid } from "../../lib/estimate";
 import { money, num } from "../../lib/money";
 import type { Estimate, Item, JobType, PayStep, Upgrade } from "../../lib/types";
 import { NumInput } from "../../ui/NumInput";
@@ -18,7 +18,7 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
   const addSvc = (id: string) => {
     const sv = SERVICE_CATALOG.find((x) => x.id === id);
     if (!sv) return;
-    set({ items: [...e.items, { id: uid("it"), desc: sv.en, descEs: sv.es, qty: 0, unit: sv.unit, rate: sv.rate, svc: sv.id }] });
+    set({ items: [...e.items, { id: uid("it"), desc: sv.en, descEs: sv.es, qty: 0, unit: sv.unit, rate: serviceRate(s, sv), svc: sv.id }] });
   };
   const plan = e.payPlan || [];
   const planSum = plan.reduce((a, p) => a + num(p.pct), 0);

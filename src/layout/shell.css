@@ -40,3 +40,29 @@
 .nav-badge{font-style:normal;margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center}
 .nav-item.on .nav-badge{background:#fff;color:var(--ink)}
 @media(max-width:899px){.bnav a{position:relative}.bnav .nav-badge{position:absolute;top:2px;left:54%;margin:0;min-width:16px;height:16px;font-size:10px;padding:0 4px}}
+
+/* workspace switcher */
+.ws-wrap{position:relative;margin:0 14px 12px}
+.ws-wrap .ws{margin:0;width:100%}
+.ws-chev{margin-left:auto;display:grid;place-items:center;color:var(--ink-3);flex:none}
+.ws[aria-expanded=true] .ws-chev svg,.ws-row.open .ws-chev svg{transform:rotate(180deg)}
+.ws-back{position:fixed;inset:0;z-index:35}
+.ws-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:36;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-pop);padding:6px}
+.ws-list{display:grid;gap:2px}
+.ws-opt{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--ink);font-weight:500;text-align:left;min-height:44px}
+.ws-opt:hover{background:var(--surface-2)}
+.ws-opt.on{background:var(--surface-2)}
+.ws-opt-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ws-opt .badge{font-size:11px;padding:2px 8px;flex:none}
+.ws-check{display:grid;place-items:center;color:var(--acc);flex:none}
+.ws-opt.add,.ws-opt.out{color:var(--ink-2);border-top:0}
+.ws-opt.add{margin-top:2px;border-top:1px solid var(--line-2);border-radius:0 0 10px 10px;padding-top:10px}
+.ws-logo.add{background:var(--surface-2);color:var(--ink-2)}
+.ws-more-name{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.ws-more-name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);font-weight:600}
+.ws-more-name small{font-size:12px;color:var(--ink-3);font-weight:400}
+@media(max-width:899px){
+  .more-in .ws-list{padding:2px 4px 6px 4px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);margin:2px 0}
+  .more-in .ws-opt{min-height:48px}
+  .more-in{max-height:calc(100vh - var(--bottomnav-h) - 24px);overflow-y:auto}
+}
