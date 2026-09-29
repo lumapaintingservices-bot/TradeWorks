@@ -17,7 +17,7 @@ export default function BackupCard() {
   const t = useT();
   const lang = useUi((s) => s.lang);
   const toast = useUi((s) => s.toast);
-  const { company } = useAuth();
+  const { company, saveCompany } = useAuth();
   const c = {
     clients: useCollection<Rec>("clients"), estimates: useCollection<Rec>("estimates"), invoices: useCollection<Rec>("invoices"), expenses: useCollection<Rec>("expenses"),
     workers: useCollection<Rec>("workers"), hours: useCollection<Rec>("hours"), payouts: useCollection<Rec>("payouts"), tasks: useCollection<Rec>("tasks"), settings: useCollection<Rec>("settings"),
@@ -79,6 +79,8 @@ export default function BackupCard() {
         if (done % 10 === 0 || done === total) setProgress({ done, total, failed });
       }
     }
+    const logo = parsed.p.images?.__logo;
+    if (logo && !company!.logoUrl) { try { const { url } = await putImage(`companies/${company!.id}/logo/logo.png`, logo); await saveCompany({ name: company!.name, logoUrl: url }); } catch { /* logo can be uploaded from Settings */ } }
     setProgress(null); setParsed(null);
     if (file.current) file.current.value = "";
     if (failed) setError(t(`Restored, but ${failed} records could not be saved. Try again.`, `Restaurado, pero ${failed} registros no se pudieron guardar. Inténtalo otra vez.`));

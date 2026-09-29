@@ -1,6 +1,8 @@
 import { useRole } from "../auth/AuthProvider";
 import { can } from "../lib/roles";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { prepareLogo } from "../lib/image";
+import { deleteImage, putImage } from "../lib/storage";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useSettings } from "../data/hooks";
@@ -59,6 +61,53 @@ function AppearanceCard() {
   );
 }
 
+function LogoBox() {
+  const t = useT();
+  const toast = useUi((x) => x.toast);
+  const { company, saveCompany } = useAuth();
+  const [trim, setTrim] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const file = useRef<HTMLInputElement>(null);
+  if (!company) return null;
+  const path = `companies/${company.id}/logo/logo.png`;
+  async function pick(f?: File | null) {
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { toast(t("That file is not an image.", "Ese archivo no es una imagen.")); return; }
+    setBusy(true);
+    try {
+      const data = await prepareLogo(f, trim);
+      const { url } = await putImage(path, data);
+      await saveCompany({ name: company!.name, logoUrl: url });
+      toast(t("Logo saved", "Logo guardado"));
+    } catch { toast(t("Couldn't save the logo. Check your connection and try again.", "No se pudo guardar el logo. Revisa tu conexión e inténtalo de nuevo.")); }
+    setBusy(false);
+    if (file.current) file.current.value = "";
+  }
+  async function remove() {
+    if (!confirm(t("Remove your logo?", "¿Quitar tu logo?"))) return;
+    setBusy(true);
+    try { await saveCompany({ name: company!.name, logoUrl: "" }); await deleteImage(path); toast(t("Logo removed", "Logo quitado")); } catch { toast(t("Couldn't remove it. Try again.", "No se pudo quitar. Inténtalo de nuevo.")); }
+    setBusy(false);
+  }
+  return (
+    <div className="logo-box" style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
+      <div style={{ width: 120, height: 84, border: "1px dashed var(--line)", borderRadius: 12, display: "grid", placeItems: "center", overflow: "hidden", background: "var(--bg-2, transparent)" }}>
+        {company.logoUrl ? <img src={company.logoUrl} alt={t("Logo", "Logo")} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} /> : <span className="muted" style={{ fontSize: 12, textAlign: "center", padding: 6 }}>{t("No logo yet", "Todavía sin logo")}</span>}
+      </div>
+      <div style={{ flex: 1, minWidth: 220 }}>
+        <div style={{ fontWeight: 600, marginBottom: 3 }}>{t("Your logo", "Tu logo")}</div>
+        <div className="muted" style={{ fontSize: 12.5, marginBottom: 9 }}>{t("Upload a file at any size — it is resized to 600px automatically. PNG or JPG. It shows on your estimates, invoices, client link and request form.", "Sube un archivo de cualquier tamaño — se ajusta a 600px automáticamente. PNG o JPG. Sale en tus presupuestos, facturas, enlace del cliente y formulario de solicitud.")}</div>
+        <label className="chk" style={{ marginBottom: 10 }}><input type="checkbox" checked={trim} onChange={(e) => setTrim(e.target.checked)} />{t("Trim the white background and empty margins", "Quitar el fondo blanco y los márgenes vacíos")}</label>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" className="btn" disabled={busy} onClick={() => file.current?.click()}>{busy ? t("Processing…", "Procesando…") : company.logoUrl ? t("Replace logo", "Cambiar logo") : t("Upload logo", "Subir logo")}</button>
+          {company.logoUrl && <button type="button" className="btn danger" disabled={busy} onClick={remove}>{t("Remove", "Quitar")}</button>}
+        </div>
+        <input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
+      </div>
+    </div>
+  );
+}
+
 function BusinessCard() {
   const t = useT();
   const toast = useUi((x) => x.toast);
@@ -70,6 +119,7 @@ function BusinessCard() {
     <div className="card">
       <div className="card-h"><h2>{t("Business info", "Datos del negocio")}</h2><span className="muted st-hint-h">{t("printed on client documents", "sale en los documentos del cliente")}</span></div>
       <div className="card-b">
+        <LogoBox />
         <label className="f">{t("Business name", "Nombre del negocio")}<input value={f.name} onChange={set("name")} /></label>
         <div className="grid2">
           <label className="f">{t("Phone", "Teléfono")}<input value={f.phone} inputMode="tel" onChange={set("phone")} /></label>

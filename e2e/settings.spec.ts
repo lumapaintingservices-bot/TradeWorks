@@ -82,3 +82,13 @@ test("backup download and restore round trip", async ({ page }) => {
   await page.locator('input[type="file"]').setInputFiles({ name: "notes.json", mimeType: "application/json", buffer: Buffer.from('{"hello":"world"}') });
   await expect(page.getByRole("alert")).toBeVisible();
 });
+
+test("logo upload shows in Settings and the sidebar", async ({ page }) => {
+  await signUpAndSkip(page);
+  await page.goto("/settings?section=general");
+  await page.locator('.logo-box input[type=file]').setInputFiles("e2e/fixtures/logo.png");
+  await expect(page.getByText("Logo saved").first()).toBeVisible();
+  const src = await page.locator(".logo-box img").getAttribute("src");
+  expect(src).toMatch(/^data:image\/png/);
+  await expect(page.locator(".ws-logo img").first()).toBeVisible();
+});

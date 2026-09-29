@@ -51,6 +51,8 @@ function settingsFrom(db: Record<string, unknown>): Record<string, unknown> {
 export function convertLegacy(db: Record<string, unknown>): Record<string, unknown> {
   const images: Record<string, string> = {};
   if (isObj(db.photoData)) for (const [k, v] of Object.entries(db.photoData)) if (typeof v === "string" && /^data:image\/(jpeg|png|webp|gif);base64,/i.test(v)) images[k] = v;
+  // the old logo travels as images.__logo (uploaded on restore when the company has none)
+  if (isObj(db.business) && typeof db.business.logo === "string" && /^data:image\/(jpeg|png|webp|gif);base64,/i.test(db.business.logo)) images.__logo = db.business.logo;
   const est = live(db.estimates, ["portal", "portalViews", "portalSeen"]).map((e) => {
     const ph = arr(e.photos).filter((x) => typeof x.id === "string" && images[x.id as string]).map((x) => ({ id: x.id, kind: x.kind || "", caption: x.caption || "", ...(x.inWork !== undefined ? { inWork: x.inWork } : {}) }));
     e.photos = ph;
