@@ -35,6 +35,9 @@ describe("ICS", () => {
   it("escapes backslash, comma, semicolon and newline", () => {
     expect(icsEsc("a,b;c\\d\ne")).toBe("a\\,b\\;c\\\\d\\ne");
     expect(icsEsc(null)).toBe("");
+    // a lone CR or CRLF in user text must not start a new ICS line (property injection)
+    expect(icsEsc("a\r\nATTENDEE:x")).toBe("a\\nATTENDEE:x");
+    expect(icsEsc("a\rb")).toBe("a\\nb");
   });
   it("folds long lines at <=75 octets and never splits a character", () => {
     const line = "DESCRIPTION:" + "x".repeat(200);

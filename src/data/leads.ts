@@ -34,7 +34,7 @@ export function useLeadInbox() {
     for (const pid of (lead.photos || []).slice(0, 5)) {
       try {
         const p = await getTop<{ data?: string }>(`leads/${lead.id}/photos`, pid);
-        if (!p?.data) continue;
+        if (!p?.data || !/^data:image\/(jpeg|jpg|png|webp|gif);base64,/i.test(p.data) || p.data.length > 900_000) continue; // the public form is untrusted: only real photos are copied in
         const id = `wl-${lead.id.slice(0, 8)}-${pid.slice(0, 8)}`;
         await saveRec(cid, "photos", { id, data: p.data } as never);
         photos.push({ id, kind: "before", caption: "" });

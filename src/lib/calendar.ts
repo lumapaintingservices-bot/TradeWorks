@@ -62,7 +62,7 @@ export function fmtTime(hhmm?: string): string {
 }
 
 /* ---------------- ICS ---------------- */
-export const icsEsc = (s: unknown) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+export const icsEsc = (s: unknown) => String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/\r\n?/g, "\n").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 
 /** RFC 5545 folding: no physical line longer than 75 octets (73 including the leading space of continuations); never splits a multi-byte character. ASCII output is identical to the prototype's. */
 export function icsFold(line: string): string {

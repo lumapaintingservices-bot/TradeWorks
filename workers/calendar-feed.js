@@ -16,7 +16,7 @@ export default {
     const ics = (j.fields && j.fields.ics && j.fields.ics.stringValue) || "";
     if (!ics) return new Response("Not found", { status: 404 });
     return new Response(request.method === "HEAD" ? null : ics, {
-      headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "max-age=300" },
+      headers: { "content-type": "text/calendar; charset=utf-8", "cache-control": "max-age=300", "x-content-type-options": "nosniff" },
     });
   },
 };

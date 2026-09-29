@@ -5,6 +5,7 @@ import { calcEstimate } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { money, num } from "../../lib/money";
 import { clientTotal, effective, isOwnerSigned, isSelectable, modelSettings, type PortalDoc, type PortalModel } from "../../lib/portal";
+import { safeImgSrc, safeUrl, mailtoHref } from "../../lib/safeUrl";
 import { nl2list, scopeGroups } from "../../lib/scope";
 import { SignaturePad, type PadHandle } from "../../ui/SignaturePad";
 import "./portal.css";
@@ -74,7 +75,7 @@ export default function PortalPage() {
     if (l.kind === "frame") return es ? p.frameLabelEs : p.frameLabel;
     return es ? p.boxLabelEs : p.boxLabel;
   };
-  const opts = (e.upgrades || []).filter(isSelectable);
+  const opts = (eff.upgrades || []).filter(isSelectable); // eff = the client's own picks applied (the snapshot alone only changes when the owner's page re-publishes)
   const scope = scopeGroups(nl2list(es ? e.scopeEs : e.scopeEn)), terms = nl2list(es ? e.termsEs : e.termsEn);
   const spec = es ? e.specEs || e.spec : e.spec || e.specEs;
   const photos = e.showPhotos ? (e.photos || []).filter((x) => x.url) : [];
@@ -107,7 +108,7 @@ export default function PortalPage() {
 
       <main className="pt-in">
         <section className="pt-hero">
-          <div className="pt-brand">{b.logoUrl ? <img src={b.logoUrl} alt="" /> : <span className="pt-mk">{b.name.slice(0, 2).toUpperCase()}</span>}<b>{b.name}</b></div>
+          <div className="pt-brand">{safeImgSrc(b.logoUrl) ? <img src={safeImgSrc(b.logoUrl)} alt="" /> : <span className="pt-mk">{b.name.slice(0, 2).toUpperCase()}</span>}<b>{b.name}</b></div>
           <p className="pt-eyebrow">{T("Estimate", "Presupuesto")} {e.number} · {fmtDate(e.date, L)}</p>
           <h1>{T(`Hi ${(e.clientName || "").split(" ")[0]}, here is your estimate`, `Hola ${(e.clientName || "").split(" ")[0]}, este es su presupuesto`)}</h1>
           {(e.address) && <p className="pt-sub">{e.address}</p>}
@@ -140,14 +141,14 @@ export default function PortalPage() {
         {photos.length > 0 && <section className="pt-sec" id="ptPhotos">
           <h2>{T("Photos of your project", "Fotos de su proyecto")}</h2>
           <div className="pt-gal">{photos.map((x, i) => (
-            <figure key={x.id}><button type="button" onClick={() => setZoom(i)} aria-label={T("Zoom", "Ampliar")}><img src={x.url} alt={photoCap(x) || T("Project photo", "Foto del proyecto")} loading="lazy" /></button>
+            <figure key={x.id}><button type="button" onClick={() => setZoom(i)} aria-label={T("Zoom", "Ampliar")}><img src={safeImgSrc(x.url)} alt={photoCap(x) || T("Project photo", "Foto del proyecto")} loading="lazy" /></button>
               {photoCap(x) && <figcaption>{photoCap(x)}</figcaption>}</figure>))}</div>
         </section>}
 
         {(m.s.showcase || []).length > 0 && <section className="pt-sec">
           <h2>{T("Our recent work", "Nuestro trabajo reciente")}</h2>
           <div className="pt-gal">{(m.s.showcase || []).map((x) => (
-            <figure key={x.id}><img src={x.url} alt={x.caption || T("Recent work", "Trabajo reciente")} loading="lazy" />{x.caption && <figcaption>{x.caption}</figcaption>}</figure>))}</div>
+            <figure key={x.id}><img src={safeImgSrc(x.url)} alt={x.caption || T("Recent work", "Trabajo reciente")} loading="lazy" />{x.caption && <figcaption>{x.caption}</figcaption>}</figure>))}</div>
         </section>}
 
         {scope.length > 0 && <section className="pt-sec"><h2>{T("What's included", "Qué incluye")}</h2>
@@ -205,8 +206,8 @@ export default function PortalPage() {
           <div className="pt-contact">
             {b.phone && <a className="pt-btn ghost" href={`tel:${wa}`}>{T("Call", "Llamar")}</a>}
             {b.phone && <a className="pt-btn wa" href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer">WhatsApp</a>}
-            {b.email && <a className="pt-btn ghost" href={`mailto:${b.email}`}>{b.email}</a>}
-            {m.s.reviewUrl && <a className="pt-btn ghost" href={m.s.reviewUrl} target="_blank" rel="noreferrer">{T("Reviews", "Reseñas")}</a>}
+            {mailtoHref(b.email) && <a className="pt-btn ghost" href={mailtoHref(b.email)}>{b.email}</a>}
+            {safeUrl(m.s.reviewUrl) && <a className="pt-btn ghost" href={safeUrl(m.s.reviewUrl)} target="_blank" rel="noreferrer">{T("Reviews", "Reseñas")}</a>}
           </div>
           <p>{b.name}{b.area ? ` · ${b.area}` : ""}</p><p className="pt-pow">Powered by TradeWorks</p>
         </footer>
@@ -226,7 +227,7 @@ export default function PortalPage() {
         </div>)}
       {zp && (
         <div className="pt-zoom" role="dialog" aria-modal aria-label={T("Photo", "Foto")} onClick={() => setZoom(-1)}>
-          <img src={zp.url} alt={photoCap(zp)} onClick={(ev) => ev.stopPropagation()} />
+          <img src={safeImgSrc(zp.url)} alt={photoCap(zp)} onClick={(ev) => ev.stopPropagation()} />
           <button type="button" className="x" aria-label={T("Close", "Cerrar")} onClick={() => setZoom(-1)}>×</button>
           {zoom > 0 && <button type="button" className="prev" aria-label={T("Previous", "Anterior")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom - 1); }}>‹</button>}
           {zoom < photos.length - 1 && <button type="button" className="next" aria-label={T("Next", "Siguiente")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom + 1); }}>›</button>}

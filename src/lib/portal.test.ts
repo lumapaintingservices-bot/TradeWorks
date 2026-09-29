@@ -132,3 +132,25 @@ describe("change orders on the client link", () => {
     expect(portalApply(e, { coSign: { co1: sig } }).e.changeOrders[0].status).toBe("signed");
   });
 });
+
+describe("portalApply: the link is written by anyone holding the token, so client input is clipped", () => {
+  const long = "x".repeat(5000);
+  it("clips chat text, names and pay claims; ignores oversized signatures and picks", () => {
+    const a = portalApply(est(), { chat: [{ from: "owner", text: "hi", at: "x" }, { from: "client", text: long, at: long }], paid: { method: long, at: "2026-09-29T10:00:00Z" } });
+    const last = a.e.chat![a.e.chat!.length - 1]; expect(last.text.length).toBe(2000); expect(last.at.length).toBe(40);
+    expect(a.e.payClaim!.method.length).toBe(40);
+    const forged = portalApply(est(), { chat: [{ from: "owner", text: "hi", at: "x" }, { from: "attacker" as never, text: "hi", at: "x" }] });
+    expect(forged.e.chat![1].from).toBe("client");
+    const big = portalApply(est(), { sign: { name: long, img: "A".repeat(500_000), at: "2026-09-29T10:00:00Z", total: 1 } });
+    expect(big.e.signature).toBeFalsy();
+    const signed = portalApply(est(), { sign: { name: long, img: "data:image/png;base64,AA", at: "2026-09-29T10:00:00Z", total: 1 } });
+    expect(signed.e.signature!.name.length).toBe(120);
+    const picks = Object.fromEntries(Array.from({ length: 5000 }, (_, i) => ["k" + i, true]));
+    expect(portalApply(est(), { picks, chat: est().chat }).changed).toBe(false);
+  });
+  it("a long paid.at does not make the claim look new on every run", () => {
+    const c = { paid: { method: "Zelle", at: long } };
+    const a = portalApply(est(), c);
+    expect(portalApply(a.e, c).changed).toBe(false);
+  });
+});

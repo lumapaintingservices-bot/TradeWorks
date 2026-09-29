@@ -15,6 +15,7 @@ import { useNavBadges } from "../pages/FollowUps";
 import { useInvoices } from "../data/hooks";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
+import { hasFirebase } from "../lib/firebase";
 
 function LangSwitch() {
   const { lang, setLang } = useUi();
@@ -137,7 +138,7 @@ function ShellBody() {
         {items.business.length > 0 && <div className="sb-lbl">{t("Business", "Negocio")}</div>}
         <nav>{items.business.map((it) => <Item key={it.to} it={it} />)}</nav>
         <div className="sb-foot">
-          <div className="row"><span className="cloud"><i />{t("Cloud on", "Nube activa")}</span><LangSwitch /></div>
+          <div className="row"><span className="cloud" title={hasFirebase ? undefined : t("No Firebase keys: data stays in this browser only", "Sin claves de Firebase: los datos solo quedan en este navegador")}><i style={hasFirebase ? undefined : { background: "var(--warn, #F79009)" }} />{hasFirebase ? t("Cloud on", "Nube activa") : t("Demo mode", "Modo demo")}</span><LangSwitch /></div>
           <div className="me">
             <span className="av">{(user?.name || user?.email || "?").slice(0, 2).toUpperCase()}</span>
             <div><b>{user?.name || company?.name}</b><span>{role ? t(...roleLabel(role)) + " · " : ""}{user?.email}</span></div>

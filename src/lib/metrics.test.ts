@@ -603,6 +603,25 @@ describe("known values", () => {
     expect(PRICE_BANDS.map(bandLabel)).toEqual(["$0–$2k", "$2k–$4k", "$4k–$6k", "$6k–$8k", "$8k–$12k", "$12k+"]);
   });
 
+  it("csvCell matches the prototype byte-for-byte for normal data, and defuses spreadsheet formulas", () => {
+    const { ctx } = protoVm({ estimates: [], invoices: [], expenses: [], payouts: [], hours: [], workers: [], clients: [] }, defaultSettings(), "2026-06-15");
+    const normal = ["", "Home Depot", "12.50", "-12.50", "+3", "0.00", "2026-05-01", 'He said "hi"', "a,b", "line\nbreak", "Ñandú & Co.", "100%", "EST-1", "-0.5", "5-8", "a=b", "x@y.com", "It's", "  spaced  "];
+    for (const x of normal) expect(csvCell(x), JSON.stringify(x)).toBe(ctx.csvCell(x));
+    for (const n of [0, 12.5, -12.5, 1e3]) expect(csvCell(n)).toBe(ctx.csvCell(n));
+    // formula starters in TEXT get a leading apostrophe (so Excel / Sheets show the text instead of running it)
+    expect(csvCell("=HYPERLINK(\"http://evil\",\"x\")")).toBe('"\'=HYPERLINK(""http://evil"",""x"")"');
+    expect(csvCell("+1 555 123")).toBe("'+1 555 123");
+    expect(csvCell("@SUM(A1)")).toBe("'@SUM(A1)");
+    expect(csvCell("-cmd|' /C calc'!A0")).toBe("'-cmd|' /C calc'!A0");
+    expect(csvCell("\t=1+1")).toBe("'\t=1+1");
+    // negative amounts, whether string or number, stay real numbers
+    expect(csvCell("-1234.50")).toBe("-1234.50");
+    expect(csvCell(-3)).toBe("-3");
+    // and it flows through the export
+    const c = base({ payouts: [{ id: "p", workerId: "w1", date: "2026-05-01", amount: 12.3, method: "Zelle", note: "=1+1" }] });
+    expect(exportCsv("team", c, { from: "2026-01-01", to: "2026-12-31" })).toBe("\ufeffDate,Worker,Amount,Method,Note\r\n2026-05-01,Ana,12.30,Zelle,'=1+1");
+  });
+
   it("CSV: BOM, CRLF, quoting", () => {
     expect(csvCell('a,"b"')).toBe('"a,""b"""');
     expect(csvCell(null)).toBe(""); expect(csvCell(12.5)).toBe("12.5");

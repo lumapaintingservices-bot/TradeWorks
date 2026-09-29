@@ -7,6 +7,7 @@ import { fmtDate } from "../../lib/format";
 import { money, num } from "../../lib/money";
 import { nl2list, scopeGroups } from "../../lib/scope";
 import "./doc.css";
+import { safeImgSrc } from "../../lib/safeUrl";
 
 /** Client-facing estimate: always light, in the contractor's brand color, printable to PDF. */
 export default function EstimateDoc() {
@@ -86,7 +87,7 @@ export default function EstimateDoc() {
           {scope.map((g, i) => <div key={i} className="grp">{g.head && <h4>{g.head}</h4>}<ul>{g.items.map((x, j) => <li key={j}>{x}</li>)}</ul></div>)}</section>}
         {terms.length > 0 && <section><h3>{T("TERMS", "TÉRMINOS")}</h3><ul>{terms.map((x, i) => <li key={i}>{x}</li>)}</ul></section>}
         {e.notes && <section><h3>{T("NOTES", "NOTAS")}</h3><p>{e.notes}</p></section>}
-        <section className="sign"><div>{e.signature?.img && <img className="sig" src={e.signature.img} alt="" />}<span>{T("Client signature", "Firma del cliente")}{e.signature?.name ? ` — ${e.signature.name}` : ""}</span></div><div>{e.signature?.date && <b className="sd">{fmtDate(e.signature.date, lang)}</b>}<span>{T("Date", "Fecha")}</span></div></section>
+        <section className="sign"><div>{safeImgSrc(e.signature?.img) && <img className="sig" src={safeImgSrc(e.signature?.img)} alt="" />}<span>{T("Client signature", "Firma del cliente")}{e.signature?.name ? ` — ${e.signature.name}` : ""}</span></div><div>{e.signature?.date && <b className="sd">{fmtDate(e.signature.date, lang)}</b>}<span>{T("Date", "Fecha")}</span></div></section>
       </article>
     </div>
   );

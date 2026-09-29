@@ -6,6 +6,7 @@ import { auth, hasFirebase } from "../../lib/firebase";
 import { fmtDate } from "../../lib/format";
 import { useT } from "../../i18n";
 import { useUi } from "../../store/ui";
+import { isTrustedRedirect } from "../../lib/safeUrl";
 
 const BADGE: Record<BillingStatus, { cls: string; en: string; es: string }> = {
   trial: { cls: "b-blue", en: "Free trial", es: "Prueba gratis" },
@@ -25,7 +26,7 @@ async function callBilling(path: "checkout" | "portal", companyId: string): Prom
   });
   const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
   if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
-  if (!/^https:\/\//.test(data.url)) throw new Error("bad-url");
+  if (!isTrustedRedirect(data.url, window.location.origin)) throw new Error("bad-url"); // only Stripe or this app
   return data.url;
 }
 

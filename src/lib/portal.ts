@@ -65,6 +65,13 @@ export function effective(m: PortalModel, client?: ClientState): Estimate {
 }
 export const clientTotal = (m: PortalModel, client?: ClientState) => calcEstimate(effective(m, client), modelSettings(m)).total;
 
+/* The client link is written by ANYONE who holds the token, so everything read back from it is clipped before it is copied
+   into the owner's estimate (a 1 MB chat line or signature would otherwise make the estimate too big to save). */
+const MAX_TEXT = 2000, MAX_NAME = 120, MAX_IMG = 400_000;
+const clip = (v: unknown, n: number) => String(v ?? "").slice(0, n);
+const okImg = (v: unknown) => typeof v === "string" && v.length > 0 && v.length <= MAX_IMG;
+const clipMsg = (m: ChatMsg): ChatMsg => ({ from: m && m.from === "owner" ? "owner" : "client", text: clip(m && m.text, MAX_TEXT), at: clip(m && m.at, 40) });
+
 const nowISO = () => new Date().toISOString();
 const logAct = (e: Estimate, text: string) => { e.activity = [...(e.activity || []), { at: nowISO(), text }].slice(-100); };
 
@@ -82,13 +89,13 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
 
   const views = c.views || [];
   if (views.length > num(seen.views)) {
-    e.portalViews = views.slice(-30); seen.views = views.length; changed = true;
+    e.portalViews = views.slice(-30).map((v) => clip(v, 40)); seen.views = views.length; changed = true;
     logAct(e, views.length === 1 ? TT("Opened the link", "Abrió el enlace") : TT(`Opened the link (time ${views.length})`, `Abrió el enlace (${views.length}ª vez)`));
     if (e.status === "Sent") e.status = "Viewed";
     news = TT(`${who} opened the estimate`, `${who} abrió el presupuesto`);
   }
   const pj = JSON.stringify(c.picks || {});
-  if (pj !== (seen.picks || "{}")) {
+  if (pj.length <= 20_000 && pj !== (seen.picks || "{}")) {
     const picks = c.picks || {};
     let prev: Record<string, boolean> = {};
     try { prev = JSON.parse(seen.picks || "{}"); } catch { prev = {}; }
@@ -107,36 +114,37 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
   const chat = c.chat || [], had = (e.chat || []).length;
   if (chat.length !== had) {
     const fresh = chat.slice(had).filter((m) => m.from === "client").length;
-    e.chat = chat.slice(-200); changed = true;
+    e.chat = chat.slice(-200).map(clipMsg); changed = true;
     if (fresh) {
       e.chatUnread = num(e.chatUnread) + fresh;
       logAct(e, TT("Message: ", "Mensaje: ") + "“" + String(chat[chat.length - 1].text || "").slice(0, 60) + "”");
       news = TT(`New message from ${who}`, `Mensaje nuevo de ${who}`);
     }
   }
-  if (c.sign && c.sign.img && !seen.sign) {
+  if (c.sign && okImg(c.sign.img) && !seen.sign) {
     seen.sign = true; changed = true;
     if (!e.signature) {
-      e.signature = { name: c.sign.name || e.clientName, img: c.sign.img, date: String(c.sign.at || nowISO()).slice(0, 10), via: "link", at: c.sign.at || "" };
+      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: String(c.sign.at || nowISO()).slice(0, 10), via: "link", at: clip(c.sign.at, 40) };
       if (e.status === "Draft" || e.status === "Sent" || e.status === "Viewed") e.status = "Accepted";
-      logAct(e, TT(`Signed and accepted from the link ($${c.sign.total})`, `Firmó y aceptó desde el enlace ($${c.sign.total})`));
+      logAct(e, TT(`Signed and accepted from the link ($${clip(c.sign.total, 20)})`, `Firmó y aceptó desde el enlace ($${clip(c.sign.total, 20)})`));
       news = TT(`${who} signed the estimate!`, `¡${who} firmó el presupuesto!`);
     }
   }
-  if (c.paid && c.paid.at && seen.paid !== c.paid.at) {
-    seen.paid = c.paid.at; changed = true; e.payClaim = { method: c.paid.method || "", at: c.paid.at };
-    logAct(e, TT(`Client says the deposit was sent (${c.paid.method || ""})`, `El cliente dice que envió el depósito (${c.paid.method || ""})`));
+  const paidAt = c.paid ? clip(c.paid.at, 40) : "", paidHow = c.paid ? clip(c.paid.method, 40) : "";
+  if (c.paid && paidAt && seen.paid !== paidAt) {
+    seen.paid = paidAt; changed = true; e.payClaim = { method: paidHow, at: paidAt };
+    logAct(e, TT(`Client says the deposit was sent (${paidHow})`, `El cliente dice que envió el depósito (${paidHow})`));
     news = TT(`${who} says the deposit was sent`, `${who} dice que envió el depósito`);
   }
   const cos = c.coSign || {}, seenCo = (seen.co ||= {});
   for (const id of Object.keys(cos)) {
     const sg = cos[id];
-    if (!sg || !sg.img || seenCo[id]) continue;
+    if (!sg || !okImg(sg.img) || seenCo[id]) continue;
     const co = (e.changeOrders || []).find((x) => x.id === id);
     if (!co || co.status === "draft") continue; // unknown or not offered to the client: ignore
     seenCo[id] = 1; changed = true;
     if (co.status === "signed") continue; // the owner already signed it here
-    co.status = "signed"; co.signedName = sg.name || e.clientName; co.signedAt = String(sg.at || nowISO()).slice(0, 10); co.sigImg = sg.img;
+    co.status = "signed"; co.signedName = clip(sg.name, MAX_NAME) || e.clientName; co.signedAt = String(sg.at || nowISO()).slice(0, 10); co.sigImg = sg.img;
     (co as { via?: string }).via = "link";
     logAct(e, TT(`Change order #${co.n} approved from the link ($${num(co.amount)})`, `Orden de cambio #${co.n} aprobada desde el enlace ($${num(co.amount)})`));
     news = TT(`${who} approved change order #${co.n}!`, `¡${who} aprobó la orden de cambio #${co.n}!`);

@@ -11,7 +11,9 @@ service firebase.storage {
     // receipts, photos, logos: only members of that company
     match /companies/{cid}/{allPaths=**} {
       allow read: if member(cid);
-      allow write: if member(cid) && (request.resource == null || request.resource.size < 5 * 1024 * 1024);
+      // uploads are photos / receipts / logos: raster images under 5 MB (deletes have no request.resource)
+      allow write: if member(cid) && (request.resource == null
+        || (request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')));
     }
   }
 }

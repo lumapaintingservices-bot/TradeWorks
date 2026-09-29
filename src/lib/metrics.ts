@@ -496,7 +496,13 @@ export function insightMonthJobs(c: Ctx, range: string | number, key: string): E
 export type CsvKind = "expenses" | "pl" | "income" | "jobs" | "team";
 type Cell = string | number | null | undefined;
 /** Port of csvCell. */
-export const csvCell = (v: Cell): string => { const s = String(v == null ? "" : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+export const csvCell = (v: Cell): string => {
+  let s = String(v == null ? "" : v);
+  // Spreadsheet formula injection: text that starts with = + - @ (or TAB / CR) would be run as a formula by Excel / Sheets.
+  // Prefix a quote, but never touch real numbers (negative profit "-12.50" must stay a number) or number cells.
+  if (typeof v !== "number" && /^[=+\-@\t\r]/.test(s) && !/^[-+]?\d+(\.\d+)?$/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
 /** Rows -> CSV text: UTF-8 BOM, CRLF line ends (downloadCSV). */
 export const csvText = (rows: Cell[][]): string => "﻿" + rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
 const byDate = <T extends { date: string }>(a: T, z: T) => String(a.date).localeCompare(String(z.date));

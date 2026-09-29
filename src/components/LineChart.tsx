@@ -73,7 +73,7 @@ export default function LineChart({ labels, tooltips, series, height = 220, sele
         </svg>
         <div className="lc-band" style={{ left: xPct + "%" }} />
         {series.map((s, si) => <i key={si} className="lc-dot" style={{ left: xPct + "%", top: 100 - ((s.values[idx] - mn) / rg) * 100 + "%", borderColor: s.color }} />)}
-        <div className="lc-tip" style={{ left: Math.max(12, Math.min(88, xPct)) + "%", top: top + "%" }}>
+        <div className={"lc-tip" + (xPct > 60 ? " r" : xPct < 40 ? " l" : "")} style={{ left: Math.max(2, Math.min(98, xPct)) + "%", top: top + "%" }}>
           <b>{(tooltips ?? labels)[idx]}</b>
           {series.map((s, si) => <span key={si}><i style={{ background: s.color }} />{series.length > 1 ? s.name + " " : ""}<em>{formatValue(s.values[idx])}</em></span>)}
         </div>

@@ -36,5 +36,10 @@ export async function requireOwner(request, env, deps = {}) {
 
 /** Where Stripe sends people back to. APP_URL wins; otherwise the URL this function is served from. */
 export function appOrigin(request, env) {
-  return String(env.APP_URL || new URL(request.url).origin).replace(/\/+$/, "");
+  if (env.APP_URL) {
+    // only a plain https origin (or localhost for testing): a typo or "javascript:" in the variable must never become a redirect target
+    try { const u = new URL(String(env.APP_URL)); if (u.protocol === "https:" || (u.protocol === "http:" && u.hostname === "localhost")) return u.origin; } catch { /* fall through */ }
+    console.error("APP_URL is not a valid https address; using the address of this request instead.");
+  }
+  return new URL(request.url).origin;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getTop, setTop } from "../../data/repo";
 import type { LeadDetails } from "../../lib/leads";
+import { safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import "./LeadForm.css";
 
 /** Public lead questionnaire: /request?c={companyId}&src=thumbtack&ref={clientId}. Always light, contractor-branded. */
@@ -128,7 +129,7 @@ export default function LeadForm() {
   const total = STEPS.length - 1;
   const name = STEPS[step];
   const phone = pub?.phone || "";
-  const site = pub?.website || "";
+  const site = safeUrl(pub?.website), insta = safeUrl(pub?.instagram), reviewsUrl = safeUrl(pub?.reviews); // user-entered links: only http(s) ever reaches an href
 
   if (pub === undefined) return <div className="lf" style={style}><div className="lf-wrap"><p className="lf-lead">…</p></div></div>;
   if (pub === null) return (
@@ -313,7 +314,7 @@ export default function LeadForm() {
     <div className="lf" style={style}>
       <div className="lf-top"><div className="lf-top-in">
         <a className="lf-brand" href={site || undefined} target="_blank" rel="noopener noreferrer">
-          {pub.logoUrl && <img src={pub.logoUrl} alt="" />}
+          {safeImgSrc(pub.logoUrl) && <img src={safeImgSrc(pub.logoUrl)} alt="" />}
           <div><b>{parts[0]}</b>{parts.length > 1 && <span>{parts.slice(1).join(" ")}</span>}</div>
         </a>
         <div className="lf-sp" />
@@ -327,8 +328,8 @@ export default function LeadForm() {
             {phone && <div className="lf-links"><a className="lf-btn" href={`tel:+1${digits(phone)}`}>{t("Call us", "Llámenos")}</a><a className="lf-btn wa" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a></div>}
             <div className="lf-links" style={{ marginTop: 10 }}>
               {site && <a className="lf-btn" href={site} target="_blank" rel="noopener noreferrer">{t("See our work", "Vea nuestro trabajo")} ↗</a>}
-              {pub.instagram && <a className="lf-btn" href={pub.instagram} target="_blank" rel="noopener noreferrer">Instagram ↗</a>}
-              {pub.reviews && <a className="lf-btn" href={pub.reviews} target="_blank" rel="noopener noreferrer">★ {t("Reviews", "Reseñas")} ↗</a>}
+              {insta && <a className="lf-btn" href={insta} target="_blank" rel="noopener noreferrer">Instagram ↗</a>}
+              {reviewsUrl && <a className="lf-btn" href={reviewsUrl} target="_blank" rel="noopener noreferrer">★ {t("Reviews", "Reseñas")} ↗</a>}
             </div>
             <p style={{ marginTop: 22 }}><button type="button" className="lf-skip" onClick={() => { location.href = location.pathname + location.search; }}>{t("Send another request", "Enviar otra solicitud")}</button></p></div>
         ) : (

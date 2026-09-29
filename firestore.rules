@@ -17,6 +17,13 @@ service cloud.firestore {
     function isWorker(cid) { return member(cid) && role(cid) == 'worker'; }
     // the workers/{id} record a worker login is linked to ('' when not linked yet: then nothing matches)
     function myWorkerId(cid) { return get(memberPath(cid, request.auth.uid)).data.get('workerId', ''); }
+    // a worker may only stamp their OWN current pay rate on an hours entry (or none: the app then uses the worker record's rate)
+    function workerRate(cid) { return get(/databases/$(db)/documents/companies/$(cid)/workers/$(myWorkerId(cid))).data.get('rate', null); }
+    function hoursShapeOk() {
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'companyId', 'createdAt', 'updatedAt'])
+        && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000;
+    }
+    function clockShapeOk() { return request.resource.data.keys().hasOnly(['at', 'estId', 'companyId', 'createdAt', 'updatedAt']); }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
     function isInvitee(email) { return signedIn() && myEmail() != '' && myEmail() == email; }
@@ -106,14 +113,16 @@ service cloud.firestore {
 
         allow create: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            (col == 'hours' && request.resource.data.workerId == myWorkerId(cid))
-            || (col == 'clock' && id == myWorkerId(cid))
+            (col == 'hours' && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
+              && (!('rate' in request.resource.data) || request.resource.data.rate == workerRate(cid)))
+            || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
           )));
 
         allow update: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid))
-            || (col == 'clock' && id == myWorkerId(cid))
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
+              && (request.resource.data.get('rate', null) == resource.data.get('rate', null) || request.resource.data.rate == workerRate(cid)))
+            || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
             // tick a task assigned to me as done (nothing else on it may change)
             || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))
@@ -154,8 +163,14 @@ service cloud.firestore {
       allow get: if true;
       allow create: if admin(request.resource.data.owner);
       allow delete: if admin(resource.data.owner);
-      allow update: if admin(resource.data.owner)
-        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client']);
+      // owners/admins edit the snapshot but can never hand the link to another company;
+      // a visitor may only touch `client` (views, picks, sign, chat, paid, coSign), with sane list sizes
+      allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client'])
+            && request.resource.data.client is map
+            && request.resource.data.client.keys().hasOnly(['views', 'picks', 'sign', 'chat', 'paid', 'coSign'])
+            && request.resource.data.client.get('chat', []).size() <= 300
+            && request.resource.data.client.get('views', []).size() <= 300);
       match /photos/{pid} {
         allow get: if true;
         allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner);
@@ -163,15 +178,31 @@ service cloud.firestore {
     }
 
     // Lead form: anyone can send a request (validated); only the company can read or manage it.
+    // optional text field: absent, or a string of at most n characters
+    function optStr(d, k, n) { return !(k in d) || (d[k] is string && d[k].size() <= n); }
     match /leads/{lid} {
-      allow create: if exists(/databases/$(db)/documents/companies/$(request.resource.data.owner))
+      // limits mirror what the form itself sends (src/pages/public/LeadForm.tsx submit())
+      allow create: if request.resource.data.owner is string
+        && exists(/databases/$(db)/documents/companies/$(request.resource.data.owner))
         && request.resource.data.keys().hasOnly(['owner', 'name', 'phone', 'email', 'city', 'address', 'service', 'message', 'heard', 'lang', 'photos', 'details', 'at', 'page'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
         && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
-        && request.resource.data.photos is list && request.resource.data.photos.size() <= 5;
+        && request.resource.data.photos is list && request.resource.data.photos.size() <= 5
+        && optStr(request.resource.data, 'email', 120) && optStr(request.resource.data, 'city', 80) && optStr(request.resource.data, 'address', 160)
+        && optStr(request.resource.data, 'service', 120) && optStr(request.resource.data, 'message', 1500) && optStr(request.resource.data, 'heard', 40)
+        && optStr(request.resource.data, 'lang', 5) && optStr(request.resource.data, 'at', 40) && optStr(request.resource.data, 'page', 200)
+        && (!('details' in request.resource.data)
+            || (request.resource.data.details is map && request.resource.data.details.size() <= 20
+                && optStr(request.resource.data.details, 'other', 800)
+                && request.resource.data.details.get('types', []) is list && request.resource.data.details.get('types', []).size() <= 5));
       allow read, update, delete: if admin(resource.data.owner);
       match /photos/{pid} {
-        allow create: if request.resource.data.keys().hasOnly(['data', 'at']) && !exists(/databases/$(db)/documents/leads/$(lid));
+        // one JPEG/PNG/WebP data URL (the form shrinks photos to ~1100 px), well under the 1 MiB document limit
+        allow create: if request.resource.data.keys().hasOnly(['data', 'at'])
+          && request.resource.data.data is string && request.resource.data.data.size() <= 900000
+          && request.resource.data.data.matches('data:image/(jpeg|png|webp);base64,.*')
+          && request.resource.data.at is string && request.resource.data.at.size() <= 40
+          && !exists(/databases/$(db)/documents/leads/$(lid));
         allow read, delete: if admin(get(/databases/$(db)/documents/leads/$(lid)).data.owner);
       }
     }
@@ -179,10 +210,16 @@ service cloud.firestore {
     // Public business card used by the lead form (name, phone, logo, brand color). No private data.
     match /public/{cid} { allow get: if true; allow write: if admin(cid); }
 
+    function calfeedShape() {
+      return request.resource.data.keys().hasOnly(['owner', 'ics', 'updatedAt'])
+        && request.resource.data.ics is string && request.resource.data.ics.size() <= 900000;
+    }
     // Live calendar feed (.ics) read by the Cloudflare worker.
     match /calfeed/{token} {
       allow get: if true;
-      allow create, update: if admin(request.resource.data.owner);
+      // shape: { owner, ics, updatedAt }. Changing an existing feed requires owning the OLD one, and the owner cannot change.
+      allow create: if admin(request.resource.data.owner) && calfeedShape();
+      allow update: if admin(resource.data.owner) && request.resource.data.owner == resource.data.owner && calfeedShape();
       allow delete: if admin(resource.data.owner);
     }
   }

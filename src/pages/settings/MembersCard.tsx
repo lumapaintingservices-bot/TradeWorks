@@ -10,6 +10,7 @@ import {
 } from "../../lib/roles";
 import { useUi } from "../../store/ui";
 import { RoleBadge } from "../../auth/RoleBadge";
+import { mailtoHref } from "../../lib/safeUrl";
 
 const ORDER: Record<Role, number> = { owner: 0, admin: 1, worker: 2 };
 
@@ -180,7 +181,7 @@ export default function MembersCard() {
             <div className="row">
               <button className="btn pri sm" onClick={() => copy(message(share))}>{t("Copy message", "Copiar mensaje")}</button>
               <a className="btn sm" href={`https://wa.me/?text=${encodeURIComponent(message(share))}`} target="_blank" rel="noreferrer">WhatsApp</a>
-              <a className="btn sm" href={`mailto:${share.email}?subject=${encodeURIComponent(t("Invitation to TradeWorks", "Invitación a TradeWorks"))}&body=${encodeURIComponent(message(share))}`}>{t("Email app", "App de correo")}</a>
+              <a className="btn sm" href={mailtoHref(share.email, `subject=${encodeURIComponent(t("Invitation to TradeWorks", "Invitación a TradeWorks"))}&body=${encodeURIComponent(message(share))}`) || undefined}>{t("Email app", "App de correo")}</a>
               <button className="btn sm" onClick={() => setShare(null)}>{t("Close", "Cerrar")}</button>
             </div>
           </div>

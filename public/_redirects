@@ -1,0 +1,3 @@
+# Single-page app: every path that is not a real file opens the app, and React Router shows the screen (/p/:token, /request, /estimates/...).
+# The billing functions (/functions/api/billing/*) are matched by Cloudflare BEFORE this rule, so /api/* still reaches them.
+/*  /index.html  200

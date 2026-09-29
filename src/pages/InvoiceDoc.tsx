@@ -7,6 +7,7 @@ import { asInv, invKindLabel, invoiceSheetData, isPaid } from "../lib/invoices";
 import { money, num } from "../lib/money";
 import { nl2list, scopeGroups } from "../lib/scope";
 import "./InvoiceDoc.css";
+import { safeImgSrc } from "../lib/safeUrl";
 
 /** Client-facing invoice: always light, in the contractor's brand color, printable to PDF. Route: /invoices/:id/doc */
 export default function InvoiceDoc() {
@@ -95,7 +96,7 @@ export default function InvoiceDoc() {
           {scope.map((g, i) => <div key={i} className="grp">{g.head && <h4>{g.head}</h4>}<ul>{g.items.map((x, j) => <li key={j}>{x}</li>)}</ul></div>)}</section>}
         {terms.length > 0 && <section><h3>{T("TERMS", "TÉRMINOS")}</h3><ul>{terms.map((x, i) => <li key={i}>{x}</li>)}</ul></section>}
         {notes && v.kind !== "co" && <section><h3>{T("NOTES", "NOTAS")}</h3><p>{notes}</p></section>}
-        {d.coApproved?.img && <section className="sign"><div><img className="sig" src={d.coApproved.img} alt="" /><span>{T("Accepted", "Aceptado")} — {d.coApproved.name}</span></div><div><b className="sd">{fmtDate(d.coApproved.date, lang)}</b><span>{T("Date", "Fecha")}</span></div></section>}
+        {safeImgSrc(d.coApproved?.img) && <section className="sign"><div><img className="sig" src={safeImgSrc(d.coApproved?.img)} alt="" /><span>{T("Accepted", "Aceptado")} — {d.coApproved?.name}</span></div><div><b className="sd">{fmtDate(d.coApproved?.date, lang)}</b><span>{T("Date", "Fecha")}</span></div></section>}
         <footer><span>{[company.name, company.phone, company.website].filter(Boolean).join(" · ")}</span><span>{T("Thank you for your business.", "Gracias por su preferencia.")}</span></footer>
       </article>
     </div>
