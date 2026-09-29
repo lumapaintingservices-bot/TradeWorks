@@ -48,14 +48,14 @@
 .ws[aria-expanded=true] .ws-chev svg,.ws-row.open .ws-chev svg{transform:rotate(180deg)}
 .ws-back{position:fixed;inset:0;z-index:35}
 .ws-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:36;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-pop);padding:6px}
-.ws-list{display:grid;gap:2px}
+.ws-list{display:grid;grid-template-columns:minmax(0,1fr);gap:2px}
 .ws-opt{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:10px;background:none;color:var(--ink);font-weight:500;text-align:left;min-height:44px}
 .ws-opt:hover{background:var(--surface-2)}
 .ws-opt.on{background:var(--surface-2)}
 .ws-opt-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ws-opt .badge{font-size:11px;padding:2px 8px;flex:none}
 .ws-check{display:grid;place-items:center;color:var(--acc);flex:none}
-.ws-opt.add,.ws-opt.out{color:var(--ink-2);border-top:0}
+.ws-opt.add,.ws-opt.out{color:var(--ink-2)}
 .ws-opt.add{margin-top:2px;border-top:1px solid var(--line-2);border-radius:0 0 10px 10px;padding-top:10px}
 .ws-logo.add{background:var(--surface-2);color:var(--ink-2)}
 .ws-more-name{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}

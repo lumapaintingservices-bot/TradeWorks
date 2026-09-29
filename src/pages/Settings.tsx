@@ -1,3 +1,5 @@
+import { useRole } from "../auth/AuthProvider";
+import { can } from "../lib/roles";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -5,6 +7,8 @@ import { useSettings } from "../data/hooks";
 import { useT } from "../i18n";
 import { Icon } from "../ui/Icon";
 import { useUi, type ThemePref } from "../store/ui";
+import BillingCard from "./settings/BillingCard";
+import MembersCard from "./settings/MembersCard";
 import BackupCard from "./settings/BackupCard";
 import CalendarCard from "./settings/CalendarCard";
 import DiscountsCard from "./settings/DiscountsCard";
@@ -126,10 +130,13 @@ function RequestLinkCard() {
   );
 }
 
+function BusinessGate() { return can(useRole(), "settings.business") ? <BusinessCard /> : null; }
+function OwnerOnly({ children }: { children: ReactNode }) { return can(useRole(), "billing") ? <>{children}</> : null; }
+
 type Section = { id: string; icon: string; en: string; es: string; descEn: string; descEs: string; body: () => ReactNode };
 const SECTIONS: Section[] = [
   { id: "general", icon: "settings", en: "General", es: "General", descEn: "How the app looks and your business details.", descEs: "Cómo se ve la app y los datos de tu negocio.",
-    body: () => <><AppearanceCard /><BusinessCard /></> },
+    body: () => <><AppearanceCard /><BusinessGate /></> },
   { id: "pricing", icon: "dollar", en: "Prices", es: "Precios", descEn: "What a new estimate starts with: your rates, deposit, tax, discounts and numbering.", descEs: "Con qué empieza un presupuesto nuevo: tus precios, depósito, impuesto, descuentos y numeración.",
     body: () => <><PricingCard /><DiscountsCard /><ServicesCard /></> },
   { id: "profit", icon: "percent", en: "Costs & profit", es: "Costos y ganancia", descEn: "The numbers behind your profit: how long the work takes, what labor costs, and paint and supplies.", descEs: "Los números detrás de tu ganancia: cuánto tarda el trabajo, cuánto cuesta la mano de obra, y la pintura y suministros.",
@@ -142,15 +149,19 @@ const SECTIONS: Section[] = [
     body: () => <><ClientLinkCard /><RequestLinkCard /><ShowcaseCard /></> },
   { id: "calendar", icon: "calendar", en: "Calendar", es: "Calendario", descEn: "Your jobs and tasks in Google, Outlook or Apple calendar.", descEs: "Tus trabajos y tareas en el calendario de Google, Outlook o Apple.",
     body: () => <CalendarCard /> },
+  { id: "team", icon: "team", en: "Team & plan", es: "Equipo y plan", descEn: "Who can use your company, and your TradeWorks plan.", descEs: "Quién puede usar tu empresa y tu plan de TradeWorks.",
+    body: () => <><MembersCard /><OwnerOnly><BillingCard /></OwnerOnly></> },
   { id: "backup", icon: "inbox", en: "Backup & storage", es: "Copia y almacenamiento", descEn: "Keep a copy of your data safe.", descEs: "Guarda una copia segura de tus datos.",
     body: () => <BackupCard /> },
 ];
 
 export default function Settings() {
   const t = useT();
+  const role = useRole();
+  const sections = can(role, "settings.business") ? SECTIONS : SECTIONS.filter((x) => x.id === "general");
   const [params, setParams] = useSearchParams();
   const asked = params.get("section") || (location.hash === "#calendar-link" ? "calendar" : "");
-  const sec = SECTIONS.find((s) => s.id === asked) || SECTIONS[0];
+  const sec = sections.find((s) => s.id === asked) || sections[0];
   const go = (id: string) => { setParams({ section: id }, { replace: true }); window.scrollTo({ top: 0 }); };
   useEffect(() => { if (location.hash === "#calendar-link") setTimeout(() => document.getElementById("calendar-link")?.scrollIntoView({ block: "start" }), 50); }, []);
 
@@ -159,7 +170,7 @@ export default function Settings() {
       <div className="page-h"><div><h1>{t("Settings", "Ajustes")}</h1><p>{t("Defaults for new estimates. Existing estimates keep the values they were written with.", "Valores para presupuestos nuevos. Los presupuestos que ya existen conservan sus valores.")}</p></div></div>
       <div className="st-layout">
         <nav className="st-nav" aria-label={t("Settings sections", "Secciones de ajustes")}>
-          {SECTIONS.map((s) => (
+          {sections.map((s) => (
             <button key={s.id} className={"st-nav-i" + (s.id === sec.id ? " on" : "")} aria-current={s.id === sec.id ? "page" : undefined} onClick={() => go(s.id)}>
               <Icon name={s.icon} size={18} /><span>{t(s.en, s.es)}</span>
             </button>
@@ -167,7 +178,7 @@ export default function Settings() {
         </nav>
         <label className="st-pick">
           <span>{t("Section", "Sección")}</span>
-          <select value={sec.id} onChange={(e) => go(e.target.value)}>{SECTIONS.map((s) => <option key={s.id} value={s.id}>{t(s.en, s.es)}</option>)}</select>
+          <select value={sec.id} onChange={(e) => go(e.target.value)}>{sections.map((s) => <option key={s.id} value={s.id}>{t(s.en, s.es)}</option>)}</select>
         </label>
         <div className="st-main">
           <div className="st-intro"><h2>{t(sec.en, sec.es)}</h2><p className="muted">{t(sec.descEn, sec.descEs)}</p></div>

@@ -37,7 +37,7 @@ function Text({ full }: { full?: boolean }) {
   const by = invite.invite.invitedByName;
   if (invite.state === "needs-verify") return (
     <span className="inv-txt">
-      <b>{t(`You were invited to ${name}`, `Te invitaron a ${name}`)}</b>{" "}
+      <b>{t(`You were invited to ${name}.`, `Te invitaron a ${name}.`)}</b>{" "}
       {t(`Verify ${user?.email} first (we emailed you a link), then press "I verified".`, `Primero verifica ${user?.email} (te enviamos un enlace) y luego pulsa "Ya verifiqué".`)}
     </span>
   );

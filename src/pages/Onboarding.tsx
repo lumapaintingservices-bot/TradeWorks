@@ -17,7 +17,7 @@ export default function Onboarding() {
   const t = useT();
   const nav = useNavigate();
   const { lang, setLang } = useUi();
-  const { user, company, saveCompany } = useAuth();
+  const { user, company, saveCompany, creating } = useAuth();
   const [step, setStep] = useState(0);
   const [f, setF] = useState({ name: company?.name || "", phone: "", email: user?.email || "", website: "", area: "", trade: "painting", door: "", drawer: "", depositPct: "30" });
   const [busy, setBusy] = useState(false);
@@ -72,7 +72,7 @@ export default function Onboarding() {
         </>}
         {step === 4 && <p className="sub">{t("Create your first estimate, or look around with a sample job.", "Crea tu primer presupuesto o explora con un trabajo de ejemplo.")}</p>}
         <div className="onb-foot">
-          {step === 0 ? <button className="link" onClick={async () => { await backend.signOut(); nav("/login"); }}>{t("I already have an account", "Ya tengo cuenta")}</button>
+          {step === 0 ? (creating ? <span /> : <button className="link" onClick={async () => { await backend.signOut(); nav("/login"); }}>{t("I already have an account", "Ya tengo cuenta")}</button>)
             : step < 4 ? <button className="btn" onClick={() => setStep(step - 1)}>{t("Back", "Atrás")}</button> : <span />}
           {step < 4
             ? <button className="btn pri" disabled={busy || (step === 1 && !f.name.trim())} onClick={next}>{t("Continue", "Continuar")}</button>

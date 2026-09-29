@@ -1,3 +1,4 @@
+import BillingBanner from "../components/BillingBanner";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
@@ -151,7 +152,7 @@ function ShellBody() {
         {canNew && <button className="btn pri sm" onClick={newEstimate}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
       </header>
 
-      <main className="main"><InviteBanner /><Outlet /></main>
+      <main className="main"><InviteBanner /><BillingBanner /><Outlet /></main>
 
       {more && <div className="more-back" onClick={() => setMore(false)} />}
       {more && (

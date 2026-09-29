@@ -3,7 +3,7 @@ import {
   sendPasswordResetEmail, onAuthStateChanged, updateProfile, sendEmailVerification,
 } from "firebase/auth";
 import {
-  arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
+  arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, setDoc, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { auth, db, hasFirebase } from "../lib/firebase";
 import { isRole, normEmail } from "../lib/roles";
@@ -50,7 +50,11 @@ export interface Backend {
 const toUser = (u: { uid: string; displayName: string | null; email: string | null; emailVerified: boolean }): User =>
   ({ uid: u.uid, name: u.displayName || "", email: u.email || "", emailVerified: u.emailVerified });
 const clean = <T extends object>(o: T): T => JSON.parse(JSON.stringify(o));
-const stripCompany = ({ id: _i, ownerUid: _o, createdAt: _c, updatedAt: _u, ...rest }: Record<string, unknown>) => rest;
+// billing fields are written only by the Stripe webhook; a stale browser copy must never write them back
+const BILLING_FIELDS = ["plan", "subscriptionStatus", "stripeCustomerId", "stripeSubscriptionId", "trialEndsAt", "currentPeriodEnd", "pastDueSince", "stripeEventAt"];
+const stripBilling = <T extends Record<string, unknown>>(o: T): T => { const c = { ...o }; BILLING_FIELDS.forEach((k) => delete c[k]); return c; };
+const stripCompany = ({ id: _i, ownerUid: _o, createdAt: _c, updatedAt: _u, ...rest }: Record<string, unknown>) => stripBilling(rest);
+const TRIAL_DAYS = 14;
 
 const fbBackend: Backend = {
   onUser: (cb) => onAuthStateChanged(auth, (u) => cb(u ? toUser(u) : null)),
@@ -105,7 +109,7 @@ const fbBackend: Backend = {
     const id = doc(collection(db, "companies")).id;
     const full = { ...defaults(uid), ...c, id, ownerUid: uid } as Company;
     const { id: _omit, ...data } = full;
-    await setDoc(doc(db, "companies", id), { ...clean(data), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    await setDoc(doc(db, "companies", id), { ...clean(data), trialEndsAt: Timestamp.fromMillis(Date.now() + TRIAL_DAYS * 864e5), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     const me = auth.currentUser;
     await setDoc(doc(db, "companies", id, "members", uid), { role: "owner", name: me?.displayName || "", email: normEmail(me?.email), createdAt: serverTimestamp() });
     // merge-write: also creates the profile if sign-up failed to save it earlier
@@ -237,11 +241,11 @@ const demoBackend: Backend = {
     const all = demoCompanies();
     const key = c.id ? Object.keys(all).find((k) => all[k].id === c.id) : undefined;
     if (key) { // update: ownerUid is immutable
-      const full = { ...all[key], ...c, id: all[key].id, ownerUid: all[key].ownerUid } as Company;
+      const full = { ...all[key], ...stripBilling(c as Record<string, unknown>), id: all[key].id, ownerUid: all[key].ownerUid } as Company;
       all[key] = full; write(K.companies, all); return full;
     }
     const id = c.id || uniqId();
-    const full = { ...defaults(uid), ...c, id, ownerUid: uid } as Company;
+    const full = { ...defaults(uid), ...c, id, ownerUid: uid, trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 864e5).toISOString() } as Company;
     all[id] = full; write(K.companies, all);
     const me = demoUid(uid);
     setDemoMembers(id, { ...demoMembersOf(id), [uid]: { role: "owner", name: me?.name || "", email: normEmail(me?.email) } });

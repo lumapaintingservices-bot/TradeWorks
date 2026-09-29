@@ -19,11 +19,11 @@ export const MORE: NavItem[] = [WORK[5], WORK[6], WORK[7], WORK[8], BUSINESS[0]]
 const at = (to: string) => [...WORK, ...BUSINESS].find((i) => i.to === to)!;
 /** Sidebar / bottom bar / More sheet for a role. Workers: Calendar + Team in the bottom bar, Settings under More. */
 export function navFor(role: Role | null | undefined) {
-  const worker = role === "worker";
+  const bottom = role === "worker" ? [at("/calendar"), at("/team")] : navFilter(role, BOTTOM);
   return {
     work: navFilter(role, WORK),
     business: navFilter(role, BUSINESS),
-    bottom: worker ? [at("/calendar"), at("/team")] : navFilter(role, BOTTOM),
-    more: navFilter(role, MORE),
+    bottom,
+    more: navFilter(role, MORE).filter((m) => !bottom.some((b) => b.to === m.to)),
   };
 }

@@ -2,21 +2,33 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
 import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, Payout, Settings, Task, Worker } from "../lib/types";
-import { removeRec, saveRec, subscribe, type Rec } from "./repo";
+import { subscriptionPlan } from "../lib/workerView";
+import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from "./repo";
 
+/**
+ * Live rows of one company collection.
+ *  - owner / admin: the whole collection.
+ *  - worker: Firestore rules are not filters, so only what the rules allow is requested (src/lib/workerView.ts subscriptionPlan):
+ *    tasks / hours where workerId == mine, clock / workers only the doc with my worker id; every other collection is not
+ *    subscribed at all (rows [] and loading false). `patch` changes single fields (a worker ticking a task).
+ */
 export function useCollection<T extends Rec>(col: string) {
-  const { company } = useAuth();
+  const { company, role, workerId } = useAuth();
   const cid = company?.id;
   const [rows, setRows] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!cid) return;
+    const plan = subscriptionPlan(role, workerId, col);
+    if (plan.kind === "none") { setRows([]); setLoading(false); return; }
     setLoading(true);
-    return subscribe<T>(cid, col, (r) => { setRows(r); setLoading(false); });
-  }, [cid, col]);
+    if (plan.kind === "doc") return subscribeDoc<T>(cid, col, plan.id, (r) => { setRows(r ? [r] : []); setLoading(false); });
+    return subscribe<T>(cid, col, (r) => { setRows(r); setLoading(false); }, plan.kind === "filter" ? { field: plan.field, value: plan.value } : undefined);
+  }, [cid, col, role, workerId]);
   const save = useCallback((r: T) => saveRec(cid!, col, r), [cid, col]);
   const remove = useCallback((id: string) => removeRec(cid!, col, id), [cid, col]);
-  return { rows, loading, save, remove };
+  const patch = useCallback((id: string, fields: Partial<T>) => patchRec(cid!, col, id, fields as Record<string, unknown>), [cid, col]);
+  return { rows, loading, save, remove, patch };
 }
 export const useClients = () => useCollection<Client & Rec>("clients");
 export const useInvoices = () => useCollection<Invoice & Rec>("invoices");

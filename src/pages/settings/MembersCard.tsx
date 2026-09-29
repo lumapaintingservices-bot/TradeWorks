@@ -128,8 +128,8 @@ export default function MembersCard() {
             return (
               <div className="mb-row" key={m.uid}>
                 <div className="mb-who">
-                  <b><span>{m.name || m.email || t("(no name)", "(sin nombre)")}</span>{self && <span className="mb-you">{t("you", "tú")}</span>}</b>
-                  <small>{m.email || "—"}</small>
+                  <b><span>{m.name || (self ? user.name : "") || m.email || t("(no name)", "(sin nombre)")}</span>{self && <span className="mb-you">{t("you", "tú")}</span>}</b>
+                  <small>{m.email || (self ? user.email : "") || "—"}</small>
                 </div>
                 <div>
                   <div className="mb-lbl">{t("Role", "Rol")}</div>

@@ -25,12 +25,25 @@ service cloud.firestore {
     // users.companies is only a hint: a company counts only if its members/{uid} doc exists.
     match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
 
+    // billing fields are written only by the Stripe webhook (service account), never from the browser
+    function billingUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['plan', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
+                 'trialEndsAt', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt']);
+    }
+
     match /companies/{cid} {
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      // a new company may only start as a trial that ends within 15 days
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt'])
+        && request.resource.data.get('plan', 'trial') == 'trial'
+        && (!('trialEndsAt' in request.resource.data)
+            || (request.resource.data.trialEndsAt is timestamp
+                && request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd')));
       // every member (incl. workers) reads the company doc: name, logo, brand color
       allow read: if member(cid);
       // owners and admins edit business info; ownerUid and createdAt can never change (admins cannot "change owners")
-      allow update: if admin(cid)
+      allow update: if admin(cid) && billingUntouched()
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
       // only the owner who created the company can delete it (there is no button for it yet)

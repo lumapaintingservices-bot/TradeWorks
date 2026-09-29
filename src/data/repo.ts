@@ -1,5 +1,6 @@
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { db, hasFirebase } from "../lib/firebase";
+import { matchFilter } from "../lib/workerView";
 
 /** Every record: id, companyId, createdAt, updatedAt. Firebase when configured, otherwise a localStorage demo. */
 export type Rec = { id: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
@@ -9,11 +10,35 @@ const key = (cid: string, col: string) => `tw.demo.${cid}.${col}`;
 const bus = new EventTarget();
 const readLocal = <T,>(cid: string, col: string): T[] => { try { return JSON.parse(localStorage.getItem(key(cid, col)) || "[]"); } catch { return []; } };
 
-export function subscribe<T extends Rec>(cid: string, col: string, cb: Cb<T>): () => void {
+/** Optional equality filter. Workers MUST use it: Firestore rules are not filters, so a whole-collection read is denied. */
+export type SubFilter = { field: string; value: string };
+const reportErr = (what: string, err: unknown) => { console.error(`[TradeWorks] could not read ${what}:`, err); };
+
+/**
+ * Live rows of companies/{cid}/{col}. With `filter` it becomes where(field == value) (demo mode filters locally).
+ * On a listener error (e.g. permission-denied) `cb([])` is called and the error is reported, so `loading` never sticks.
+ */
+export function subscribe<T extends Rec>(cid: string, col: string, cb: Cb<T>, filter?: SubFilter, onError?: (err: unknown) => void): () => void {
   if (hasFirebase) {
-    return onSnapshot(collection(db, "companies", cid, col), (snap) => cb(snap.docs.map((d) => ({ ...d.data(), id: d.id }) as T)));
+    const ref = collection(db, "companies", cid, col);
+    return onSnapshot(filter ? query(ref, where(filter.field, "==", filter.value)) : ref,
+      (snap) => cb(snap.docs.map((d) => ({ ...d.data(), id: d.id }) as T)),
+      (err) => { reportErr(`${col}`, err); onError?.(err); cb([]); });
   }
-  const fire = () => cb(readLocal<T>(cid, col));
+  const fire = () => cb(readLocal<T>(cid, col).filter((r) => matchFilter(r as unknown as Record<string, unknown>, filter)));
+  const h = (ev: Event) => { if ((ev as CustomEvent).detail === key(cid, col)) fire(); };
+  bus.addEventListener("change", h); fire();
+  return () => bus.removeEventListener("change", h);
+}
+
+/** Live single document companies/{cid}/{col}/{id} (null when it does not exist or cannot be read). */
+export function subscribeDoc<T extends Rec>(cid: string, col: string, id: string, cb: (row: T | null) => void, onError?: (err: unknown) => void): () => void {
+  if (hasFirebase) {
+    return onSnapshot(doc(db, "companies", cid, col, id),
+      (s) => cb(s.exists() ? ({ ...s.data(), id: s.id } as T) : null),
+      (err) => { reportErr(`${col}/${id}`, err); onError?.(err); cb(null); });
+  }
+  const fire = () => cb(readLocal<T>(cid, col).find((r) => r.id === id) ?? null);
   const h = (ev: Event) => { if ((ev as CustomEvent).detail === key(cid, col)) fire(); };
   bus.addEventListener("change", h); fire();
   return () => bus.removeEventListener("change", h);
@@ -34,6 +59,20 @@ export async function saveRec<T extends Rec>(cid: string, col: string, rec: T): 
   bus.dispatchEvent(new CustomEvent("change", { detail: key(cid, col) }));
 }
 
+/**
+ * Changes only some fields of an existing record (updateDoc), so a worker ticking a task does not overwrite the owner's
+ * edits, and the rules see exactly `patch` + updatedAt as the changed keys.
+ */
+export async function patchRec(cid: string, col: string, id: string, patch: Record<string, unknown>): Promise<void> {
+  const clean = JSON.parse(JSON.stringify(patch));
+  if (hasFirebase) { await updateDoc(doc(db, "companies", cid, col, id), { ...clean, updatedAt: serverTimestamp() }); return; }
+  const rows = readLocal<Rec>(cid, col), i = rows.findIndex((r) => r.id === id);
+  if (i < 0) throw new Error("not-found");
+  rows[i] = { ...rows[i], ...clean, updatedAt: new Date().toISOString() };
+  localStorage.setItem(key(cid, col), JSON.stringify(rows));
+  bus.dispatchEvent(new CustomEvent("change", { detail: key(cid, col) }));
+}
+
 export async function removeRec(cid: string, col: string, id: string): Promise<void> {
   if (hasFirebase) { await deleteDoc(doc(db, "companies", cid, col, id)); return; }
   localStorage.setItem(key(cid, col), JSON.stringify(readLocal<Rec>(cid, col).filter((r) => r.id !== id)));
@@ -42,7 +81,7 @@ export async function removeRec(cid: string, col: string, id: string): Promise<v
 
 /* ---------- top-level collections (portal, leads, public) ----------
    These are readable by anyone with the id/token (see docs/06-security-rules.md), so they never hold owner-only data. */
-import { getDoc, getDocs, query, where, updateDoc } from "firebase/firestore";
+import { getDoc, getDocs } from "firebase/firestore";
 
 const topKey = (col: string, id: string) => `tw.demo.top.${col}.${id}`;
 const topBus = new EventTarget();

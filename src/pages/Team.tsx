@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
 import { useClients, useClock, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
 import { useT } from "../i18n";
 import { clientNameOf, jobStatus } from "../lib/calendar";
@@ -15,6 +16,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { NumInput } from "../ui/NumInput";
+import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 
 type ModalState =
@@ -25,7 +27,16 @@ type ModalState =
 
 const hrs = (n: number) => n.toFixed(1) + " h";
 
+/**
+ * Team page. Owners / admins get the full page (OwnerTeam). A worker gets WorkerTeam, a separate component tree, so a
+ * worker never mounts hooks for collections the rules do not let them read (estimates, invoices, clients, settings...).
+ */
 export default function Team() {
+  const { role } = useAuth();
+  return role === "worker" ? <WorkerTeam /> : <OwnerTeam />;
+}
+
+function OwnerTeam() {
   const t = useT();
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const nav = useNavigate();
