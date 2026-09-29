@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
-import type { Client, Estimate, Settings } from "../lib/types";
+import type { Client, Estimate, Invoice, Settings, Task } from "../lib/types";
 import { removeRec, saveRec, subscribe, type Rec } from "./repo";
 
 export function useCollection<T extends Rec>(col: string) {
@@ -19,6 +19,8 @@ export function useCollection<T extends Rec>(col: string) {
   return { rows, loading, save, remove };
 }
 export const useClients = () => useCollection<Client & Rec>("clients");
+export const useInvoices = () => useCollection<Invoice & Rec>("invoices");
+export const useTasks = () => useCollection<Task & Rec>("tasks");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
 
 /** Company settings live in a single doc: settings/main. Missing fields fall back to defaults. */

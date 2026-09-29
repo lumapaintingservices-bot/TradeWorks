@@ -25,7 +25,7 @@ export type Estimate = {
   showMaterials: boolean; materialsMode: "included" | "added"; materialsList: MatRow[]; matBuyer: "me" | "paint" | "client";
   laborMode?: "solo" | "crew"; extraHrs: number;
   actualMaterialCost?: number;
-  changeOrders: { n: number; status: string; amount: number; hours?: number }[];
+  changeOrders: ChangeOrder[];
   portal?: { token: string; live?: boolean };
   portalViews?: string[]; portalSeen?: { views: number; picks: string; sign: boolean; paid?: string; co?: Record<string, number> };
   activity?: { at: string; text: string }[];
@@ -33,8 +33,13 @@ export type Estimate = {
   signature?: { name: string; img: string; date: string; via: string; at: string } | null;
   payClaim?: { method: string; at: string };
   sentAt?: string;
+  snooze?: Record<string, string>; reviewAsked?: boolean; warrantyChecked?: boolean;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
+export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
+export type Invoice = { id: string; number: string; estId: string; kind: "deposit" | "balance" | "co"; amount: number; date: string; status: "Unpaid" | "Paid"; paidDate?: string; coId?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type Task = { id: string; title: string; date: string; time?: string; note?: string; estId?: string; workerId?: string; done?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type MessageTemplates = Partial<Record<string, { en: string; es: string }>>;
 export type ChatMsg = { from: "client" | "owner"; text: string; at: string };
 
 export type Client = {
@@ -75,7 +80,9 @@ export type Settings = {
   typePresets: Partial<Record<Exclude<JobType, "cabinets">, TypePreset>>;
   services: string; servicesEs: string;
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
-  numbering: { nextEst: number };
+  numbering: { nextEst: number; nextInv?: number };
   payZelle: string; payZelleName: string; payNote: string;
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
+  followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
+  calOn?: boolean; calToken?: string;
 };
