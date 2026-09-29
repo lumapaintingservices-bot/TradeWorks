@@ -140,9 +140,15 @@ export default function EstimateEditor() {
       </div>
 
       <div className="tiles">
-        {([[t("Client price", "Precio al cliente"), money(tot.total)], [t("Your hours", "Tus horas"), x.h.total + " h"], [t("Materials", "Materiales"), money(x.mat)],
-          [t("What you keep", "Lo que te queda"), money(x.profit)], [t("Earn per hour", "Ganas por hora"), money(x.perHour)]] as const).map(([k, v]) => (
-          <div className="tile card" key={k}><span>{k}</span><b>{v}</b></div>))}
+        {(x.mode === "solo"
+          ? [[t("Client price", "Precio al cliente"), money(tot.total), ""], [t("Your hours", "Tus horas"), x.h.total + " h", ""], [t("Materials", "Materiales"), money(x.mat), ""],
+            [t("What you keep", "Lo que te queda"), money(x.profit), ""],
+            [t("Earn per hour", "Ganas por hora"), x.h.total > 0 ? money(x.perHour) : "—", x.perHour >= x.targetHourly ? "good" : x.perHour >= x.targetHourly * 0.75 ? "mid" : "low"]]
+          : [[t("Client price", "Precio al cliente"), money(tot.total), ""], [t("Labor hours", "Horas de trabajo"), x.h.total + " h", ""], [t("Your cost", "Tu costo"), money(x.cost), ""],
+            [t("Profit", "Ganancia"), money(x.profit), ""],
+            [t("Real margin", "Margen real"), Math.round(x.margin) + "%", x.margin >= x.target ? "good" : x.margin >= x.target - 15 ? "mid" : "low"]]
+        ).map(([k, v, tone]) => (
+          <div className={"tile card" + (tone ? " tone-" + tone : "")} key={k}><span>{k}</span><b>{v}</b></div>))}
       </div>
 
       <div className="ed-grid">

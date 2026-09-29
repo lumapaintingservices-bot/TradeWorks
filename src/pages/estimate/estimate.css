@@ -4,6 +4,7 @@
 .actions select{width:auto;height:38px}
 .tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:16px}
 .tile{padding:14px 18px}.tile span{display:block;font-size:12.5px;color:var(--ink-3);margin-bottom:4px}
+.tile.tone-good b{color:var(--ok)}.tile.tone-mid b{color:var(--warn)}.tile.tone-low b{color:var(--bad)}
 .tile b{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .ed-grid{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:16px;align-items:start}
 .ed-grid>*{min-width:0}
