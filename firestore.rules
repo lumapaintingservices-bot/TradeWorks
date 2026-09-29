@@ -1,0 +1,226 @@
+rules_version = '2';
+// TradeWorks Firestore rules. Paste this whole file in Firebase console > Firestore Database > Rules > Publish.
+//
+// Roles (companies/{cid}/members/{uid}.role), mirrored in src/lib/roles.ts:
+//   owner  everything, incl. members and roles
+//   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
+//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record
+// The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function memberPath(cid, uid) { return /databases/$(db)/documents/companies/$(cid)/members/$(uid); }
+    function member(cid) { return signedIn() && exists(memberPath(cid, request.auth.uid)); }
+    function role(cid) { return get(memberPath(cid, request.auth.uid)).data.role; }
+    function isOwner(cid) { return member(cid) && role(cid) == 'owner'; }
+    function admin(cid) { return member(cid) && role(cid) in ['owner', 'admin']; }
+    function isWorker(cid) { return member(cid) && role(cid) == 'worker'; }
+    // the workers/{id} record a worker login is linked to ('' when not linked yet: then nothing matches)
+    function myWorkerId(cid) { return get(memberPath(cid, request.auth.uid)).data.get('workerId', ''); }
+    // a worker may only stamp their OWN current pay rate on an hours entry (or none: the app then uses the worker record's rate)
+    function workerRate(cid) { return get(/databases/$(db)/documents/companies/$(cid)/workers/$(myWorkerId(cid))).data.get('rate', null); }
+    function hoursShapeOk() {
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'companyId', 'createdAt', 'updatedAt'])
+        && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000;
+    }
+    function clockShapeOk() { return request.resource.data.keys().hasOnly(['at', 'estId', 'companyId', 'createdAt', 'updatedAt']); }
+    function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
+    function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
+    function isInvitee(email) { return signedIn() && myEmail() != '' && myEmail() == email; }
+
+    // Each person only reads/writes their own profile (name, language, list of companies, active company).
+    // users.companies is only a hint: a company counts only if its members/{uid} doc exists.
+    match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
+
+    // billing fields are written only by the Stripe webhook (service account), never from the browser
+    function billingUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['plan', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
+                 'trialEndsAt', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt']);
+    }
+
+    match /companies/{cid} {
+      // a new company may only start as a trial that ends within 15 days
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && !request.resource.data.keys().hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt'])
+        && request.resource.data.get('plan', 'trial') == 'trial'
+        && (!('trialEndsAt' in request.resource.data)
+            || (request.resource.data.trialEndsAt is timestamp
+                && request.resource.data.trialEndsAt <= request.time + duration.value(15, 'd')));
+      // every member (incl. workers) reads the company doc: name, logo, brand color
+      allow read: if member(cid);
+      // owners and admins edit business info; ownerUid and createdAt can never change (admins cannot "change owners")
+      allow update: if admin(cid) && billingUntouched()
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
+      // only the owner who created the company can delete it (there is no button for it yet)
+      allow delete: if isOwner(cid) && resource.data.ownerUid == request.auth.uid;
+
+      // ---- team members: companies/{cid}/members/{uid} = { role, workerId?, name, email, createdAt } ----
+      match /members/{uid} {
+        // owners/admins list everybody; anyone reads their own doc (that is how the app learns the role)
+        allow read: if admin(cid) || (signedIn() && request.auth.uid == uid);
+
+        // A member doc can only be created by the person it is for, and only in one of two ways:
+        //  1. the company creator adds themselves as its first owner
+        //  2. they hold a matching invite (invites/{their e-mail}) for this company, with the SAME role / workerId,
+        //     and their e-mail is verified (otherwise anyone could sign up with someone else's e-mail)
+        // There is no other way in: nobody can add themselves as admin/owner, and admins cannot add members directly.
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['role', 'workerId', 'name', 'email', 'createdAt'])
+          && request.resource.data.role in ['owner', 'admin', 'worker']
+          && (
+            (companyOwnerUid(cid) == request.auth.uid && request.resource.data.role == 'owner')
+            || (
+              request.auth.token.email_verified == true
+              && myEmail() != ''
+              && exists(/databases/$(db)/documents/invites/$(myEmail()))
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.companyId == cid
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.role == request.resource.data.role
+              && get(/databases/$(db)/documents/invites/$(myEmail())).data.get('workerId', null) == request.resource.data.get('workerId', null)
+              && request.resource.data.email == myEmail()
+            )
+          );
+
+        // Role changes. Nobody edits their own doc, so nobody can promote themselves.
+        //  owner: any member except the company creator; only role / workerId may change
+        //  admin: only the worker link (workerId) of a member who is and stays a worker
+        allow update: if
+          (isOwner(cid) && uid != companyOwnerUid(cid)
+            && request.resource.data.role in ['owner', 'admin', 'worker']
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'workerId']))
+          || (admin(cid) && uid != request.auth.uid
+            && resource.data.role == 'worker' && request.resource.data.role == 'worker'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workerId']));
+
+        // Removing: never the company creator. A member may leave; owners remove anyone else; admins remove workers.
+        allow delete: if uid != companyOwnerUid(cid) && (
+          (signedIn() && request.auth.uid == uid)
+          || isOwner(cid)
+          || (admin(cid) && resource.data.role == 'worker')
+        );
+      }
+
+      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock ...
+      // owners/admins everything. A worker only touches what is linked to their workerId (rules are not filters:
+      // the app must query with the same filter, see src/lib/roles.ts workerScope()).
+      match /{col}/{id} {
+        allow read: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            ((col == 'tasks' || col == 'hours') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, my hours
+            || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
+          )));
+
+        allow create: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
+              && (!('rate' in request.resource.data) || request.resource.data.rate == workerRate(cid)))
+            || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
+          )));
+
+        allow update: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
+              && (request.resource.data.get('rate', null) == resource.data.get('rate', null) || request.resource.data.rate == workerRate(cid)))
+            || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
+            // tick a task assigned to me as done (nothing else on it may change)
+            || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))
+          )));
+
+        allow delete: if col != 'members' && (admin(cid) || (
+          isWorker(cid) && myWorkerId(cid) != '' && (
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid))
+            || (col == 'clock' && id == myWorkerId(cid))
+          )));
+      }
+    }
+
+    // ---- invites/{emailLower} = { companyId, companyName, role, workerId?, invitedBy, invitedByName?, createdAt } ----
+    // The app cannot send e-mail: the inviter shares a link; whoever signs up / in with EXACTLY that (verified) e-mail
+    // sees "You were invited to X - Join", which creates their members doc (rule above) and deletes the invite.
+    function inviteShape(d) {
+      return d.keys().hasOnly(['companyId', 'companyName', 'role', 'workerId', 'invitedBy', 'invitedByName', 'createdAt'])
+        && d.companyId is string && d.companyName is string && d.role in ['owner', 'admin', 'worker']
+        && d.invitedBy == request.auth.uid;
+    }
+    // owners invite any role; admins invite workers only
+    function mayInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    // same limits for changing / revoking an existing invite
+    function mayManageInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    match /invites/{email} {
+      // the invited person reads their own; owners/admins list their company's (query where companyId == cid)
+      allow read: if isInvitee(email) || (resource != null && admin(resource.data.companyId));
+      allow create: if signedIn() && email == email.lower() && inviteShape(request.resource.data) && mayInvite(request.resource.data);
+      // re-inviting the same e-mail overwrites: allowed only when you may manage the old invite AND the new one
+      allow update: if signedIn() && inviteShape(request.resource.data) && mayInvite(request.resource.data) && mayManageInvite(resource.data);
+      // revoke (owner / admin for workers) or consume (the invited person, when joining or when already a member)
+      allow delete: if isInvitee(email) || (signedIn() && mayManageInvite(resource.data));
+    }
+
+    // Client link: anyone with the secret token can open it; the client may only change the `client` field.
+    match /portal/{token} {
+      allow get: if true;
+      allow create: if admin(request.resource.data.owner);
+      allow delete: if admin(resource.data.owner);
+      // owners/admins edit the snapshot but can never hand the link to another company;
+      // a visitor may only touch `client` (views, picks, sign, chat, paid, coSign), with sane list sizes
+      allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client'])
+            && request.resource.data.client is map
+            && request.resource.data.client.keys().hasOnly(['views', 'picks', 'sign', 'chat', 'paid', 'coSign'])
+            && request.resource.data.client.get('chat', []).size() <= 300
+            && request.resource.data.client.get('views', []).size() <= 300);
+      match /photos/{pid} {
+        allow get: if true;
+        allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner);
+      }
+    }
+
+    // Lead form: anyone can send a request (validated); only the company can read or manage it.
+    // optional text field: absent, or a string of at most n characters
+    function optStr(d, k, n) { return !(k in d) || (d[k] is string && d[k].size() <= n); }
+    match /leads/{lid} {
+      // limits mirror what the form itself sends (src/pages/public/LeadForm.tsx submit())
+      allow create: if request.resource.data.owner is string
+        && exists(/databases/$(db)/documents/companies/$(request.resource.data.owner))
+        && request.resource.data.keys().hasOnly(['owner', 'name', 'phone', 'email', 'city', 'address', 'service', 'message', 'heard', 'lang', 'photos', 'details', 'at', 'page'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 30
+        && request.resource.data.photos is list && request.resource.data.photos.size() <= 5
+        && optStr(request.resource.data, 'email', 120) && optStr(request.resource.data, 'city', 80) && optStr(request.resource.data, 'address', 160)
+        && optStr(request.resource.data, 'service', 120) && optStr(request.resource.data, 'message', 1500) && optStr(request.resource.data, 'heard', 40)
+        && optStr(request.resource.data, 'lang', 5) && optStr(request.resource.data, 'at', 40) && optStr(request.resource.data, 'page', 200)
+        && (!('details' in request.resource.data)
+            || (request.resource.data.details is map && request.resource.data.details.size() <= 20
+                && optStr(request.resource.data.details, 'other', 800)
+                && request.resource.data.details.get('types', []) is list && request.resource.data.details.get('types', []).size() <= 5));
+      allow read, update, delete: if admin(resource.data.owner);
+      match /photos/{pid} {
+        // one JPEG/PNG/WebP data URL (the form shrinks photos to ~1100 px), well under the 1 MiB document limit
+        allow create: if request.resource.data.keys().hasOnly(['data', 'at'])
+          && request.resource.data.data is string && request.resource.data.data.size() <= 900000
+          && request.resource.data.data.matches('data:image/(jpeg|png|webp);base64,.*')
+          && request.resource.data.at is string && request.resource.data.at.size() <= 40
+          && !exists(/databases/$(db)/documents/leads/$(lid));
+        allow read, delete: if admin(get(/databases/$(db)/documents/leads/$(lid)).data.owner);
+      }
+    }
+
+    // Public business card used by the lead form (name, phone, logo, brand color). No private data.
+    match /public/{cid} { allow get: if true; allow write: if admin(cid); }
+
+    function calfeedShape() {
+      return request.resource.data.keys().hasOnly(['owner', 'ics', 'updatedAt'])
+        && request.resource.data.ics is string && request.resource.data.ics.size() <= 900000;
+    }
+    // Live calendar feed (.ics) read by the Cloudflare worker.
+    match /calfeed/{token} {
+      allow get: if true;
+      // shape: { owner, ics, updatedAt }. Changing an existing feed requires owning the OLD one, and the owner cannot change.
+      allow create: if admin(request.resource.data.owner) && calfeedShape();
+      allow update: if admin(resource.data.owner) && request.resource.data.owner == resource.data.owner && calfeedShape();
+      allow delete: if admin(resource.data.owner);
+    }
+  }
+}

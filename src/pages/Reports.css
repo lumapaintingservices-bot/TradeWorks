@@ -1,0 +1,60 @@
+/* Reports page — tokens only. Shared tiles / cards / bars live in dashboard/charts.css (cx-*, sx-*). */
+.rp .tabs{margin-bottom:16px;display:flex;width:max-content;max-width:100%}
+.rp .strong{font-weight:600}
+.rp .ok{color:var(--ok)}.rp .bad{color:var(--bad)}.rp .warn{color:var(--warn)}
+
+/* statement */
+.rp-stmt{width:100%;border-collapse:collapse}
+.rp-stmt td{padding:10px 24px;border-top:1px solid var(--line-2);font-variant-numeric:tabular-nums}
+.rp-stmt tr:first-child td{border-top:0;padding-top:18px}
+.rp-stmt td.r{text-align:right;white-space:nowrap}
+.rp-stmt td.ind{padding-left:40px;color:var(--ink-2)}
+.rp-stmt tr.net td{border-top:2px solid var(--ink);font-size:15px;padding-bottom:18px}
+@media (max-width:640px){.rp-stmt td{padding:9px 16px}.rp-stmt td.ind{padding-left:28px}}
+
+/* all jobs: actual vs estimate */
+.aj{display:grid}
+.aj-h,.aj-r{display:grid;grid-template-columns:minmax(0,1.6fr) 110px minmax(0,1.2fr) 110px 70px;gap:14px;align-items:center}
+.aj-h{font-size:11.5px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-2);padding:0 4px 10px;border-bottom:1px solid var(--line)}
+.aj-h .lg{display:inline-block;width:9px;height:9px;vertical-align:baseline;border-radius:2px;margin-right:5px}
+.aj-h .lg.lg-in{background:var(--ok)}.aj-h .lg.lg-co{background:var(--acc)}
+.aj-r{border:0;border-bottom:1px solid var(--line);background:none;padding:14px 4px;text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}
+.aj-r:last-child{border-bottom:0}
+.aj-r:hover{background:var(--surface-2)}
+.aj .r{text-align:right}
+.aj .n{font-variant-numeric:tabular-nums;line-height:1.7;font-size:14px}
+.aj .nm{min-width:0}
+.aj .nm b{display:block;font-size:14.5px}
+.aj .nm em{font-style:normal;color:var(--ink-2);font-size:13.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aj .bars{display:grid;gap:10px}
+.aj .bars .t{display:block;height:13px;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.aj .bars .t i{display:block;height:100%}
+.aj .mg{font-size:18px;font-weight:600}
+.aj .mg em{display:block;font-style:normal;font-size:10.5px;font-weight:500;color:var(--ink-3)}
+@media (max-width:640px){
+  .aj-h,.aj-r{grid-template-columns:minmax(0,1.3fr) 84px minmax(0,1fr) 50px;gap:10px}
+  .aj-h span:nth-child(4),.aj-r>span:nth-child(4){display:none}
+  .aj .n{font-size:12.5px}
+  .aj .nm b{font-size:13.5px}.aj .nm em{font-size:12.5px}
+  .aj .mg{font-size:15px}
+  .aj .aj-t{display:none}
+  .aj .nm b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+  .aj-h span{white-space:nowrap}.aj-h span:first-child{white-space:normal}
+  .rp .tabs button{padding:7px 10px;font-size:13px}
+}
+
+/* details */
+.tbl.rp-det th,.tbl.rp-det td{padding:12px 14px}
+.tbl.rp-det th:first-child,.tbl.rp-det td:first-child{padding-left:24px}.tbl.rp-det th:last-child,.tbl.rp-det td:last-child{padding-right:24px}
+.rp-det .nw{white-space:nowrap}
+.rp-sub{font-size:12px;font-weight:400}
+.rp-pr{font-weight:600}
+.rp .ec .l2 .ok,.rp .ec .l2 .warn,.rp .ec .l2 .bad{font-weight:600}
+
+/* export */
+.rp-per{font-size:13px}
+.rp-per b{color:var(--ink)}
+.rp-exp{display:grid;gap:10px;max-width:640px}
+.rp .rp-exp-b{height:auto;min-height:52px;padding:10px 16px;flex-direction:column;align-items:flex-start;gap:2px;text-align:left}
+.rp-exp-t{font-weight:600}
+.rp-exp-n{font-size:12px;font-weight:400;overflow-wrap:anywhere}

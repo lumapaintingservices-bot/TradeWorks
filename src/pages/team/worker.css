@@ -1,0 +1,29 @@
+/* Worker view of the Team page (own hours, clock, own tasks). Tokens only. */
+.wk-clock{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;margin-bottom:16px}
+.wk-clock-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wk-lbl{font-size:12.5px;color:var(--ink-3)}
+.wk-clock-t b{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.wk-clock-t .wk-run{color:var(--ok)}
+.wk-clock-t small{font-size:12.5px}
+.wk-btn{height:46px;padding:0 24px;font-size:15px;flex:none}
+.wk-tiles{grid-template-columns:repeat(3,1fr)}
+.wk-tasks{padding:4px 24px 12px}
+.wk-task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.wk-task:last-child{border-bottom:0}
+.wk-info{flex:1;min-width:0}
+.wk-tt{font-weight:600;word-break:break-word}
+.wk-tt.done{color:var(--ink-3);text-decoration:line-through}
+.wk-sub{font-size:12.5px;margin-top:2px}
+.wk-pre{white-space:pre-wrap}
+.wk-chk{width:28px;height:28px;flex:none;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:transparent;font-size:15px;line-height:1;padding:0;display:grid;place-items:center;cursor:pointer}
+.wk-chk:hover{border-color:var(--acc)}
+.wk-chk.on{background:var(--ok);border-color:var(--ok);color:var(--bg)}
+@media(max-width:640px){
+  .wk-clock{padding:14px 16px;flex-direction:column;align-items:stretch}
+  .wk-btn{width:100%;justify-content:center}
+  .wk-tiles{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .wk-tiles .tm-tile{padding:10px 10px}
+  .wk-tiles .tm-tile b{font-size:17px}
+  .wk-tiles .tm-tile small{display:none}
+  .wk-tasks{padding:4px 16px 8px}
+}

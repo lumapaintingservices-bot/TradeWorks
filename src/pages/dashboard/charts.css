@@ -1,0 +1,87 @@
+/* Money / Charts / Sources tabs + Reports: shared primitives (cx-*). Tokens only. */
+.cx-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.cx-tile{display:block;text-align:left;padding:16px 20px;color:var(--ink);min-width:0;font:inherit}
+button.cx-tile.click{width:100%;cursor:pointer}
+button.cx-tile.click:hover{background:var(--surface-2)}
+.cx-k{display:block;font-size:13.5px;font-weight:500;color:var(--ink)}
+.cx-v{display:block;font-size:28px;font-weight:600;letter-spacing:-.03em;margin-top:10px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cx-v.ok{color:var(--ok)}.cx-v.bad{color:var(--bad)}.cx-v.warn{color:var(--warn)}
+.cx-m{display:block;font-size:12.5px;color:var(--ink-3);margin-top:4px}
+button.cx-tile .cx-m.link{text-decoration:underline}
+.cx-card{margin-bottom:16px;min-width:0}
+.cx-h{gap:12px;flex-wrap:wrap}
+.cx-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cx-sub{font-size:12.5px;margin:-4px 0 14px}
+.cx-note{font-size:12.5px;margin-top:12px;line-height:1.5}
+.cx-flush{padding:0;overflow-x:auto;border-radius:0 0 var(--r-card) var(--r-card)}
+.cx-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.cx-grid2>.cx-card{margin-bottom:0}
+.cx-grid2+.cx-grid2,.cx-grid2+.cx-card,.cx-card+.cx-grid2{margin-top:16px}
+.tabs.cx-pills{margin-bottom:16px;display:flex;width:max-content;max-width:100%}
+.tabs.cx-pills.sm{margin:0;padding:3px}
+.tabs.cx-pills.sm button{padding:5px 11px;font-size:13px}
+.cx-empty{font-size:13.5px;padding:8px 0}
+
+/* horizontal bars (funnel, close rate by ..., where the money went) */
+.cx-row{display:grid;grid-template-columns:minmax(90px,30%) minmax(0,1fr) 128px;align-items:center;gap:12px;padding:8px 0}
+.cx-l{font-size:13.5px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cx-track{height:12px;background:var(--line);border-radius:999px;overflow:hidden}
+.cx-track i{display:block;height:100%;background:var(--acc);border-radius:999px;min-width:0}
+.cx-track i.best{background:var(--ok)}
+.cx-track i.ink{background:var(--ink)}
+.cx-r{font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
+.cx-r b{font-weight:600}
+.cx-r em{font-style:normal;color:var(--ink-3);font-size:12px}
+.cx-best{font-size:12.5px;margin-top:10px}
+.cx-best b{color:var(--ink)}
+
+/* range sub tabs sit right under the page tabs */
+.cx-ranges{overflow-x:auto}
+
+/* month drill-down list inside the modal */
+.cx-jobs-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:10px}
+.cx-jobs .tbl th:first-child,.cx-jobs .tbl td:first-child{padding-left:0}
+
+@media (max-width:1000px){.cx-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.cx-grid2{grid-template-columns:1fr}.cx-grid2>.cx-card{margin-bottom:16px}.cx-grid2+.cx-grid2,.cx-grid2+.cx-card,.cx-card+.cx-grid2{margin-top:0}}
+@media (max-width:640px){
+  .cx-tiles{gap:10px;margin-bottom:12px}
+  .cx-tile{padding:12px 14px}
+  .cx-k{font-size:12.5px}
+  .cx-v{font-size:22px;margin-top:6px}
+  .cx-m{font-size:12px}
+  .cx-row{grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:7px 0}
+  .cx-row .cx-track{grid-column:1 / -1;grid-row:2}
+  .cx-card{margin-bottom:12px}
+  .cx-card .card-h{padding:14px 16px}
+  .cx-flush .card-b{padding:16px}
+}
+
+/* sources table + phone cards */
+.tbl.sx-tbl th,.tbl.sx-tbl td{padding:12px 14px}
+.tbl.sx-tbl th:first-child,.tbl.sx-tbl td:first-child{padding-left:24px}.tbl.sx-tbl th:last-child,.tbl.sx-tbl td:last-child{padding-right:24px}
+.sx-tbl .nw,.cx-tbl .nw{white-space:nowrap}
+.tbl.sx-tbl tfoot td{border-top:1px solid var(--line);background:var(--surface-2);font-weight:600}
+.sx-roi.ok{color:var(--ok)}.sx-roi.bad{color:var(--bad)}
+.sx-card{cursor:default}
+.sx-dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px;margin:10px 0 0}
+.sx-dl div{min-width:0}
+.sx-dl dt{font-size:11.5px;color:var(--ink-3)}
+.sx-dl dd{margin:1px 0 0;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.cx-flush>.cx-sub{padding:14px 24px 0;margin:0 0 12px}
+.cx-flush>.cards{padding:0 16px 16px}
+.cx-flush>.cx-empty{padding:16px 24px}
+@media (max-width:640px){.cx-flush>.cx-sub{padding:12px 16px 0}}
+
+/* money tab */
+.cx-money .cx-tiles:last-of-type{margin-bottom:0}
+.cx-cnt{font-size:13px}
+.tbl.cx-tbl th,.tbl.cx-tbl td{padding:12px 14px}
+.tbl.cx-tbl th:first-child,.tbl.cx-tbl td:first-child{padding-left:24px}.tbl.cx-tbl th:last-child,.tbl.cx-tbl td:last-child{padding-right:24px}
+.tbl.cx-tbl tfoot td{border-top:1px solid var(--line);background:var(--surface-2);font-weight:600}
+.cx-more{padding:0 24px 16px;margin:0}
+@media (max-width:640px){.cx-more{padding:0 16px 12px}}
+
+/* charts tab */
+.cx-hint{font-size:12px;margin:4px 0 0}
+.cx-jobs .tbl td{padding:10px 12px}
+.cx-jobs .tbl .nw{white-space:nowrap}

@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.env.local
+.harness-*/
+.dev.vars
+test-results
+playwright-report

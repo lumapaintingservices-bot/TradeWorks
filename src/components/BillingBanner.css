@@ -1,0 +1,9 @@
+.bill-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 24px;font-size:13.5px;border-bottom:1px solid var(--line);background:var(--tile-amber);color:var(--ink)}
+.bill-banner.bad{background:var(--tile-red)}
+.bill-banner i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--icon-amber)}
+.bill-banner.bad i{background:var(--icon-red)}
+.bill-banner span{flex:1 1 260px;min-width:0}
+.bill-banner .btn{flex:none}
+.bill-x{flex:none;border:0;background:transparent;color:var(--ink-2);font-size:20px;line-height:1;width:32px;height:32px;border-radius:var(--r-sm);cursor:pointer}
+.bill-x:hover{background:var(--surface-2)}
+@media(max-width:640px){.bill-banner{padding:10px 16px}}

@@ -1,0 +1,19 @@
+rules_version = '2';
+// TradeWorks Storage rules. Firebase console > Storage > Rules > Publish.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function member(cid) {
+      // owners and admins only: workers never touch photos or receipts
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
+    }
+    // receipts, photos, logos: only members of that company
+    match /companies/{cid}/{allPaths=**} {
+      allow read: if member(cid);
+      // uploads are photos / receipts / logos: raster images under 5 MB (deletes have no request.resource)
+      allow write: if member(cid) && (request.resource == null
+        || (request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/(jpeg|png|webp|gif)')));
+    }
+  }
+}

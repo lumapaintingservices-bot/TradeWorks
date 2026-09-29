@@ -1,0 +1,13 @@
+Description,,Summary Amt.
+Beginning balance as of 09/01/2026,,"4,210.55"
+Total credits,,"2,500.00"
+Total debits,,"-1,384.72"
+Ending balance as of 09/30/2026,,"5,325.83"
+
+Date,Description,Amount,Running Bal.
+09/01/2026,Beginning balance,,"4,210.55"
+09/02/2026,"POS DEBIT HOME DEPOT #6320 MIAMI FL",-184.37,"4,026.18"
+09/05/2026,"DEPOSIT - CLIENT ZELLE JOHN SMITH","2,500.00","6,526.18"
+09/06/2026,"POS DEBIT WAWA 8112 HOLLYWOOD FL",(45.10),"6,481.08"
+09/10/2026,"NEXT INSURANCE PMT",-89.00,"6,392.08"
+09/20/2026,"EQUIPMENT PURCHASE, TITAN X",-1064.25,"5,327.83"

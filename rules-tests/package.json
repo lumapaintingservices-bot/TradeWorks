@@ -1,0 +1,14 @@
+{
+  "name": "tradeworks-rules-tests",
+  "private": true,
+  "type": "module",
+  "description": "Firestore security-rules tests (run against the local emulator). Kept out of the app's package.json because firebase-tools is large.",
+  "scripts": {
+    "test": "firebase emulators:exec --config ../firebase.json --only firestore --project demo-tw \"node rules.test.mjs && node rules.worker.test.mjs && node rules.security.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0",
+    "firebase-tools": "^15.32.0"
+  }
+}

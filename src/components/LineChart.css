@@ -1,0 +1,21 @@
+.lc{position:relative;display:grid;grid-template-columns:44px 1fr;grid-template-rows:var(--lch) auto auto;column-gap:8px;margin-top:10px}
+.lc-y{position:relative}
+.lc-y span{position:absolute;right:0;transform:translateY(-50%);font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lc-plot{position:relative;grid-column:2;cursor:crosshair;touch-action:pan-y}
+.lc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.lc-g{stroke:var(--chart-grid);stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
+.lc-band{position:absolute;top:0;bottom:0;width:22px;margin-left:-11px;border-radius:8px;background:linear-gradient(180deg,rgba(30,107,255,.14),rgba(30,107,255,0));pointer-events:none;transition:left .12s ease}
+.lc-dot{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:var(--surface);border:3px solid var(--acc);box-shadow:0 1px 4px rgba(16,24,40,.25);pointer-events:none;transition:left .12s,top .12s}
+.lc-tip{position:absolute;transform:translate(-50%,calc(-100% - 14px));background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px;box-shadow:var(--shadow-pop);font-size:12px;white-space:nowrap;pointer-events:none;display:grid;gap:2px;transition:left .12s,top .12s;z-index:2}
+/* near an edge the tip hangs inward (it used to poke out of the card and made phones scroll sideways) */
+.lc-tip.r{transform:translate(-100%,calc(-100% - 14px))}
+.lc-tip.l{transform:translate(0,calc(-100% - 14px))}
+.lc-tip b{font-size:11.5px;color:var(--ink-3);font-weight:500}
+.lc-tip span{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+.lc-tip span i{width:8px;height:8px;border-radius:50%}
+.lc-tip em{font-style:normal;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.lc-x{position:relative;grid-column:2;height:22px}
+.lc-x span{position:absolute;top:6px;transform:translateX(-50%);font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.lc-leg{grid-column:2;display:flex;gap:16px;margin-top:6px;font-size:12.5px;color:var(--ink-2)}
+.lc-leg i{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:6px;vertical-align:-1px}
+@media (max-width:640px){ .lc{grid-template-columns:36px 1fr} .lc-x span:nth-child(even){display:none} }
