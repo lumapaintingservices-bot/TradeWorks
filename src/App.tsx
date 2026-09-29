@@ -111,13 +111,17 @@ const P = (en: string, es: string, icon: string, phase: number) => <Placeholder 
 
 export default function App() {
   const theme = useUi((s) => s.theme);
+  const { pathname } = useLocation();
+  // client-facing pages (client link, lead form, estimate/invoice documents, work order) are always light, whatever the owner's theme
+  const clientPage = /^\/(p\/|request(\/|$)|(estimates|invoices)\/[^/]+\/(doc|work-order)(\/|$))/.test(pathname);
   useEffect(() => {
+    if (clientPage) { document.documentElement.classList.remove("tw-dark"); return; }
     applyTheme(theme);
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const h = () => theme === "auto" && applyTheme(theme);
     mq.addEventListener("change", h);
     return () => mq.removeEventListener("change", h);
-  }, [theme]);
+  }, [theme, clientPage]);
 
   return (
     <Routes>

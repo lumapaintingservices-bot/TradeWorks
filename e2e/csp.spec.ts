@@ -70,8 +70,8 @@ test("the app works under the CSP: sign up, estimate, client link, lead form wit
   await client.goto(link);
   await client.getByLabel("Your full name").fill("Ana Ruiz");
   await sign(client.getByLabel("Signature"));
-  await client.getByRole("button", { name: "Accept & sign", exact: true }).click();
-  await expect(client.getByRole("heading", { name: "✓ Thank you!" })).toBeVisible();
+  await client.getByRole("button", { name: /^Accept estimate/ }).click();
+  await expect(client.getByText(/Thank you! Your project is confirmed/).first()).toBeVisible();
   expect(await client.evaluate(() => (window as unknown as { __v: string[] }).__v)).toEqual([]);
   await client.close();
 
@@ -79,7 +79,7 @@ test("the app works under the CSP: sign up, estimate, client link, lead form wit
   await expect(page.locator("select").first()).toHaveValue("Accepted");
   await expect.poll(async () => (await demoRows<{ signature?: { img?: string } }>(page, cid, "estimates"))[0]?.signature?.img ?? "").toContain("data:image/png");   // saved, not just on screen
   await page.goto(`/estimates/${estId}/doc`);
-  await expect(page.locator("img.sig")).toBeVisible();
+  await expect(page.locator("img.sig-img")).toBeVisible();
 
   // lead form with a photo (shrunk in a canvas, sent as data URL)
   const lead = await context.newPage();

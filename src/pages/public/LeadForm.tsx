@@ -28,7 +28,7 @@ const TIERS = {
   ],
 };
 
-const svg = (d: string, s = 22) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: d }} />;
+const svg = (d: string, s = 22, sw = 1.7) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" dangerouslySetInnerHTML={{ __html: d }} />;
 const ICO: Record<string, string> = {
   cabinets: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18M9.5 8v1.5M14.5 8v1.5M9.5 15v1.5M14.5 15v1.5"/>',
   vanity: '<path d="M4 11h16v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 11v9M9 15h.01M15 15h.01M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -123,7 +123,8 @@ export default function LeadForm() {
   useEffect(() => { if (pub?.name) document.title = `${t("Free estimate", "Presupuesto gratis")} — ${pub.name}`; }, [pub, lang]); // eslint-disable-line
 
   const brand = /^#[0-9a-f]{6}$/i.test(pub?.brandColor || "") ? pub!.brandColor! : "#EF6A2C";
-  const style = { "--acc": brand } as React.CSSProperties;
+  const isDefaultBrand = brand.toLowerCase() === "#ef6a2c"; // the prototype's orange: use its exact tints (other brands derive them with color-mix)
+  const style = { "--acc": brand, ...(isDefaultBrand ? { "--acc-2": "#fdeee6", "--acc-ink": "#c2501b", "--acc-on": "#fffaf7" } : {}) } as React.CSSProperties;
   const isCab = f.types.includes("cabinets") || f.types.includes("vanity");
   const isWall = f.types.includes("interior") || f.types.includes("exterior");
   const total = STEPS.length - 1;
@@ -199,7 +200,7 @@ export default function LeadForm() {
     intro: () => <>
       <div className="lf-hero"><h1>{t("Get your free estimate", "Pida su presupuesto gratis")}</h1>
         <p>{t("Answer a few quick questions about your project. It takes about 2 minutes — photos help us give you an accurate price faster.", "Responda unas preguntas rápidas sobre su proyecto. Toma unos 2 minutos — las fotos nos ayudan a darle un precio exacto más rápido.")}</p>
-        <div className="lf-trust"><span>✓ {t("Free, no obligation", "Gratis, sin compromiso")}</span><span>English &amp; Español</span>{pub?.reviews && <span>★ {t("Customer reviews", "Reseñas de clientes")}</span>}</div></div>
+        <div className="lf-trust">{pub?.reviews && <span><svg width="13" height="13" viewBox="0 0 24 24" fill="#ffb547"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.3l-5.7 3 1.1-6.3L2.8 9.5l6.4-.9z" /></svg> {t("Customer reviews", "Reseñas de clientes")}</span>}<span>✓ {t("Free, no obligation", "Gratis, sin compromiso")}</span><span>English &amp; Español</span></div></div>
       <div className="lf-how">{([["Tell us about it", "Cuéntenos", "Your project, finish and timing.", "Su proyecto, el acabado y cuándo lo quiere."], ["We review it", "Lo revisamos", "We price it from your answers and photos.", "Le ponemos precio con sus respuestas y fotos."], ["Get your estimate", "Reciba su presupuesto", "A clear written estimate you can accept online.", "Un presupuesto claro que puede aceptar en línea."]] as const).map((h, i) =>
         <div key={i}><i>{i + 1}</i><b>{t(h[0], h[1])}</b>{t(h[2], h[3])}</div>)}</div>
     </>,
@@ -269,7 +270,7 @@ export default function LeadForm() {
       <h1>{t("Add photos", "Agregue fotos")}</h1><p className="lf-lead">{t("Photos let us price your project accurately without a visit.", "Con fotos le damos un precio exacto sin necesidad de visita.")}</p>
       <div className="lf-box"><div className="lf-photos">
         {f.photos.map((p, i) => <div className="ph" key={i}><img src={p} alt="" /><button type="button" aria-label="remove" onClick={() => set({ photos: f.photos.filter((_, j) => j !== i) })}>×</button></div>)}
-        {f.photos.length < MAX_PHOTOS && <label className="add"><input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { void addPhotos(e.target.files); e.target.value = ""; }} />{svg(ICO.cam, 24)}{t("Add photo", "Agregar foto")}</label>}
+        {f.photos.length < MAX_PHOTOS && <label className="add"><input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { void addPhotos(e.target.files); e.target.value = ""; }} />{svg(ICO.cam, 24, 1.8)}{t("Add photo", "Agregar foto")}</label>}
       </div>
         <div className="lf-tips">{[["One wide photo of the whole kitchen or room", "Una foto amplia de toda la cocina o el cuarto"], ["A close-up of a door or wall to see the current finish", "Una de cerca de una puerta o pared para ver el acabado actual"], ["Good light — open the blinds or turn on the lights", "Buena luz — abra las persianas o prenda las luces"]].map((x, i) => <div key={i}><i>●</i>{t(x[0], x[1])}</div>)}</div></div>
       <div className="lf-box"><label className="lf-f"><span>{t("Anything else we should know?", "¿Algo más que debamos saber?")} <i>{t("(optional)", "(opcional)")}</i></span>
@@ -291,7 +292,7 @@ export default function LeadForm() {
           </div>
           <label className="lf-f"><span>{t("Email", "Correo")} <i>{t("(optional)", "(opcional)")}</i></span><input type="email" autoComplete="email" maxLength={120} value={f.email} onChange={(e) => set({ email: e.target.value })} /></label>
           <label className="lf-f"><span>{t("Project address", "Dirección del proyecto")}</span><input type="text" autoComplete="street-address" maxLength={160} placeholder={t("Street, city, ZIP", "Calle, ciudad, código postal")} value={f.address} onChange={(e) => set({ address: e.target.value })} /></label>
-          <div className="lf-f"><span>{t("Best way to reach you", "¿Cómo prefiere que lo contactemos?")}</span>
+          <div className="lf-f" style={{ gap: 8 }}><span>{t("Best way to reach you", "¿Cómo prefiere que lo contactemos?")}</span>
             <Chips opts={rec({ text: ["Text", "Mensaje"], call: ["Call", "Llamada"], whatsapp: ["WhatsApp", "WhatsApp"], email: ["Email", "Correo"] })} sel={f.contact} onPick={(k) => set({ contact: k })} /></div>
           {!SRC && <label className="lf-f"><span>{t("How did you find us?", "¿Cómo nos encontró?")}</span>
             <select value={f.heard} onChange={(e) => set({ heard: e.target.value })}><option value="" />

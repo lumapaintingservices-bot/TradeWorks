@@ -47,16 +47,27 @@ function settingsFrom(db: Record<string, unknown>): Record<string, unknown> {
   return s;
 }
 
-/** Old file -> new backup object (same shape parseBackup reads). Photos, receipts and old client links are left behind. */
+/** Old file -> new backup object (same shape parseBackup reads). Job photos and receipts are kept as references plus an `images` map (id -> data URL) uploaded on restore; old client links are left behind. */
 export function convertLegacy(db: Record<string, unknown>): Record<string, unknown> {
+  const images: Record<string, string> = {};
+  if (isObj(db.photoData)) for (const [k, v] of Object.entries(db.photoData)) if (typeof v === "string" && /^data:image\/(jpeg|png|webp|gif);base64,/i.test(v)) images[k] = v;
+  const est = live(db.estimates, ["portal", "portalViews", "portalSeen"]).map((e) => {
+    const ph = arr(e.photos).filter((x) => typeof x.id === "string" && images[x.id as string]).map((x) => ({ id: x.id, kind: x.kind || "", caption: x.caption || "", ...(x.inWork !== undefined ? { inWork: x.inWork } : {}) }));
+    e.photos = ph;
+    return e;
+  });
+  const exp = live(db.expenses, ["receiptPath"]).map((x) => {
+    if (!(typeof x.receiptId === "string" && images[x.receiptId])) delete x.receiptId;
+    return x;
+  });
   return {
-    app: "TradeWorks", version: 1, createdAt: new Date().toISOString(), legacy: true,
+    app: "TradeWorks", version: 1, createdAt: new Date().toISOString(), legacy: true, images,
     company: { id: "", name: isObj(db.business) && typeof db.business.name === "string" ? db.business.name : "" },
     data: {
       clients: live(db.clients, ["photos"]),
-      estimates: live(db.estimates, ["photos", "portal", "portalViews", "portalSeen"]),
+      estimates: est,
       invoices: live(db.invoices),
-      expenses: live(db.expenses, ["receiptId", "receiptPath"]),
+      expenses: exp,
       workers: live(db.workers),
       hours: live(db.hours),
       payouts: live(db.payouts),

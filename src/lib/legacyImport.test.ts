@@ -26,9 +26,18 @@ describe("legacy LUMA backup import", () => {
     expect(b.counts.clients).toBe(1);
     expect(b.records.clients[0].photos).toBeUndefined();
     expect(b.records.estimates[0].number).toBe("EST-2026-006");
+    expect(b.records.estimates[0].photos).toEqual([{ id: "p", kind: "", caption: "" }]);
     expect(b.records.estimates[0].portal).toBeUndefined();
     expect(b.records.invoices[0].amount).toBe(500);
     expect(b.records.expenses[0].receiptId).toBeUndefined();
+  });
+  it("keeps photos and receipts that have image data, with the images map", () => {
+    const withPhotos = { ...old, estimates: [{ ...old.estimates[0], photos: [{ id: "p", kind: "before", caption: "x" }, { id: "missing" }] }], expenses: [{ ...old.expenses[0], receiptId: "p" }] };
+    const r = parseBackup(JSON.stringify(withPhotos));
+    if (!r.ok) throw new Error("x");
+    expect(r.backup.records.estimates[0].photos).toEqual([{ id: "p", kind: "before", caption: "x" }]);
+    expect(r.backup.records.expenses[0].receiptId).toBe("p");
+    expect(r.backup.images?.p).toMatch(/^data:image\/png/);
   });
   it("brings prices over on top of defaults", () => {
     const r = parseBackup(JSON.stringify(old));

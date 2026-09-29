@@ -36,8 +36,8 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   // ---- the client, in a second tab (same browser storage = the shared demo "cloud")
   const client = await context.newPage();
   await client.goto(link);
-  await expect(client.getByRole("heading", { name: /Hi Ana, here is your estimate/ })).toBeVisible();
-  const bigTotal = client.locator(".pt-row.big b");
+  await expect(client.getByRole("heading", { name: "Ana Ruiz" })).toBeVisible();
+  const bigTotal = client.locator("#ptHeroTotal");
   await expect(bigTotal).toHaveText("$1,075.00");
   await client.getByRole("button", { name: /Crown molding/ }).click();       // live total changes
   await expect(bigTotal).toHaveText("$1,275.00");
@@ -48,19 +48,19 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
 
   await client.getByLabel("Your full name").fill("Ana Ruiz");
   await sign(client.getByLabel("Signature"));
-  await client.getByRole("button", { name: "Accept & sign", exact: true }).click();
-  await expect(client.getByRole("heading", { name: "✓ Thank you!" })).toBeVisible();
+  await client.getByRole("button", { name: /^Accept estimate/ }).click();
+  await expect(client.getByText(/Thank you! Your project is confirmed/).first()).toBeVisible();
 
   // Zelle box: details visible, deposit is 50% of $1,275
-  await expect(client.getByText("pay@luma.example")).toBeVisible();
-  await expect(client.locator(".pt-dep b")).toHaveText("$637.50");
+  await expect(client.locator(".pt-pm").getByText(/pay@luma\.example/)).toBeVisible();
+  await expect(client.locator(".pt-amt b")).toHaveText("$637.50");
   await client.getByRole("button", { name: "I sent the Zelle" }).click();
-  await expect(client.getByText(/We'll confirm when it arrives/)).toBeVisible();
+  await expect(client.getByText(/We'll confirm your payment shortly/)).toBeVisible();
 
   // chat
-  await client.getByPlaceholder("Type a message…").fill("When can you start?");
+  await client.getByPlaceholder("Write a message").fill("When can you start?");
   await client.getByRole("button", { name: "Send", exact: true }).click();
-  await expect(client.locator(".pt-bubble", { hasText: "When can you start?" })).toBeVisible();
+  await expect(client.locator(".pt-msg", { hasText: "When can you start?" })).toBeVisible();
   await client.close();
 
   // ---- back on the owner's screen: Accepted + deposit claim + the chat message
