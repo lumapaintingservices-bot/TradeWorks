@@ -20,6 +20,7 @@ import Pipeline from "./pages/Pipeline";
 import Team from "./pages/Team";
 import Expenses from "./pages/Expenses";
 import WorkOrder from "./pages/estimate/WorkOrder";
+import Reports from "./pages/Reports";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -75,7 +76,7 @@ export default function App() {
         <Route path="/clients" element={<Clients />} />
         <Route path="/clients/:id" element={<ClientProfile />} />
         <Route path="/expenses" element={<Expenses />} />
-        <Route path="/reports" element={P("Reports", "Reportes", "chart", 6)} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/team" element={<Team />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
