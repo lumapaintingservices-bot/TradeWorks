@@ -11,9 +11,11 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
   const listed = useJobExpenses(e.id, e);
   const x = jobEconomics(e, s, listed);
   const m = calcMaterials(e, s);
-  const good = x.mode === "solo" ? x.perHour >= x.targetHourly : x.margin >= x.target;
-  const col = good ? "var(--ok)" : "var(--warn)";
-  const Row = ({ a, b, dim }: { a: string; b: string; dim?: boolean }) => <div className={"totline" + (dim ? " dim" : "")}><span>{a}</span><b>{b}</b></div>;
+  const solo = x.mode === "solo";
+  const good = solo ? x.perHour >= x.targetHourly : x.margin >= x.target;
+  const mid = solo ? x.perHour >= x.targetHourly * 0.75 : x.margin >= x.target - 15;
+  const col = good ? "var(--ok)" : mid ? "var(--warn)" : "var(--bad)";
+  const Row = ({ a, b, dim, color }: { a: string; b: string; dim?: boolean; color?: string }) => <div className={"totline" + (dim ? " dim" : "")}><span>{a}</span><b style={color ? { color, fontWeight: 700 } : undefined}>{b}</b></div>;
   return (
     <div className="stack">
       <div className="card"><div className="card-h"><h2>{t("Real profit", "Ganancia real")}</h2><span style={{ color: col, fontWeight: 700 }}>{x.margin.toFixed(1)}%</span></div><div className="card-b">
@@ -22,7 +24,9 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
         <Row a={x.matReal ? t("Materials (real)", "Materiales (real)") : t("Materials (estimated)", "Materiales (estimado)")} b={"− " + money(x.mat)} />
         {x.mode === "crew" && <Row a={t("Team labor", "Mano de obra del equipo")} b={"− " + money(x.labor)} />}
         <Row a={t("What you keep", "Lo que te queda")} b={money(x.profit)} />
-        <Row a={t("Earn per hour", "Ganas por hora")} b={money(x.perHour)} dim />
+        {solo
+          ? <Row a={t("You earn per hour", "Ganas por hora")} b={x.h.total > 0 ? money(x.perHour) : "—"} color={col} />
+          : <Row a={t("Real margin", "Margen real")} b={x.margin.toFixed(1) + "%"} color={col} />}
         {x.suggested > 0 && <p className="muted" style={{ marginTop: 10, fontSize: 13 }}>{x.mode === "solo" ? t(`To earn ${money(x.targetHourly)}/hour, charge about ${money(x.suggested)}.`, `Para ganar ${money(x.targetHourly)}/hora, cobra alrededor de ${money(x.suggested)}.`) : t(`For a ${x.target}% margin, charge about ${money(x.suggested)}.`, `Para un margen de ${x.target}%, cobra alrededor de ${money(x.suggested)}.`)}</p>}
       </div></div>
 
