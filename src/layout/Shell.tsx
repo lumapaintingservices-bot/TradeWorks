@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { setTop } from "../data/repo";
 import { backend } from "../auth/backend";
 import { useT } from "../i18n";
 import { useUi } from "../store/ui";
@@ -37,6 +38,11 @@ export default function Shell() {
   const toast = useUi((s) => s.toastMsg);
   const [more, setMore] = useState(false);
   useEffect(() => setMore(false), [loc.pathname]);
+  // public branding for the lead form (public/{companyId}); readable by anyone with the link, holds no private data
+  useEffect(() => {
+    if (!company) return;
+    setTop("public", company.id, { name: company.name, phone: company.phone, website: company.website, logoUrl: company.logoUrl, brandColor: company.brandColor, area: company.area }, true).catch(() => {});
+  }, [company?.id, company?.name, company?.phone, company?.website, company?.logoUrl, company?.brandColor, company?.area]); // eslint-disable-line react-hooks/exhaustive-deps
   const newEstimate = () => nav("/estimates?new=1");
 
   return (

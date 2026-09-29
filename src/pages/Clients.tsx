@@ -9,6 +9,7 @@ import { useUi } from "../store/ui";
 import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
+import { LeadInbox } from "./LeadInbox";
 
 const blank = (lang: "en" | "es"): Client => ({ id: uid("c"), name: "", phone: "", email: "", address: "", source: "", lang, note: "" });
 
@@ -28,6 +29,7 @@ export default function Clients() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, q]);
   const jobs = (id: string) => ests.filter((e) => e.clientId === id).length;
+  const leadBadge = (c: Client) => (c.lead && !jobs(c.id) ? <span className="badge b-blue" style={{ marginLeft: 8 }}>{t("Lead", "Prospecto")}</span> : null);
 
   return (
     <div className="page">
@@ -35,6 +37,7 @@ export default function Clients() {
         <div><h1>{t("Clients", "Clientes")}</h1><p>{t(`${list.length} clients`, `${list.length} clientes`)}</p></div>
         <button className="btn pri" onClick={() => setEdit(blank(lang))}><Icon name="plus" />{t("New client", "Nuevo cliente")}</button>
       </div>
+      <LeadInbox />
       {rows.filter((c) => !c.archived).length === 0 ? (
         <div className="card"><EmptyState icon="clients" title={t("No clients yet", "Aún no hay clientes")}
           text={t("Add a client, or create an estimate and the client is saved for you.", "Agrega un cliente, o crea un presupuesto y el cliente se guarda solo.")}>
@@ -47,13 +50,13 @@ export default function Clients() {
               <thead><tr><th>{t("Client", "Cliente")}</th><th>{t("Phone", "Teléfono")}</th><th>{t("Email", "Correo")}</th><th>{t("Address", "Dirección")}</th><th className="r">{t("Jobs", "Trabajos")}</th></tr></thead>
               <tbody>{list.map((c) => (
                 <tr key={c.id} className="click" onClick={() => setEdit(c)}>
-                  <td><b>{c.name}</b></td><td>{c.phone}</td><td>{c.email}</td><td>{c.address}</td><td className="r">{jobs(c.id)}</td>
+                  <td><b>{c.name}</b>{leadBadge(c)}</td><td>{c.phone}</td><td>{c.email}</td><td>{c.address}</td><td className="r">{jobs(c.id)}</td>
                 </tr>))}</tbody>
             </table>
           </div>
           <div className="cards only-phone">{list.map((c) => (
             <div key={c.id} className="ec" onClick={() => setEdit(c)}>
-              <div className="l1"><span>{c.name}</span><span className="muted">{jobs(c.id)}</span></div>
+              <div className="l1"><span>{c.name}{leadBadge(c)}</span><span className="muted">{jobs(c.id)}</span></div>
               <div className="l2"><span>{c.phone || c.email || initials(c.name)}</span></div>
             </div>))}</div>
         </>

@@ -21,8 +21,8 @@
 .tbl-wrap{overflow-x:auto}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .toolbar input,.toolbar select{width:auto;min-width:160px;flex:1 1 180px;max-width:320px}
-.only-phone{display:none}
-@media(max-width:640px){.only-phone{display:block}.only-desk{display:none}.toolbar input,.toolbar select{max-width:none}}
+.only-phone,.cards.only-phone{display:none}
+@media(max-width:640px){.only-phone{display:block}.cards.only-phone{display:grid}.only-desk{display:none}.toolbar input,.toolbar select{max-width:none}}
 .cards{display:grid;gap:10px}
 .ec{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);cursor:pointer}
 .ec .l1{display:flex;justify-content:space-between;gap:10px;font-size:15px;font-weight:600}

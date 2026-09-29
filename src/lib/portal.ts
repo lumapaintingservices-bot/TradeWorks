@@ -1,0 +1,128 @@
+/** Client link (portal) logic — port of portalSnapshot / portalApply from the prototype. */
+import { calcEstimate, findDiscount } from "./estimate";
+import { num } from "./money";
+import type { ChatMsg, Estimate, Settings } from "./types";
+
+/** Fields that must never reach the client's phone. */
+export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "actualMaterialCost", "activity", "snooze", "portalSeen",
+  "chat", "chatUnread", "extraHrs", "crewNotes", "leadSource", "portalViews", "reviewAsked", "portal", "laborMode", "payClaim", "createdAt", "updatedAt", "companyId"];
+
+export type Brand = { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string };
+export type PortalModel = {
+  v: 1; e: Estimate;
+  s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
+       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string };
+};
+export type ClientState = {
+  views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
+  chat?: ChatMsg[]; paid?: { method: string; at: string };
+};
+export type PortalDoc = { id: string; owner: string; estId: string; number?: string; data: string; client?: ClientState };
+
+export function newToken(): string {
+  const a = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const arr = new Uint32Array(24);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, (n) => a.charAt(n % a.length)).join("");
+}
+
+export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { reviewUrl?: string; websiteUrl?: string; instagramUrl?: string } = {}): PortalModel {
+  const x = JSON.parse(JSON.stringify(e)) as Estimate;
+  PORTAL_STRIP.forEach((k) => delete (x as unknown as Record<string, unknown>)[k]);
+  if (!x.showMaterials) x.materialsList = [];
+  // hidden lines travel only as numbers: the total adds up but the client never gets the wording
+  x.items = (x.items || []).map((it) => (it.hidden ? { id: it.id, qty: num(it.qty), rate: num(it.rate), hidden: true, desc: "", descEs: "", unit: "" } : it));
+  if (x.signature) x.signature = { name: x.signature.name || "", img: "", date: x.signature.date || "", via: "", at: "" };
+  x.changeOrders = (e.changeOrders || []).map((c) => ({ n: c.n, status: c.status, amount: num(c.amount) }));
+  const f = e.discountMode === "code" ? findDiscount(s, e.discountCode) : null;
+  return { v: 1, e: x, s: { business: b, pricing: s.pricing, tax: s.tax, discounts: f ? [f] : [],
+    reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
+    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "" } };
+}
+
+/** Settings shaped for calcEstimate, using only what the snapshot carries. */
+export const modelSettings = (m: PortalModel): Settings => ({ pricing: m.s.pricing, tax: m.s.tax, discounts: m.s.discounts } as unknown as Settings);
+
+export const isSelectable = (u: Estimate["upgrades"][number]) => !!(u.desc || u.descEs);
+export const isOwnerSigned = (m: PortalModel) => !!(m.e.signature && m.e.signature.name);
+
+/** The estimate as the client currently sees it: their option picks applied. */
+export function effective(m: PortalModel, client?: ClientState): Estimate {
+  const picks = client?.picks || {};
+  return { ...m.e, upgrades: (m.e.upgrades || []).map((u) => (u.id in picks ? { ...u, included: !!picks[u.id] } : u)) };
+}
+export const clientTotal = (m: PortalModel, client?: ClientState) => calcEstimate(effective(m, client), modelSettings(m)).total;
+
+const nowISO = () => new Date().toISOString();
+const logAct = (e: Estimate, text: string) => { e.activity = [...(e.activity || []), { at: nowISO(), text }].slice(-100); };
+
+/**
+ * Applies what the client did on the link to the owner's estimate. Pure: returns a new estimate.
+ * `seen` keeps track of what was already applied so nothing is logged twice.
+ */
+export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en" | "es" = "en"): { e: Estimate; changed: boolean; news: string } {
+  const TT = (a: string, b: string) => (lang === "es" ? b : a);
+  const e = JSON.parse(JSON.stringify(est)) as Estimate;
+  if (!c) return { e: est, changed: false, news: "" };
+  const seen = (e.portalSeen ||= { views: 0, picks: "{}", sign: false, co: {} });
+  const who = e.clientName || TT("The client", "El cliente");
+  let changed = false, news = "";
+
+  const views = c.views || [];
+  if (views.length > num(seen.views)) {
+    e.portalViews = views.slice(-30); seen.views = views.length; changed = true;
+    logAct(e, views.length === 1 ? TT("Opened the link", "Abrió el enlace") : TT(`Opened the link (time ${views.length})`, `Abrió el enlace (${views.length}ª vez)`));
+    if (e.status === "Sent") e.status = "Viewed";
+    news = TT(`${who} opened the estimate`, `${who} abrió el presupuesto`);
+  }
+  const pj = JSON.stringify(c.picks || {});
+  if (pj !== (seen.picks || "{}")) {
+    const picks = c.picks || {};
+    let prev: Record<string, boolean> = {};
+    try { prev = JSON.parse(seen.picks || "{}"); } catch { prev = {}; }
+    if (!e.signature) {
+      (e.upgrades || []).forEach((u) => {
+        if (!(u.id in picks) || prev[u.id] === picks[u.id]) return;
+        if (u.included && !u.byClient) return;
+        if (!!u.included === !!picks[u.id]) return;
+        u.included = !!picks[u.id]; u.byClient = !!picks[u.id];
+        logAct(e, (picks[u.id] ? TT("Added: ", "Agregó: ") : TT("Removed: ", "Quitó: ")) + (lang === "es" ? u.descEs || u.desc : u.desc || u.descEs));
+      });
+      news = TT(`${who} changed the options`, `${who} cambió las opciones`);
+    }
+    seen.picks = pj; changed = true;
+  }
+  const chat = c.chat || [], had = (e.chat || []).length;
+  if (chat.length !== had) {
+    const fresh = chat.slice(had).filter((m) => m.from === "client").length;
+    e.chat = chat.slice(-200); changed = true;
+    if (fresh) {
+      e.chatUnread = num(e.chatUnread) + fresh;
+      logAct(e, TT("Message: ", "Mensaje: ") + "“" + String(chat[chat.length - 1].text || "").slice(0, 60) + "”");
+      news = TT(`New message from ${who}`, `Mensaje nuevo de ${who}`);
+    }
+  }
+  if (c.sign && c.sign.img && !seen.sign) {
+    seen.sign = true; changed = true;
+    if (!e.signature) {
+      e.signature = { name: c.sign.name || e.clientName, img: c.sign.img, date: String(c.sign.at || nowISO()).slice(0, 10), via: "link", at: c.sign.at || "" };
+      if (e.status === "Draft" || e.status === "Sent" || e.status === "Viewed") e.status = "Accepted";
+      logAct(e, TT(`Signed and accepted from the link ($${c.sign.total})`, `Firmó y aceptó desde el enlace ($${c.sign.total})`));
+      news = TT(`${who} signed the estimate!`, `¡${who} firmó el presupuesto!`);
+    }
+  }
+  if (c.paid && c.paid.at && seen.paid !== c.paid.at) {
+    seen.paid = c.paid.at; changed = true; e.payClaim = { method: c.paid.method || "", at: c.paid.at };
+    logAct(e, TT(`Client says the deposit was sent (${c.paid.method || ""})`, `El cliente dice que envió el depósito (${c.paid.method || ""})`));
+    news = TT(`${who} says the deposit was sent`, `${who} dice que envió el depósito`);
+  }
+  if (changed) e.updatedAt = undefined;
+  return { e: changed ? e : est, changed, news };
+}
+
+export function sendLinkMessage(e: Estimate, total: string, link: string, businessName: string, lang: "en" | "es"): string {
+  const first = String(e.clientName || "").split(" ")[0];
+  return lang === "es"
+    ? `Hola ${first}, aquí está su presupuesto ${e.number} por ${total}.\n\nEn este enlace lo puede ver completo, escoger las opciones y firmarlo desde el teléfono. Si tiene preguntas, me escribe ahí mismo:\n${link}\n\n${businessName}`
+    : `Hi ${first}, here is your estimate ${e.number} for ${total}.\n\nOn this link you can see all of it, pick the options and sign from your phone. If you have questions, you can message me right there:\n${link}\n\n${businessName}`;
+}

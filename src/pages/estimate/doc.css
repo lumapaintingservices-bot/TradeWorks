@@ -22,3 +22,4 @@
 .doc.compact{font-size:12px;padding:28px;line-height:1.35}.doc.compact section{margin-top:12px}.doc.compact td{padding:5px 8px}
 @media(max-width:640px){.doc{padding:20px}.doc .two{grid-template-columns:1fr}.doc header{flex-direction:column}.doc .meta{text-align:left}}
 @media print{.no-print{display:none!important}.doc-wrap{background:#fff;padding:0}.doc{border:0;border-radius:0;max-width:none;padding:0}@page{margin:14mm}}
+.doc .sig{display:block;height:54px;margin-bottom:2px}.doc .sd{display:block;color:#0B0D12;font-size:13px}

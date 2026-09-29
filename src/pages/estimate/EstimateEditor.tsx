@@ -8,14 +8,17 @@ import { money } from "../../lib/money";
 import { STATUSES, type Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { statusLabel } from "../../ui/StatusBadge";
+import { subscribeTop } from "../../data/repo";
+import { portalApply, type PortalDoc } from "../../lib/portal";
 import CostsTab from "./CostsTab";
+import LinkTab, { publishPortal } from "./LinkTab";
 import PricingTab from "./PricingTab";
 import ScopeTab from "./ScopeTab";
 import "./estimate.css";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
-  ["co", "Change orders", "Cambios", 4], ["inv", "Invoices", "Facturas", 4], ["link", "Link & chat", "Enlace y chat", 3],
+  ["co", "Change orders", "Cambios", 4], ["inv", "Invoices", "Facturas", 4], ["link", "Link & chat", "Enlace y chat", 0],
   ["photos", "Photos", "Fotos", 5], ["jobday", "Job day", "Día de trabajo", 5],
 ] as const;
 
@@ -34,6 +37,9 @@ export default function EstimateEditor() {
   const [saved, setSaved] = useState<"saved" | "saving">("saved");
   const loadedId = useRef("");
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const eRef = useRef<Estimate | null>(null);
+  eRef.current = e;
+  const syncTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => { // load once per estimate id
     const found = rows.find((r) => r.id === id);
@@ -58,7 +64,28 @@ export default function EstimateEditor() {
     }, 500);
   };
   const set = (p: Partial<Estimate>) => setE((cur) => { if (!cur) return cur; const next = { ...cur, ...p }; commit(next); return next; });
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(syncTimer.current); }, []);
+
+  // what the client does on the link (views, picks, signature, chat, Zelle claim) flows into this estimate
+  const token = e?.portal?.token;
+  useEffect(() => {
+    if (!token) return;
+    return subscribeTop<PortalDoc>("portal", token, (doc) => {
+      const cur = eRef.current;
+      if (!doc || !cur) return;
+      const r = portalApply(cur, doc.client, lang);
+      if (!r.changed) return;
+      setE(r.e); commit(r.e);
+      if (r.news) toast(r.news);
+    });
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // keep the client's copy in step with edits (owner-only fields are stripped in portalSnapshot)
+  useEffect(() => {
+    if (!e?.portal || !company) return;
+    clearTimeout(syncTimer.current);
+    syncTimer.current = setTimeout(() => { publishPortal(e, s, company).catch(() => {}); }, 800);
+  }, [e, s, company]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!e) return <div className="page">{loading ? null : <><p>{t("Estimate not found.", "No se encontró el presupuesto.")}</p><Link to="/estimates">{t("All estimates", "Todos los presupuestos")}</Link></>}</div>;
   const x = jobEconomics(e, s), tot = x.t;
@@ -146,6 +173,7 @@ export default function EstimateEditor() {
           {tab === "pricing" && <PricingTab {...props} />}
           {tab === "scope" && <ScopeTab {...props} saveStandard={update} />}
           {tab === "costs" && <CostsTab {...props} />}
+          {tab === "link" && <LinkTab {...props} />}
           {TABS.filter(([k]) => k === tab && TABS.find(([kk]) => kk === k)![3] > 0).map(([k, en, es, ph]) => (
             <div className="card" key={k}><div className="es"><h3>{t(en, es)}</h3><p>{t(`This tab arrives in phase ${ph}.`, `Esta pestaña llega en la fase ${ph}.`)}</p></div></div>))}
         </div>

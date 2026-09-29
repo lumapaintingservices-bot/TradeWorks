@@ -9,6 +9,8 @@ import EstimateDoc from "./pages/estimate/EstimateDoc";
 import EstimateEditor from "./pages/estimate/EstimateEditor";
 import Estimates from "./pages/Estimates";
 import Onboarding from "./pages/Onboarding";
+import LeadForm from "./pages/public/LeadForm";
+import PortalPage from "./pages/public/PortalPage";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -45,6 +47,8 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/p/:token" element={<PortalPage />} />
+      <Route path="/request" element={<LeadForm />} />
       <Route path="/login" element={<AuthPage mode="signin" />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/reset" element={<AuthPage mode="reset" />} />

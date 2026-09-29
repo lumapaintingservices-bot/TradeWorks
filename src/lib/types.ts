@@ -26,13 +26,23 @@ export type Estimate = {
   laborMode?: "solo" | "crew"; extraHrs: number;
   actualMaterialCost?: number;
   changeOrders: { n: number; status: string; amount: number; hours?: number }[];
+  portal?: { token: string; live?: boolean };
+  portalViews?: string[]; portalSeen?: { views: number; picks: string; sign: boolean; paid?: string; co?: Record<string, number> };
+  activity?: { at: string; text: string }[];
+  chat?: ChatMsg[]; chatUnread?: number;
+  signature?: { name: string; img: string; date: string; via: string; at: string } | null;
+  payClaim?: { method: string; at: string };
+  sentAt?: string;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
+export type ChatMsg = { from: "client" | "owner"; text: string; at: string };
 
 export type Client = {
   id: string; name: string; phone: string; email: string; address: string; source: string; lang: "en" | "es";
   note: string; lead?: boolean; archived?: boolean; createdAt?: unknown; updatedAt?: unknown; companyId?: string;
-  web?: { service?: string; details?: { types?: string[] } };
+  web?: { id?: string; service?: string; city?: string; message?: string; heard?: string; at?: string; details?: { types?: string[] } & Record<string, unknown> };
+  referredBy?: string;
+  photos?: { id: string; kind: string; caption: string }[];
 };
 export type Discount = { code: string; type: "percent" | "fixed"; value: number; label: string; labelEs: string; active?: boolean };
 export type Supply = { name: string; qty?: number; cost: number; basis: "item" | "door" | "drawer" | "job" };
@@ -67,4 +77,5 @@ export type Settings = {
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
   numbering: { nextEst: number };
   payZelle: string; payZelleName: string; payNote: string;
+  reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
 };
