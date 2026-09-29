@@ -77,7 +77,7 @@ export default function BackupCard() {
         </div>
 
         <Sub>{t("Restore from a backup", "Restaurar desde una copia")}</Sub>
-        <Help>{t("Choose a file you downloaded here before. Records with the same ID are replaced by the ones in the file; nothing else is deleted. Photos are not inside the file.", "Elige un archivo que descargaste aquí antes. Los registros con el mismo ID se reemplazan por los del archivo; no se borra nada más. Las fotos no van dentro del archivo.")}</Help>
+        <Help>{t("Choose a file you downloaded here before, or the backup file from your old LUMA app (luma-backup-….json). Records with the same ID are replaced by the ones in the file; nothing else is deleted. Photos are not inside the file.", "Elige un archivo que descargaste aquí antes, o el archivo de copia de tu app LUMA anterior (luma-backup-….json). Los registros con el mismo ID se reemplazan por los del archivo; no se borra nada más. Las fotos no van dentro del archivo.")}</Help>
         <input ref={file} type="file" accept="application/json,.json" style={{ display: "none" }} onChange={(e) => pick(e.target.files?.[0])} />
         <div className="st-actions"><button className="btn" disabled={!!progress} onClick={() => file.current?.click()}>{t("Choose backup file…", "Elegir archivo de copia…")}</button></div>
         {error && <p className="st-err" role="alert" style={{ margin: "12px 0 0" }}>{error}</p>}
@@ -88,6 +88,7 @@ export default function BackupCard() {
               {parsed.p.company?.name ? parsed.p.company.name + " · " : ""}{parsed.p.createdAt ? fmt(parsed.p.createdAt) : ""}
             </div>
             <div className="pills" style={{ marginBottom: 10 }}>{counts.map((k) => <span className="badge b-blue" key={k}>{t(BACKUP_LABELS[k][0], BACKUP_LABELS[k][1])}: {parsed.p.counts[k]}</span>)}</div>
+            {parsed.p.legacy && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t("This is a backup from your old LUMA app. Clients, estimates, invoices, expenses, team, tasks and your prices will be brought over. Photos, receipts and old client links are not included — create a new link from each estimate.", "Esta es una copia de tu app LUMA anterior. Se traen clientes, presupuestos, facturas, gastos, equipo, tareas y tus precios. Las fotos, recibos y los links viejos de clientes no van incluidos — crea un link nuevo desde cada presupuesto.")}</p>}
             {parsed.p.skipped > 0 && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t(`${parsed.p.skipped} damaged records in the file will be skipped.`, `${parsed.p.skipped} registros dañados del archivo se van a omitir.`)}</p>}
             {progress ? <p style={{ margin: 0 }}>{t("Restoring…", "Restaurando…")} {progress.done} / {progress.total}</p> : (
               <div className="st-actions">
