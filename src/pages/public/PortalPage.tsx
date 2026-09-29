@@ -144,6 +144,12 @@ export default function PortalPage() {
               {photoCap(x) && <figcaption>{photoCap(x)}</figcaption>}</figure>))}</div>
         </section>}
 
+        {(m.s.showcase || []).length > 0 && <section className="pt-sec">
+          <h2>{T("Our recent work", "Nuestro trabajo reciente")}</h2>
+          <div className="pt-gal">{(m.s.showcase || []).map((x) => (
+            <figure key={x.id}><img src={x.url} alt={x.caption || T("Recent work", "Trabajo reciente")} loading="lazy" />{x.caption && <figcaption>{x.caption}</figcaption>}</figure>))}</div>
+        </section>}
+
         {scope.length > 0 && <section className="pt-sec"><h2>{T("What's included", "Qué incluye")}</h2>
           {scope.map((g, i) => g.day
             ? <div className="pt-day" key={i}><span className="pt-day-n">{g.day}</span><div><div className="pt-day-t">{g.title}</div><ul>{g.items.map((x, j) => <li key={j}>{x}</li>)}</ul></div></div>

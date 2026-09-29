@@ -18,6 +18,7 @@ import Invoices from "./pages/Invoices";
 import Pipeline from "./pages/Pipeline";
 import Team from "./pages/Team";
 import Expenses from "./pages/Expenses";
+import WorkOrder from "./pages/estimate/WorkOrder";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -62,7 +63,7 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/reset" element={<AuthPage mode="reset" />} />
       <Route path="/onboarding" element={<Onboarding />} />
-      <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /><Route path="/invoices/:id/doc" element={<InvoiceDoc />} /></Route>
+      <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /><Route path="/invoices/:id/doc" element={<InvoiceDoc />} /><Route path="/estimates/:id/work-order" element={<WorkOrder />} /></Route>
       <Route element={<Gate />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={<Pipeline />} />

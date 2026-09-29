@@ -11,6 +11,7 @@ export type Brand = { name: string; phone: string; email: string; website: strin
 export type PortalModel = {
   v: 1; e: Estimate;
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
+       showcase?: { id: string; url: string; caption: string }[];
        reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string };
 };
 export type ClientState = {
@@ -47,6 +48,7 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
   const f = e.discountMode === "code" ? findDiscount(s, e.discountCode) : null;
   return { v: 1, e: x, s: { business: b, pricing: s.pricing, tax: s.tax, discounts: f ? [f] : [],
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
+    showcase: (s.showcase || []).filter((x) => x.url).map((x) => ({ id: x.id, url: x.url, caption: x.caption || "" })),
     payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "" } };
 }
 

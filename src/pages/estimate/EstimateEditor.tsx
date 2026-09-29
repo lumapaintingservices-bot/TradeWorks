@@ -14,6 +14,8 @@ import { portalApply, type PortalDoc } from "../../lib/portal";
 import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
 import InvoicesTab from "./InvoicesTab";
+import JobDayTab from "./JobDayTab";
+import PhotosTab from "./PhotosTab";
 import LinkTab, { publishPortal } from "./LinkTab";
 import PricingTab from "./PricingTab";
 import ScopeTab from "./ScopeTab";
@@ -22,7 +24,7 @@ import "./estimate.css";
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
   ["co", "Change orders", "Cambios", 0], ["inv", "Invoices", "Facturas", 0], ["link", "Link & chat", "Enlace y chat", 0],
-  ["photos", "Photos", "Fotos", 5], ["jobday", "Job day", "Día de trabajo", 5],
+  ["photos", "Photos", "Fotos", 0], ["jobday", "Job day", "Día de trabajo", 0],
 ] as const;
 
 export default function EstimateEditor() {
@@ -129,6 +131,7 @@ export default function EstimateEditor() {
           <select value={e.status} onChange={(ev) => set({ status: ev.target.value as Estimate["status"] })} aria-label="Status">
             {STATUSES.map((st) => <option key={st} value={st}>{statusLabel(st, lang === "es")}</option>)}</select>
           <Link className="btn" to={`/estimates/${e.id}/doc`} target="_blank">{t("Preview / PDF", "Vista previa / PDF")}</Link>
+          <Link className="btn" to={`/estimates/${e.id}/work-order`} target="_blank">{t("Work order", "Orden de trabajo")}</Link>
           <button className="btn" onClick={saveTemplate}>{t("Save as template", "Guardar como plantilla")}</button>
           <button className="btn" onClick={duplicate}>{t("Duplicate", "Duplicar")}</button>
           <button className="btn danger" onClick={del}>{t("Delete", "Eliminar")}</button>
@@ -180,6 +183,8 @@ export default function EstimateEditor() {
           {tab === "link" && <LinkTab {...props} />}
           {tab === "co" && <ChangeOrdersTab {...props} />}
           {tab === "inv" && <InvoicesTab {...props} />}
+          {tab === "photos" && <PhotosTab {...props} />}
+          {tab === "jobday" && <JobDayTab {...props} />}
           {TABS.filter(([k]) => k === tab && TABS.find(([kk]) => kk === k)![3] > 0).map(([k, en, es, ph]) => (
             <div className="card" key={k}><div className="es"><h3>{t(en, es)}</h3><p>{t(`This tab arrives in phase ${ph}.`, `Esta pestaña llega en la fase ${ph}.`)}</p></div></div>))}
         </div>
