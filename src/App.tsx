@@ -28,6 +28,7 @@ import WorkOrder from "./pages/estimate/WorkOrder";
 import Reports from "./pages/Reports";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
+import MembersCardTMP from "./pages/settings/MembersCard"; // TMP-TEST
 import { applyTheme, useUi } from "./store/ui";
 
 /** Publishes the calendar feed; it reads owner-only collections, so workers never run it. */
@@ -141,6 +142,7 @@ export default function App() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/team" element={<Team />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/settings/members-tmp" element={<div className="page"><MembersCardTMP /></div>} /> {/* TMP-TEST */}
       </Route></Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
