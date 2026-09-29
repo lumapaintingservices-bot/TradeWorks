@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>Free estimate — LUMA Painting Services</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111111; --ink-2:#4b4d52; --ink-3:#8b8e94; --line:#e7e5e0; --line-2:#f0eeea;
+    --bg:#f5f3ef; --card:#ffffff; --acc:#ef6a2c; --acc-2:#fdeee6; --acc-ink:#c2501b; --ok:#1f7a4d; --bad:#b3261e;
+    --r:18px; --shadow:0 1px 2px rgba(17,17,17,.04), 0 8px 28px rgba(17,17,17,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.5 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .top{position:sticky;top:0;z-index:5;background:rgba(245,243,239,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding-top:env(safe-area-inset-top,0px)}
+  .top-in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 18px}
+  .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .brand img{height:30px;width:auto;display:block}
+  .brand b{letter-spacing:.28em;font-size:14px}
+  .brand span{font-size:12px;color:var(--ink-3);letter-spacing:0;display:block;margin-top:-2px}
+  .sp{flex:1}
+  .lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+  .lang button{border:0;background:none;padding:6px 11px;font-weight:600;font-size:12px;color:var(--ink-3);cursor:pointer}
+  .lang button.on{background:var(--ink);color:#fff}
+  .prog{height:4px;background:var(--line);}
+  .prog i{display:block;height:100%;background:var(--acc);transition:width .35s ease;border-radius:0 4px 4px 0}
+  .wrap{max-width:680px;margin:0 auto;padding:22px 18px 130px}
+  .step-k{font-size:12.5px;font-weight:600;color:var(--acc-ink);letter-spacing:.02em;text-transform:uppercase}
+  h1{font-size:28px;line-height:1.15;letter-spacing:-.02em;margin:6px 0 8px}
+  h2{font-size:17px;margin:26px 0 10px;letter-spacing:-.01em}
+  .lead{color:var(--ink-2);margin:0 0 20px}
+  .hero{background:var(--ink);color:#fff;border-radius:22px;padding:26px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .hero:after{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(239,106,44,.55),rgba(239,106,44,0) 70%)}
+  .hero h1{color:#fff;font-size:30px;margin:0 0 10px;position:relative}
+  .hero p{color:rgba(255,255,255,.78);margin:0 0 18px;position:relative;max-width:460px}
+  .trust{display:flex;flex-wrap:wrap;gap:8px;position:relative}
+  .trust span{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:6px 11px;font-size:12.5px;color:#fff}
+  .how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .how div{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow);font-size:13px;color:var(--ink-2)}
+  .how b{display:block;color:var(--ink);font-size:13.5px;margin:6px 0 2px}
+  .how i{font-style:normal;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--acc-2);color:var(--acc-ink);font-weight:700;font-size:12px}
+  @media (max-width:520px){ .how{grid-template-columns:1fr} }
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .grid.one{grid-template-columns:1fr}
+  .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  @media (max-width:520px){ .grid.three{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .opt{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:var(--card);border:1.5px solid transparent;border-radius:16px;padding:16px;cursor:pointer;box-shadow:var(--shadow);transition:border-color .15s, transform .15s}
+  .opt:hover{transform:translateY(-1px)}
+  .opt.on{border-color:var(--acc);background:#fffaf7}
+  .opt .ic{width:42px;height:42px;border-radius:12px;background:var(--line-2);display:grid;place-items:center;color:var(--ink)}
+  .opt.on .ic{background:var(--acc);color:#fff}
+  .opt b{font-size:15px;line-height:1.25}
+  .opt small{font-size:12.5px;color:var(--ink-3);line-height:1.35}
+  .opt .ck{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-size:12px;color:#fff}
+  .opt.on .ck{background:var(--acc);border-color:var(--acc)}
+  .opt.row{flex-direction:row;align-items:center;gap:12px;padding:14px 16px}
+  .opt.row .txt{flex:1;min-width:0}
+  .opt.row small{display:block}
+  .opt .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;color:var(--acc-ink);background:var(--acc-2);border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:9px 14px;font-weight:500;font-size:14px;cursor:pointer}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .box{background:var(--card);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+  .box + .box{margin-top:12px}
+  .box h3{margin:0 0 4px;font-size:15.5px}
+  .box p.m{margin:0 0 12px;font-size:13px;color:var(--ink-3)}
+  .count{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--line-2)}
+  .count:first-of-type{border-top:0}
+  .count .lbl b{display:block;font-size:14.5px}
+  .count .lbl small{color:var(--ink-3);font-size:12.5px}
+  .stepper{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .stepper button{width:40px;height:40px;border:0;background:none;font-size:20px;cursor:pointer;color:var(--ink)}
+  .stepper input{width:54px;height:40px;border:0;text-align:center;font-weight:600;font-size:16px;-moz-appearance:textfield;background:none}
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .stepper.off{opacity:.4;pointer-events:none}
+  .toggle{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--line-2);cursor:pointer;margin-top:12px}
+  .toggle input{display:none}
+  .toggle .sw{width:40px;height:24px;border-radius:999px;background:#cfccc6;position:relative;flex:0 0 auto;transition:background .15s}
+  .toggle .sw:after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .toggle input:checked + .sw{background:var(--acc)}
+  .toggle input:checked + .sw:after{left:19px}
+  .toggle span.t{font-size:14px}
+  .toggle span.t small{display:block;color:var(--ink-3);font-size:12.5px}
+  label.f{display:grid;gap:6px}
+  label.f > span{font-size:13px;font-weight:600;color:var(--ink-2)}
+  label.f > span i{font-style:normal;font-weight:400;color:var(--ink-3)}
+  input[type=text],input[type=tel],input[type=email],input[type=date],select,textarea{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;background:#fff;outline:none;-webkit-appearance:none;appearance:none;font-size:16px}
+  input:focus,select:focus,textarea:focus{border-color:var(--ink)}
+  textarea{min-height:110px;resize:vertical}
+  .fields{display:grid;gap:12px}
+  .f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:520px){ .f2{grid-template-columns:1fr} }
+  .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+  .ph{position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:var(--line-2)}
+  .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .ph button{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(255,255,255,.94);font-size:16px;line-height:26px;cursor:pointer}
+  .add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:1/1;border:1.5px dashed #cfccc6;border-radius:14px;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;background:#fff;text-align:center;padding:6px}
+  .add svg{color:var(--acc)}
+  .tips{display:grid;gap:8px;margin-top:14px}
+  .tips div{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--ink-2)}
+  .tips i{font-style:normal;color:var(--acc)}
+  .sum{display:grid;gap:8px;font-size:14px}
+  .sum div{display:flex;gap:12px;justify-content:space-between;border-bottom:1px solid var(--line-2);padding-bottom:8px}
+  .sum div:last-child{border-bottom:0;padding-bottom:0}
+  .sum span{color:var(--ink-3)}
+  .sum b{text-align:right;font-weight:600}
+  .err{color:var(--bad);font-size:13.5px;margin-top:12px;min-height:1em}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .fine{font-size:12px;color:var(--ink-3);margin-top:14px;text-align:center}
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px))}
+  .bar-in{max-width:680px;margin:0 auto;display:flex;gap:10px;align-items:center}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:14px 18px;font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;color:var(--ink)}
+  .btn.pri{background:var(--ink);border-color:var(--ink);color:#fff;flex:1}
+  .btn.pri.acc{background:var(--acc);border-color:var(--acc)}
+  .btn[disabled]{opacity:.55;cursor:default}
+  .btn.wa{background:#1f8a58;border-color:#1f8a58;color:#fff}
+  .skip{font-size:13px;color:var(--ink-3);background:none;border:0;text-decoration:underline;cursor:pointer;padding:6px}
+  .done{text-align:center;padding:24px 0}
+  .done .okc{width:72px;height:72px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;margin:8px auto 16px;font-size:34px;box-shadow:0 10px 30px rgba(239,106,44,.35)}
+  .done h1{margin-bottom:10px}
+  .done p{color:var(--ink-2);max-width:460px;margin:0 auto 18px}
+  .links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+  .foot{max-width:680px;margin:0 auto;padding:0 18px 30px;text-align:center;font-size:12.5px;color:var(--ink-3)}
+  .foot a{color:var(--ink-2)}
+  .fade{animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="top"><div class="top-in">
+  <a class="brand" id="brandLink" href="https://lumapaintingservices.com" target="_blank" rel="noopener"><img id="brandLogo" src="logo.png" alt=""><div><b id="brandName">LUMA</b><span id="brandSub">Painting Services</span></div></a>
+  <div class="sp"></div>
+  <div class="lang" id="langSw"></div>
+</div><div class="prog"><i id="prog" style="width:0%"></i></div></div>
+<div class="wrap" id="root"></div>
+<div class="foot" id="foot"></div>
+<div class="bar" id="bar" hidden><div class="bar-in" id="barIn"></div></div>
+
+<script>
+/* =====================================================================
+   LUMA — estimate request (questionnaire)
+   Send clients here from Thumbtack, Instagram, Google or the website.
+   Add ?src=thumbtack to the link and the lead is filed as Thumbtack.
+   Everything they answer lands in the LUMA app as a new lead.
+   ===================================================================== */
+var CONFIG = {
+  owner: "HWXv6qFAKxS8iK3BS8182O50CdU2",
+  phone: "(786) 909-3458",
+  website: "https://lumapaintingservices.com",
+  instagram: "https://www.instagram.com/lumapainting.services/",
+  reviews: "https://www.google.com/maps?cid=11756563910388521523",
+  firebase: {
+    apiKey: "AIzaSyCQWRFafNw1GynOj8quZy03Sj3BqE4g7rY",
+    authDomain: "luma-painting-estimate.firebaseapp.com",
+    projectId: "luma-painting-estimate",
+    storageBucket: "luma-painting-estimate.firebasestorage.app",
+    messagingSenderId: "24783689736",
+    appId: "1:24783689736:web:74df3839fe7f41553619bd"
+  },
+  sdk: ["https://www.gstatic.com/firebasejs/12.19.0/", "https://cdn.jsdelivr.net/npm/firebase@12.19.0/"],
+  maxPhotos: 5
+};
+
+/* the finish levels a client can pick — edit the product names here */
+var TIERS = {
+  cabinets: [
+    { id:"premium", en:["Premium","Sherwin-Williams Gallery Series over Zinsser BIN shellac primer. Smooth, durable factory look — our most popular."], es:["Premium","Sherwin-Williams Gallery Series sobre primer Zinsser BIN a base de goma laca. Acabado liso y resistente de fábrica — el más pedido."], tag:1 },
+    { id:"pro", en:["Professional","Envirolak professional spray lacquer. Harder surface with a furniture-grade feel."], es:["Profesional","Laca profesional Envirolak a pistola. Superficie más dura, con acabado de mueble fino."] },
+    { id:"top", en:["Top of the line","Italian 2K catalyzed coatings (Renner / ICRO). Maximum hardness and chemical resistance — built for heavy daily use."], es:["Lo mejor de lo mejor","Recubrimientos italianos catalizados 2K (Renner / ICRO). Máxima dureza y resistencia química — hechos para uso diario intenso."] }
+  ],
+  walls: [
+    { id:"standard", en:["Standard","Quality paint with a clean, even finish. Great for rentals and quick refreshes."], es:["Estándar","Pintura de calidad con acabado limpio y parejo. Ideal para alquileres y retoques rápidos."] },
+    { id:"premium", en:["Premium","Sherwin-Williams premium lines. Richer color, better coverage and a washable finish."], es:["Premium","Líneas premium de Sherwin-Williams. Color más rico, mejor cubrimiento y acabado lavable."], tag:1 },
+    { id:"top", en:["Top of the line","The best Sherwin-Williams lines, built to last years longer in Miami sun and humidity."], es:["Lo mejor de lo mejor","Las mejores líneas de Sherwin-Williams, hechas para durar años más con el sol y la humedad de Miami."] }
+  ]
+};
+
+var ICO = {
+  cabinets:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18M9.5 8v1.5M14.5 8v1.5M9.5 15v1.5M14.5 15v1.5"/></svg>',
+  vanity:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M12 11v9M9 15h.01M15 15h.01M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  interior:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="13" height="6" rx="1.5"/><path d="M17 6h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7v3"/><rect x="10" y="14" width="4" height="7" rx="1"/></svg>',
+  exterior:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/></svg>',
+  other:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>',
+  cam:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
+  star:'<svg width="13" height="13" viewBox="0 0 24 24" fill="#ffb547"><path d="m12 2.8 2.8 5.8 6.4.9-4.6 4.5 1.1 6.3L12 17.3l-5.7 3 1.1-6.3L2.8 9.5l6.4-.9z"/></svg>'
+};
+
+var TX = {
+  en:{
+    heroT:"Get your free estimate", heroP:"Answer a few quick questions about your project. It takes about 2 minutes — photos help us give you an accurate price faster.",
+    t1:"5.0 on Google", t2:"Free, no obligation", t3:"English & Español",
+    how:[["Tell us about it","Your project, finish and timing."],["We review it","We price it from your answers and photos."],["Get your estimate","A clear written estimate you can accept online."]],
+    start:"Start", next:"Continue", back:"Back", send:"Send my request", sending:"Sending…", stepOf:"Step {0} of {1}",
+    q1:"What would you like done?", q1s:"Pick everything that applies.",
+    types:{ cabinets:["Kitchen cabinets","Refinish / paint your kitchen cabinets"], vanity:["Bathroom vanity","Refinish a bathroom vanity"], interior:["Interior painting","Walls, ceilings, trim, doors"], exterior:["Exterior painting","Stucco, siding, trim, doors"], other:["Something else","Drywall, repairs, limewash, other"] },
+    q2:"Tell us about your project", q2s:"Rough numbers are perfectly fine.",
+    cabT:"Cabinets", cabS:"Count the doors and drawer fronts — or let us count them.",
+    doors:"Doors", doorsS:"Every cabinet door, uppers and lowers", drawers:"Drawers", drawersS:"Each drawer front",
+    countMe:"I'm not sure — please count them for me", countMeS:"We'll count everything from your photos or at the visit.",
+    island:"Is there an island?", yes:"Yes", no:"No",
+    style:"Color style", styles:{ one:"One color", two:"Two-tone (island or uppers in another color)", unsure:"Not sure yet" },
+    current:"Current finish", currents:{ wood:"Natural wood / stained", painted:"Already painted", laminate:"Laminate / thermofoil", unsure:"Not sure" },
+    extras:"Anything else?", extraOpts:{ hardware:"New handles / pulls", inside:"Paint inside the cabinets", counters:"Countertop replacement", nothing:"Nothing else" },
+    intT:"Interior", intS:"Which areas and surfaces?", rooms:"Rooms", roomOpts:{ whole:"Whole home", living:"Living room", dining:"Dining room", kitchen:"Kitchen walls", bedrooms:"Bedrooms", bathrooms:"Bathrooms", hall:"Hallways / stairs", office:"Office" },
+    bedN:"How many bedrooms?", bathN:"How many bathrooms?",
+    surf:"Surfaces", surfOpts:{ walls:"Walls", ceilings:"Ceilings", trim:"Trim & baseboards", doors:"Doors", accent:"Accent / limewash wall" },
+    size:"Home size", sizes:{ condo:"Apartment / condo", s:"House under 1,500 sq ft", m:"1,500 – 2,500 sq ft", l:"Over 2,500 sq ft", unsure:"Not sure" },
+    extT:"Exterior", extS:"Tell us about the outside.", stories:"Home", storyOpts:{ one:"1 story", two:"2 stories", town:"Townhouse", unsure:"Not sure" },
+    extSurf:"What should we paint?", extOpts:{ stucco:"Stucco walls", trim:"Trim & fascia", soffit:"Soffits", door:"Front door", garage:"Garage door", fence:"Fence / walls", wash:"Pressure washing" },
+    othT:"Something else", othS:"Describe what you need.", othPh:"For example: patch two drywall holes in the hallway and paint the wall…",
+    q3:"Which finish level do you prefer?", q3s:"These are the products we use. Not sure? We'll recommend the best one for your home.",
+    cabTiers:"For your cabinets", wallTiers:"For your walls & surfaces", popular:"MOST CHOSEN", recommend:"Recommend the best for me", recommendS:"We'll suggest the right product at your estimate.",
+    q4:"When would you like it done?", q4s:"This helps us plan our calendar.",
+    whens:{ asap:["As soon as possible",""], w2:["In the next 2 weeks",""], month:["This month",""], m3:["In 1–3 months",""], pricing:["Just getting prices",""] },
+    date:"Preferred start date", optional:"(optional)",
+    q5:"Add photos", q5s:"Photos let us price your project accurately without a visit.",
+    addPh:"Add photo", tip1:"One wide photo of the whole kitchen or room", tip2:"A close-up of a door or wall to see the current finish", tip3:"Good light — open the blinds or turn on the lights",
+    msg:"Anything else we should know?", msgPh:"Colors you have in mind, questions, access details…",
+    q6:"Where should we send your estimate?", q6s:"We'll contact you the way you prefer.",
+    name:"Full name", phone:"Phone", email:"Email", address:"Project address", addressPh:"Street, city, ZIP", city:"City or ZIP",
+    contact:"Best way to reach you", contacts:{ text:"Text", call:"Call", whatsapp:"WhatsApp", email:"Email" },
+    heard:"How did you find us?", heardOpts:{ Thumbtack:"Thumbtack", Google:"Google", Instagram:"Instagram", Facebook:"Facebook", Referral:"A friend / referral", Nextdoor:"Nextdoor", Other:"Other" },
+    review:"Your request", need1:"Pick at least one project.", need6:"Please add your name and a phone number.",
+    fail:"We couldn't send it. Check your connection and try again, or call us at ",
+    fine:"By sending, you agree that LUMA Painting Services may contact you about your project by phone, text or email.",
+    doneT:"Thank you — we got your request!", doneP:"We'll review your project and reach out soon with your free estimate. If it's urgent, call or message us.",
+    call:"Call us", site:"See our work", reviews:"Google reviews", again:"Send another request",
+    sumType:"Project", sumCab:"Cabinets", sumTier:"Finish", sumWhen:"When", sumPh:"Photos", counted:"we'll count them",
+    stepLbl:["Project","Details","Finish","Timing","Photos","Contact"]
+  },
+  es:{
+    heroT:"Pida su presupuesto gratis", heroP:"Responda unas preguntas rápidas sobre su proyecto. Toma unos 2 minutos — las fotos nos ayudan a darle un precio exacto más rápido.",
+    t1:"5.0 en Google", t2:"Gratis, sin compromiso", t3:"English & Español",
+    how:[["Cuéntenos","Su proyecto, el acabado y cuándo lo quiere."],["Lo revisamos","Le ponemos precio con sus respuestas y fotos."],["Reciba su presupuesto","Un presupuesto claro que puede aceptar en línea."]],
+    start:"Empezar", next:"Continuar", back:"Atrás", send:"Enviar mi solicitud", sending:"Enviando…", stepOf:"Paso {0} de {1}",
+    q1:"¿Qué le gustaría hacer?", q1s:"Escoja todo lo que aplique.",
+    types:{ cabinets:["Gabinetes de cocina","Renovar / pintar los gabinetes de la cocina"], vanity:["Vanity del baño","Renovar un vanity del baño"], interior:["Pintura interior","Paredes, techos, molduras, puertas"], exterior:["Pintura exterior","Estuco, siding, molduras, puertas"], other:["Otra cosa","Drywall, reparaciones, limewash, otro"] },
+    q2:"Cuéntenos de su proyecto", q2s:"Números aproximados están perfectos.",
+    cabT:"Gabinetes", cabS:"Cuente las puertas y los frentes de cajón — o deje que nosotros los contemos.",
+    doors:"Puertas", doorsS:"Todas las puertas, arriba y abajo", drawers:"Cajones", drawersS:"Cada frente de cajón",
+    countMe:"No estoy seguro — cuéntenlos ustedes", countMeS:"Los contamos con sus fotos o en la visita.",
+    island:"¿Hay isla?", yes:"Sí", no:"No",
+    style:"Estilo de color", styles:{ one:"Un solo color", two:"Dos tonos (isla o gabinetes de arriba en otro color)", unsure:"Todavía no sé" },
+    current:"Acabado actual", currents:{ wood:"Madera natural / teñida", painted:"Ya están pintados", laminate:"Laminado / thermofoil", unsure:"No sé" },
+    extras:"¿Algo más?", extraOpts:{ hardware:"Jaladeras / manijas nuevas", inside:"Pintar el interior de los gabinetes", counters:"Cambio de encimera", nothing:"Nada más" },
+    intT:"Interior", intS:"¿Qué áreas y superficies?", rooms:"Cuartos", roomOpts:{ whole:"Toda la casa", living:"Sala", dining:"Comedor", kitchen:"Paredes de la cocina", bedrooms:"Habitaciones", bathrooms:"Baños", hall:"Pasillos / escaleras", office:"Oficina" },
+    bedN:"¿Cuántas habitaciones?", bathN:"¿Cuántos baños?",
+    surf:"Superficies", surfOpts:{ walls:"Paredes", ceilings:"Techos", trim:"Molduras y zócalos", doors:"Puertas", accent:"Pared de acento / limewash" },
+    size:"Tamaño de la casa", sizes:{ condo:"Apartamento / condo", s:"Casa de menos de 1,500 pies²", m:"1,500 – 2,500 pies²", l:"Más de 2,500 pies²", unsure:"No sé" },
+    extT:"Exterior", extS:"Cuéntenos del exterior.", stories:"Casa", storyOpts:{ one:"1 piso", two:"2 pisos", town:"Townhouse", unsure:"No sé" },
+    extSurf:"¿Qué pintamos?", extOpts:{ stucco:"Paredes de estuco", trim:"Molduras y fascia", soffit:"Sofitos", door:"Puerta principal", garage:"Puerta del garaje", fence:"Cerca / muros", wash:"Lavado a presión" },
+    othT:"Otra cosa", othS:"Describa lo que necesita.", othPh:"Por ejemplo: resanar dos huecos de drywall en el pasillo y pintar la pared…",
+    q3:"¿Qué nivel de acabado prefiere?", q3s:"Estos son los productos que usamos. ¿No está seguro? Le recomendamos el mejor para su casa.",
+    cabTiers:"Para sus gabinetes", wallTiers:"Para sus paredes y superficies", popular:"EL MÁS ELEGIDO", recommend:"Recomiéndenme el mejor", recommendS:"Le sugerimos el producto ideal en su presupuesto.",
+    q4:"¿Para cuándo lo quiere?", q4s:"Nos ayuda a planear el calendario.",
+    whens:{ asap:["Lo antes posible",""], w2:["En las próximas 2 semanas",""], month:["Este mes",""], m3:["En 1–3 meses",""], pricing:["Solo estoy cotizando",""] },
+    date:"Fecha de inicio preferida", optional:"(opcional)",
+    q5:"Agregue fotos", q5s:"Con fotos le damos un precio exacto sin necesidad de visita.",
+    addPh:"Agregar foto", tip1:"Una foto amplia de toda la cocina o el cuarto", tip2:"Una de cerca de una puerta o pared para ver el acabado actual", tip3:"Buena luz — abra las persianas o prenda las luces",
+    msg:"¿Algo más que debamos saber?", msgPh:"Colores que tiene en mente, preguntas, acceso a la casa…",
+    q6:"¿A dónde le enviamos el presupuesto?", q6s:"Lo contactamos como usted prefiera.",
+    name:"Nombre completo", phone:"Teléfono", email:"Correo", address:"Dirección del proyecto", addressPh:"Calle, ciudad, código postal", city:"Ciudad o código postal",
+    contact:"¿Cómo prefiere que lo contactemos?", contacts:{ text:"Mensaje", call:"Llamada", whatsapp:"WhatsApp", email:"Correo" },
+    heard:"¿Cómo nos encontró?", heardOpts:{ Thumbtack:"Thumbtack", Google:"Google", Instagram:"Instagram", Facebook:"Facebook", Referral:"Un amigo / referido", Nextdoor:"Nextdoor", Other:"Otro" },
+    review:"Su solicitud", need1:"Escoja al menos un proyecto.", need6:"Por favor escriba su nombre y un teléfono.",
+    fail:"No se pudo enviar. Revise su conexión e intente otra vez, o llámenos al ",
+    fine:"Al enviar, acepta que LUMA Painting Services lo contacte sobre su proyecto por teléfono, mensaje o correo.",
+    doneT:"¡Gracias — recibimos su solicitud!", doneP:"Revisaremos su proyecto y le escribiremos pronto con su presupuesto gratis. Si es urgente, llámenos o escríbanos.",
+    call:"Llámenos", site:"Vea nuestro trabajo", reviews:"Reseñas en Google", again:"Enviar otra solicitud",
+    sumType:"Proyecto", sumCab:"Gabinetes", sumTier:"Acabado", sumWhen:"Cuándo", sumPh:"Fotos", counted:"los contamos nosotros",
+    stepLbl:["Proyecto","Detalles","Acabado","Fecha","Fotos","Contacto"]
+  }
+};
+
+var Q = new URLSearchParams(location.search);
+var SRC = (function(){ var s = (Q.get("src") || Q.get("utm_source") || "").toLowerCase();
+  var map = { referral:"Referral", ref:"Referral", thumbtack:"Thumbtack", tt:"Thumbtack", google:"Google", gbp:"Google", instagram:"Instagram", ig:"Instagram", facebook:"Facebook", fb:"Facebook", nextdoor:"Nextdoor", website:"Website", web:"Website" };
+  return map[s] || ""; })();
+var S = {
+  lang: (Q.get("lang") || navigator.language || "en").toLowerCase().indexOf("es") === 0 ? "es" : "en",
+  step: 0, types: [], cab:{ doors:0, drawers:0, countMe:false, island:"", style:"", current:"", extras:[] },
+  intr:{ rooms:[], bedrooms:1, bathrooms:1, surfaces:[], size:"" }, ext:{ stories:"", surfaces:[] }, other:"",
+  tierCab:"", tierWall:"", when:"", date:"", photos:[], message:"",
+  name:Q.get("name") || "", phone:Q.get("phone") || "", email:Q.get("email") || "", address:"", contact:"text", heard:SRC,
+  busy:false, done:false, err:""
+};
+var STEPS = ["intro","types","details","tier","when","photos","contact"];
+function t(){ return TX[S.lang]; }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
+function digits(s){ return String(s || "").replace(/[^0-9]/g, ""); }
+function rid(){ var a = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", o = ""; for(var i = 0; i < 20; i++) o += a[Math.floor(Math.random() * a.length)]; return o; }
+function has(list, v){ return list.indexOf(v) >= 0; }
+function toggleIn(list, v){ var i = list.indexOf(v); if(i >= 0) list.splice(i, 1); else list.push(v); }
+function isCab(){ return has(S.types, "cabinets") || has(S.types, "vanity"); }
+function isWall(){ return has(S.types, "interior") || has(S.types, "exterior"); }
+
+/* ---------- drawing ---------- */
+function render(){
+  var T = t(), root = document.getElementById("root");
+  document.documentElement.lang = S.lang;
+  document.getElementById("langSw").innerHTML = '<button data-lang="en" class="'+(S.lang==="en"?"on":"")+'">EN</button><button data-lang="es" class="'+(S.lang==="es"?"on":"")+'">ES</button>';
+  var total = STEPS.length - 1, pct = S.done ? 100 : Math.round(S.step / total * 100);
+  document.getElementById("prog").style.width = pct + "%";
+  document.getElementById("foot").innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;font-size:11.5px;color:#8b8e94"><svg width="14" height="14" viewBox="0 0 200 200"><rect width="200" height="200" rx="40" fill="#1a1a2e"/><path d="M100 40 L150 68 L150 132 L100 160 L50 132 L50 68 Z" stroke="#fff" stroke-width="14" stroke-linejoin="round" fill="none"/><circle cx="100" cy="100" r="20" fill="#fff"/></svg>Powered by TradeWorks</div>' + '<a href="'+esc(CONFIG.website)+'" target="_blank" rel="noopener">'+esc(String(CONFIG.website).replace(/^https?:\/\//, "").replace(/\/$/, ""))+'</a> · <a href="tel:+1'+digits(CONFIG.phone)+'">'+esc(CONFIG.phone)+'</a>';
+  var bl = document.getElementById("brandLink"); if(bl) bl.href = CONFIG.website;
+  var bar = document.getElementById("bar"), barIn = document.getElementById("barIn");
+  if(S.done){ root.innerHTML = doneHTML(); bar.hidden = true; bindAll(); return; }
+  var name = STEPS[S.step], head = "";
+  if(S.step > 0) head = '<div class="step-k">'+esc(T.stepOf.replace("{0}", S.step).replace("{1}", total))+' · '+esc(T.stepLbl[S.step - 1])+'</div>';
+  var body = ({ intro:introHTML, types:typesHTML, details:detailsHTML, tier:tierHTML, when:whenHTML, photos:photosHTML, contact:contactHTML })[name]();
+  root.innerHTML = '<div class="fade">'+head+body+'<div class="err" id="err">'+esc(S.err)+'</div></div>';
+  bar.hidden = false;
+  var last = S.step === total;
+  barIn.innerHTML = (S.step > 0 ? '<button class="btn" data-go="back">'+T.back+'</button>' : '')+
+    '<button class="btn pri'+(last || S.step === 0 ? " acc" : "")+'" data-go="next"'+(S.busy ? " disabled" : "")+'>'+(S.step === 0 ? T.start + " →" : last ? (S.busy ? T.sending : T.send) : T.next + " →")+'</button>';
+  bindAll();
+}
+function optCard(kind, id, title, sub, on, ico, extra){
+  return '<button type="button" class="opt'+(ico ? "" : " row")+(on ? " on" : "")+'" data-'+kind+'="'+esc(id)+'">'+
+    (ico ? '<span class="ic">'+ico+'</span><b>'+esc(title)+'</b>'+(sub ? '<small>'+esc(sub)+'</small>' : '')
+         : '<span class="txt"><b>'+esc(title)+(extra || '')+'</b>'+(sub ? '<small>'+esc(sub)+'</small>' : '')+'</span>')+
+    '<span class="ck">'+(on ? "✓" : "")+'</span></button>';
+}
+function chips(kind, opts, sel, multi){
+  return '<div class="chips">'+Object.keys(opts).map(function(k){
+    var on = multi ? has(sel, k) : sel === k;
+    return '<button type="button" class="chip'+(on ? " on" : "")+'" data-'+kind+'="'+esc(k)+'">'+esc(opts[k])+'</button>';
+  }).join("")+'</div>';
+}
+function stepper(kind, v, off){
+  return '<div class="stepper'+(off ? " off" : "")+'"><button type="button" data-dec="'+kind+'" aria-label="-">−</button><input type="number" inputmode="numeric" min="0" max="200" data-num="'+kind+'" value="'+(v || 0)+'"><button type="button" data-inc="'+kind+'" aria-label="+">+</button></div>';
+}
+function introHTML(){
+  var T = t();
+  return '<div class="hero"><h1>'+T.heroT+'</h1><p>'+T.heroP+'</p><div class="trust"><span>'+ICO.star+' '+T.t1+'</span><span>✓ '+T.t2+'</span><span>'+T.t3+'</span></div></div>'+
+    '<div class="how">'+T.how.map(function(h, i){ return '<div><i>'+(i + 1)+'</i><b>'+esc(h[0])+'</b>'+esc(h[1])+'</div>'; }).join("")+'</div>';
+}
+function typesHTML(){
+  var T = t();
+  return '<h1>'+T.q1+'</h1><p class="lead">'+T.q1s+'</p><div class="grid">'+
+    ["cabinets","vanity","interior","exterior","other"].map(function(k){ return optCard("type", k, T.types[k][0], T.types[k][1], has(S.types, k), ICO[k]); }).join("")+'</div>';
+}
+function detailsHTML(){
+  var T = t(), h = '<h1>'+T.q2+'</h1><p class="lead">'+T.q2s+'</p>';
+  if(isCab()){
+    var c = S.cab;
+    h += '<div class="box"><h3>'+T.cabT+'</h3><p class="m">'+T.cabS+'</p>'+
+      '<div class="count"><div class="lbl"><b>'+T.doors+'</b><small>'+T.doorsS+'</small></div>'+stepper("doors", c.doors, c.countMe)+'</div>'+
+      '<div class="count"><div class="lbl"><b>'+T.drawers+'</b><small>'+T.drawersS+'</small></div>'+stepper("drawers", c.drawers, c.countMe)+'</div>'+
+      '<label class="toggle"><input type="checkbox" id="countMe"'+(c.countMe ? " checked" : "")+'><span class="sw"></span><span class="t">'+T.countMe+'<small>'+T.countMeS+'</small></span></label>'+
+    '</div>'+
+    '<div class="box"><h3>'+T.island+'</h3>'+chips("island", { yes:T.yes, no:T.no }, c.island)+
+      '<h3 style="margin-top:16px">'+T.style+'</h3>'+chips("style", T.styles, c.style)+
+      '<h3 style="margin-top:16px">'+T.current+'</h3>'+chips("current", T.currents, c.current)+
+      '<h3 style="margin-top:16px">'+T.extras+'</h3>'+chips("extra", T.extraOpts, c.extras, true)+
+    '</div>';
+  }
+  if(has(S.types, "interior")){
+    var i = S.intr;
+    h += '<div class="box"><h3>'+T.intT+'</h3><p class="m">'+T.intS+'</p>'+
+      '<h3 style="font-size:14px">'+T.rooms+'</h3>'+chips("room", T.roomOpts, i.rooms, true)+
+      (has(i.rooms, "bedrooms") ? '<div class="count" style="margin-top:10px"><div class="lbl"><b>'+T.bedN+'</b></div>'+stepper("bedrooms", i.bedrooms)+'</div>' : '')+
+      (has(i.rooms, "bathrooms") ? '<div class="count"><div class="lbl"><b>'+T.bathN+'</b></div>'+stepper("bathrooms", i.bathrooms)+'</div>' : '')+
+      '<h3 style="font-size:14px;margin-top:16px">'+T.surf+'</h3>'+chips("surf", T.surfOpts, i.surfaces, true)+
+      '<h3 style="font-size:14px;margin-top:16px">'+T.size+'</h3>'+chips("size", T.sizes, i.size)+
+    '</div>';
+  }
+  if(has(S.types, "exterior")){
+    var x = S.ext;
+    h += '<div class="box"><h3>'+T.extT+'</h3><p class="m">'+T.extS+'</p>'+
+      '<h3 style="font-size:14px">'+T.stories+'</h3>'+chips("story", T.storyOpts, x.stories)+
+      '<h3 style="font-size:14px;margin-top:16px">'+T.extSurf+'</h3>'+chips("esurf", T.extOpts, x.surfaces, true)+
+    '</div>';
+  }
+  if(has(S.types, "other")){
+    h += '<div class="box"><h3>'+T.othT+'</h3><p class="m">'+T.othS+'</p><textarea id="fOther" maxlength="800" placeholder="'+esc(T.othPh)+'">'+esc(S.other)+'</textarea></div>';
+  }
+  return h;
+}
+function tierHTML(){
+  var T = t(), L = S.lang, h = '<h1>'+T.q3+'</h1><p class="lead">'+T.q3s+'</p>';
+  function list(kind, arr, sel){
+    return '<div class="grid one">'+arr.map(function(x){
+      var tx = x[L];
+      return optCard(kind, x.id, tx[0], tx[1], sel === x.id, "", x.tag ? '<span class="tag">'+T.popular+'</span>' : "");
+    }).join("")+optCard(kind, "recommend", T.recommend, T.recommendS, sel === "recommend", "")+'</div>';
+  }
+  if(isCab()) h += '<h2>'+T.cabTiers+'</h2>'+list("tcab", TIERS.cabinets, S.tierCab);
+  if(isWall() || (!isCab() && has(S.types, "other"))) h += '<h2>'+T.wallTiers+'</h2>'+list("twall", TIERS.walls, S.tierWall);
+  return h;
+}
+function whenHTML(){
+  var T = t();
+  return '<h1>'+T.q4+'</h1><p class="lead">'+T.q4s+'</p><div class="grid one">'+
+    Object.keys(T.whens).map(function(k){ return optCard("when", k, T.whens[k][0], "", S.when === k, ""); }).join("")+'</div>'+
+    '<div class="box" style="margin-top:14px"><label class="f"><span>'+T.date+' <i>'+T.optional+'</i></span><input type="date" id="fDate" value="'+esc(S.date)+'" min="'+new Date().toISOString().slice(0, 10)+'"></label></div>';
+}
+function photosHTML(){
+  var T = t();
+  return '<h1>'+T.q5+'</h1><p class="lead">'+T.q5s+'</p>'+
+    '<div class="box"><div class="photos">'+S.photos.map(function(p, i){ return '<div class="ph"><img src="'+p+'" alt=""><button type="button" data-rm="'+i+'" aria-label="remove">×</button></div>'; }).join("")+
+      (S.photos.length < CONFIG.maxPhotos ? '<label class="add"><input type="file" id="fPh" accept="image/*" multiple style="display:none">'+ICO.cam+T.addPh+'</label>' : '')+'</div>'+
+      '<div class="tips"><div><i>●</i>'+T.tip1+'</div><div><i>●</i>'+T.tip2+'</div><div><i>●</i>'+T.tip3+'</div></div></div>'+
+    '<div class="box"><label class="f"><span>'+T.msg+' <i>'+T.optional+'</i></span><textarea id="fMsg" maxlength="1500" placeholder="'+esc(T.msgPh)+'">'+esc(S.message)+'</textarea></label></div>';
+}
+function contactHTML(){
+  var T = t();
+  return '<h1>'+T.q6+'</h1><p class="lead">'+T.q6s+'</p>'+
+    '<div class="box fields">'+
+      '<div class="f2"><label class="f"><span>'+T.name+'</span><input type="text" id="fName" autocomplete="name" maxlength="100" value="'+esc(S.name)+'"></label>'+
+      '<label class="f"><span>'+T.phone+'</span><input type="tel" id="fPhone" autocomplete="tel" maxlength="30" value="'+esc(S.phone)+'"></label></div>'+
+      '<label class="f"><span>'+T.email+' <i>'+T.optional+'</i></span><input type="email" id="fEmail" autocomplete="email" maxlength="120" value="'+esc(S.email)+'"></label>'+
+      '<label class="f"><span>'+T.address+'</span><input type="text" id="fAddr" autocomplete="street-address" maxlength="160" placeholder="'+esc(T.addressPh)+'" value="'+esc(S.address)+'"></label>'+
+      '<div class="f" style="display:grid;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--ink-2)">'+T.contact+'</span>'+chips("contact", T.contacts, S.contact)+'</div>'+
+      (SRC ? '' : '<label class="f"><span>'+T.heard+'</span><select id="fHeard"><option value=""></option>'+
+        Object.keys(T.heardOpts).map(function(k){ return '<option value="'+k+'"'+(S.heard === k ? " selected" : "")+'>'+esc(T.heardOpts[k])+'</option>'; }).join("")+'</select></label>')+
+      '<div class="hp" aria-hidden="true"><label>Company<input type="text" id="fCo" tabindex="-1" autocomplete="off"></label></div>'+
+    '</div>'+
+    '<h2>'+T.review+'</h2><div class="box sum">'+summaryRows().map(function(r){ return '<div><span>'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>'; }).join("")+'</div>'+
+    '<div class="fine">'+T.fine+'</div>';
+}
+function summaryRows(){
+  var T = t(), L = S.lang, rows = [];
+  rows.push([T.sumType, S.types.map(function(k){ return T.types[k][0]; }).join(", ") || "—"]);
+  if(isCab()) rows.push([T.sumCab, S.cab.countMe ? T.counted : (S.cab.doors + " " + T.doors.toLowerCase() + " · " + S.cab.drawers + " " + T.drawers.toLowerCase())]);
+  var tiers = [];
+  function tn(arr, id){ if(id === "recommend") return T.recommend; var x = arr.filter(function(y){ return y.id === id; })[0]; return x ? x[L][0] : ""; }
+  if(S.tierCab) tiers.push(tn(TIERS.cabinets, S.tierCab));
+  if(S.tierWall) tiers.push(tn(TIERS.walls, S.tierWall));
+  if(tiers.length) rows.push([T.sumTier, tiers.join(" / ")]);
+  if(S.when) rows.push([T.sumWhen, T.whens[S.when][0] + (S.date ? " · " + S.date : "")]);
+  rows.push([T.sumPh, String(S.photos.length)]);
+  return rows;
+}
+function doneHTML(){
+  var T = t(), wa = "https://wa.me/1" + digits(CONFIG.phone);
+  return '<div class="done fade"><div class="okc">✓</div><h1>'+T.doneT+'</h1><p>'+T.doneP+'</p>'+
+    '<div class="links"><a class="btn" href="tel:+1'+digits(CONFIG.phone)+'">'+T.call+'</a><a class="btn wa" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a></div>'+
+    '<div class="links" style="margin-top:10px"><a class="btn" href="'+CONFIG.website+'" target="_blank" rel="noopener">'+T.site+' ↗</a><a class="btn" href="'+CONFIG.instagram+'" target="_blank" rel="noopener">Instagram ↗</a><a class="btn" href="'+CONFIG.reviews+'" target="_blank" rel="noopener">★ '+T.reviews+' ↗</a></div>'+
+    '<p style="margin-top:22px"><button type="button" class="skip" id="again">'+T.again+'</button></p></div>';
+}
+
+/* ---------- reading what they typed ---------- */
+function keep(){
+  function v(id){ var el = document.getElementById(id); return el ? el.value : null; }
+  var x;
+  if((x = v("fOther")) !== null) S.other = x;
+  if((x = v("fDate")) !== null) S.date = x;
+  if((x = v("fMsg")) !== null) S.message = x;
+  if((x = v("fName")) !== null) S.name = x;
+  if((x = v("fPhone")) !== null) S.phone = x;
+  if((x = v("fEmail")) !== null) S.email = x;
+  if((x = v("fAddr")) !== null) S.address = x;
+  if((x = v("fHeard")) !== null) S.heard = x;
+  document.querySelectorAll("[data-num]").forEach(function(el){ setNum(el.getAttribute("data-num"), el.value); });
+}
+function setNum(k, v){
+  v = Math.max(0, Math.min(200, parseInt(v, 10) || 0));
+  if(k === "doors" || k === "drawers") S.cab[k] = v; else S.intr[k] = v;
+}
+function getNum(k){ return (k === "doors" || k === "drawers") ? S.cab[k] : S.intr[k]; }
+function bindAll(){
+  function each(sel, fn){ document.querySelectorAll(sel).forEach(fn); }
+  each("[data-lang]", function(b){ b.onclick = function(){ keep(); S.lang = b.getAttribute("data-lang"); render(); }; });
+  each("[data-go]", function(b){ b.onclick = function(){ keep(); b.getAttribute("data-go") === "back" ? go(-1) : next(); }; });
+  each("[data-type]", function(b){ b.onclick = function(){ toggleIn(S.types, b.getAttribute("data-type")); S.err = ""; render(); }; });
+  each("[data-dec]", function(b){ b.onclick = function(){ keep(); var k = b.getAttribute("data-dec"); setNum(k, getNum(k) - 1); render(); }; });
+  each("[data-inc]", function(b){ b.onclick = function(){ keep(); var k = b.getAttribute("data-inc"); setNum(k, getNum(k) + 1); render(); }; });
+  var cm = document.getElementById("countMe"); if(cm) cm.onchange = function(){ keep(); S.cab.countMe = cm.checked; render(); };
+  function single(attr, obj, key){ each("[data-" + attr + "]", function(b){ b.onclick = function(){ keep(); var v = b.getAttribute("data-" + attr); obj[key] = obj[key] === v ? "" : v; render(); }; }); }
+  function multi(attr, list){ each("[data-" + attr + "]", function(b){ b.onclick = function(){ keep(); toggleIn(list, b.getAttribute("data-" + attr)); render(); }; }); }
+  single("island", S.cab, "island"); single("style", S.cab, "style"); single("current", S.cab, "current");
+  each("[data-extra]", function(b){ b.onclick = function(){ keep(); var v = b.getAttribute("data-extra");
+    if(v === "nothing") S.cab.extras = has(S.cab.extras, "nothing") ? [] : ["nothing"];
+    else { S.cab.extras = S.cab.extras.filter(function(x){ return x !== "nothing"; }); toggleIn(S.cab.extras, v); }
+    render(); }; });
+  multi("room", S.intr.rooms); multi("surf", S.intr.surfaces); single("size", S.intr, "size");
+  single("story", S.ext, "stories"); multi("esurf", S.ext.surfaces);
+  single("tcab", S, "tierCab"); single("twall", S, "tierWall"); single("when", S, "when"); single("contact", S, "contact");
+  each("[data-rm]", function(b){ b.onclick = function(){ keep(); S.photos.splice(+b.getAttribute("data-rm"), 1); render(); }; });
+  var fp = document.getElementById("fPh"); if(fp) fp.onchange = function(){ keep(); addPhotos(fp.files); };
+  var ag = document.getElementById("again"); if(ag) ag.onclick = function(){ location.href = location.pathname + location.search; };
+}
+function go(d){ S.err = ""; S.step = Math.max(0, Math.min(STEPS.length - 1, S.step + d)); render(); window.scrollTo(0, 0); }
+function next(){
+  var T = t(), name = STEPS[S.step];
+  if(name === "types" && !S.types.length){ S.err = T.need1; render(); return; }
+  if(name === "contact"){ submit(); return; }
+  go(1);
+}
+
+/* ---------- photos: shrunk on the phone before they travel ---------- */
+function shrink(file){
+  return new Promise(function(res){
+    if(!file || !/^image\//.test(file.type)){ res(null); return; }
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      var w = img.naturalWidth, h = img.naturalHeight, k = Math.min(1, 1100 / Math.max(w, h));
+      var c = document.createElement("canvas"); c.width = Math.round(w*k); c.height = Math.round(h*k);
+      var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      var out = c.toDataURL("image/jpeg", 0.7);
+      if(out.length > 850000) out = c.toDataURL("image/jpeg", 0.5);
+      res(out.length > 850000 ? null : out);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); res(null); };
+    img.src = url;
+  });
+}
+function addPhotos(files){
+  var list = Array.prototype.slice.call(files || []).slice(0, CONFIG.maxPhotos - S.photos.length);
+  Promise.all(list.map(shrink)).then(function(out){ out.forEach(function(u){ if(u && S.photos.length < CONFIG.maxPhotos) S.photos.push(u); }); render(); });
+}
+
+/* ---------- sending ---------- */
+var fbReady = null;
+function loadScript(src){ return new Promise(function(res, rej){ var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+function loadFirebase(){
+  if(fbReady) return fbReady;
+  function chain(base){ return loadScript(base + "firebase-app-compat.js").then(function(){ return loadScript(base + "firebase-firestore-compat.js"); }); }
+  fbReady = chain(CONFIG.sdk[0]).catch(function(){ return chain(CONFIG.sdk[1]); }).then(function(){
+    if(!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
+    var fs = firebase.firestore();
+    try{ fs.settings({ experimentalForceLongPolling:true, merge:true }); }catch(err){}
+    return fs;
+  });
+  fbReady.catch(function(){ fbReady = null; });
+  return fbReady;
+}
+var SVC_EN = { cabinets:"Kitchen cabinets", vanity:"Bathroom vanity", interior:"Interior painting", exterior:"Exterior painting", other:"Other" };
+function submit(){
+  var T = t();
+  var co = document.getElementById("fCo");
+  if(co && co.value){ S.done = true; render(); return; }            /* robots fill the hidden field */
+  if(!S.name.trim() || digits(S.phone).length < 7){ S.err = T.need6; render(); return; }
+  S.err = ""; S.busy = true; render();
+  var id = rid(), photoIds = S.photos.map(function(){ return rid(); });
+  var details = {
+    v:2, types:S.types.slice(0, 5),
+    cab: isCab() ? { doors:S.cab.countMe ? 0 : S.cab.doors, drawers:S.cab.countMe ? 0 : S.cab.drawers, countMe:!!S.cab.countMe, island:S.cab.island, style:S.cab.style, current:S.cab.current, extras:S.cab.extras.slice(0, 6) } : null,
+    intr: has(S.types, "interior") ? { rooms:S.intr.rooms.slice(0, 10), bedrooms:has(S.intr.rooms, "bedrooms") ? S.intr.bedrooms : 0, bathrooms:has(S.intr.rooms, "bathrooms") ? S.intr.bathrooms : 0, surfaces:S.intr.surfaces.slice(0, 8), size:S.intr.size } : null,
+    ext: has(S.types, "exterior") ? { stories:S.ext.stories, surfaces:S.ext.surfaces.slice(0, 8) } : null,
+    other: has(S.types, "other") ? S.other.trim().slice(0, 800) : "",
+    tierCab:S.tierCab, tierWall:S.tierWall, when:S.when, date:S.date, contact:S.contact, src:SRC || "", ref:String(Q.get("ref") || "").slice(0, 60)
+  };
+  loadFirebase().then(function(fs){
+    var ref = fs.collection("leads").doc(id);
+    return photoIds.reduce(function(chain, pid, i){
+      return chain.then(function(){ return ref.collection("photos").doc(pid).set({ data:S.photos[i], at:new Date().toISOString() }); });
+    }, Promise.resolve()).then(function(){
+      return ref.set({
+        owner: CONFIG.owner,
+        name: S.name.trim().slice(0, 100),
+        phone: S.phone.trim().slice(0, 30),
+        email: S.email.trim().slice(0, 120),
+        city: S.address.trim().slice(0, 80),
+        address: S.address.trim().slice(0, 160),
+        service: S.types.map(function(k){ return SVC_EN[k]; }).join(", ").slice(0, 120) || "Other",
+        message: S.message.trim().slice(0, 1500),
+        heard: (SRC || S.heard || "").slice(0, 40),
+        lang: S.lang,
+        photos: photoIds,
+        details: details,
+        at: new Date().toISOString(),
+        page: String(location.href).slice(0, 200)
+      });
+    });
+  }).then(function(){
+    S.busy = false; S.done = true; render(); window.scrollTo(0, 0);
+    try{ window.parent && window.parent.postMessage({ luma:"lead-sent" }, "*"); }catch(err){}
+  }).catch(function(err){
+    try{ console.error(err); }catch(e){}
+    S.busy = false; S.err = T.fail + CONFIG.phone + "."; render();
+  });
+}
+/* links and phone follow the LUMA app's Settings (a small public doc the app keeps up to date) */
+function loadPublicProfile(){
+  var url = "https://firestore.googleapis.com/v1/projects/" + CONFIG.firebase.projectId + "/databases/(default)/documents/public/" + CONFIG.owner;
+  fetch(url).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+    if(!j || !j.fields) return;
+    function f(k){ return j.fields[k] && j.fields[k].stringValue ? j.fields[k].stringValue : ""; }
+    var changed = false;
+    [["website","website"],["instagram","instagram"],["reviews","reviews"],["phone","phone"]].forEach(function(m){ var v = f(m[1]); if(v && CONFIG[m[0]] !== v){ CONFIG[m[0]] = v; changed = true; } });
+    var logo = f("logo"), nm = f("name");
+    if(logo){ var im = document.getElementById("brandLogo"); if(im) im.src = logo; }
+    if(nm){ var parts = nm.split(" "), b = document.getElementById("brandName"), sb = document.getElementById("brandSub");
+      if(b) b.textContent = parts[0]; if(sb) sb.textContent = parts.slice(1).join(" "); }
+    if(changed){ keep(); render(); }
+  }).catch(function(){});
+}
+render();
+loadPublicProfile();
+</script>
+</body>
+</html>
