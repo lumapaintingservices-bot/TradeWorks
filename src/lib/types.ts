@@ -94,6 +94,7 @@ export type Settings = {
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
   calOn?: boolean; calToken?: string;
+  goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];
   bankRules?: { match: string; category: string; source?: string; vendor?: string }[];
   expCats?: (string | { id: string; name: string })[];
