@@ -1,0 +1,12 @@
+rules_version = '2';
+// TradeWorks Storage rules. Firebase console > Storage > Rules > Publish.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function member(cid) { return request.auth != null && firestore.exists(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)); }
+    // receipts, photos, logos: only members of that company
+    match /companies/{cid}/{allPaths=**} {
+      allow read: if member(cid);
+      allow write: if member(cid) && (request.resource == null || request.resource.size < 5 * 1024 * 1024);
+    }
+  }
+}

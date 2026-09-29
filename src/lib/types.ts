@@ -34,12 +34,21 @@ export type Estimate = {
   payClaim?: { method: string; at: string };
   sentAt?: string;
   snooze?: Record<string, string>; reviewAsked?: boolean; warrantyChecked?: boolean;
+  photos?: PhotoRef[]; showPhotos?: boolean; check?: Record<string, string>; jobTasks?: JobTask[]; colors?: ColorRow[];
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
 export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
 export type Invoice = { id: string; number: string; estId: string; kind: "deposit" | "balance" | "co"; amount: number; date: string; status: "Unpaid" | "Paid"; paidDate?: string; coId?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type Task = { id: string; title: string; date: string; time?: string; note?: string; estId?: string; workerId?: string; done?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type MessageTemplates = Partial<Record<string, { en: string; es: string }>>;
+export type Worker = { id: string; name: string; phone?: string; role?: string; rate: number; active?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type HourEntry = { id: string; workerId: string; date: string; hours: number; rate: number; estId?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type Payout = { id: string; workerId: string; date: string; amount: number; method?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type ClockRec = { id: string; at: string; estId?: string; companyId?: string };
+export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string };
+export type ColorRow = { area: string; brand: string; color: string; sheen: string; code: string };
+export type JobTask = { id: string; day: number | string; text: string };
 export type ChatMsg = { from: "client" | "owner"; text: string; at: string };
 
 export type Client = {
@@ -85,4 +94,8 @@ export type Settings = {
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
   calOn?: boolean; calToken?: string;
+  recurring?: { id: string; vendor: string; amount: number; category: string; method?: string; note?: string; day: number; active: boolean }[];
+  bankRules?: { match: string; category: string; vendor?: string }[];
+  expCats?: string[];
+  showcase?: { id: string; url: string; caption: string }[];
 };

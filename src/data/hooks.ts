@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
-import type { Client, Estimate, Invoice, Settings, Task } from "../lib/types";
+import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, Payout, Settings, Task, Worker } from "../lib/types";
 import { removeRec, saveRec, subscribe, type Rec } from "./repo";
 
 export function useCollection<T extends Rec>(col: string) {
@@ -21,6 +21,11 @@ export function useCollection<T extends Rec>(col: string) {
 export const useClients = () => useCollection<Client & Rec>("clients");
 export const useInvoices = () => useCollection<Invoice & Rec>("invoices");
 export const useTasks = () => useCollection<Task & Rec>("tasks");
+export const useExpenses = () => useCollection<Expense & Rec>("expenses");
+export const useWorkers = () => useCollection<Worker & Rec>("workers");
+export const useHours = () => useCollection<HourEntry & Rec>("hours");
+export const usePayouts = () => useCollection<Payout & Rec>("payouts");
+export const useClock = () => useCollection<ClockRec & Rec>("clock");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
 
 /** Company settings live in a single doc: settings/main. Missing fields fall back to defaults. */
