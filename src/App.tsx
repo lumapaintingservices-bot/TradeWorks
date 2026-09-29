@@ -15,6 +15,7 @@ import LeadForm from "./pages/public/LeadForm";
 import PortalPage from "./pages/public/PortalPage";
 import InvoiceDoc from "./pages/InvoiceDoc";
 import Invoices from "./pages/Invoices";
+import Pipeline from "./pages/Pipeline";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -62,7 +63,7 @@ export default function App() {
       <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /><Route path="/invoices/:id/doc" element={<InvoiceDoc />} /></Route>
       <Route element={<Gate />}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/pipeline" element={P("Pipeline", "Embudo", "leads", 4)} />
+        <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/estimates" element={<Estimates />} />
         <Route path="/estimates/:id" element={<EstimateEditor />} />

@@ -44,7 +44,7 @@ export type ChatMsg = { from: "client" | "owner"; text: string; at: string };
 
 export type Client = {
   id: string; name: string; phone: string; email: string; address: string; source: string; lang: "en" | "es";
-  note: string; lead?: boolean; archived?: boolean; createdAt?: unknown; updatedAt?: unknown; companyId?: string;
+  note: string; lead?: boolean; archived?: boolean; archivedAt?: string; snooze?: Record<string, string>; createdAt?: unknown; updatedAt?: unknown; companyId?: string;
   web?: { id?: string; service?: string; city?: string; message?: string; heard?: string; at?: string; details?: { types?: string[] } & Record<string, unknown> };
   referredBy?: string;
   photos?: { id: string; kind: string; caption: string }[];

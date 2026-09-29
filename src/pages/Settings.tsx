@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useSettings } from "../data/hooks";
+import MessageTemplatesCard from "./settings/MessageTemplatesCard";
 import CalendarCard from "./settings/CalendarCard";
 import { useT } from "../i18n";
 import { useUi, type ThemePref } from "../store/ui";
@@ -92,6 +93,7 @@ export default function Settings() {
       </div>
       <BusinessCard />
       <ClientLinkCard />
+      <MessageTemplatesCard />
       <CalendarCard />
       {company && (
         <div className="card" style={{ maxWidth: 640, marginTop: 16 }}>

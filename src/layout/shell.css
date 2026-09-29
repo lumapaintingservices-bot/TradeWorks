@@ -37,3 +37,6 @@
   .more-in .nav-item{width:100%;margin:0;font-size:15px;padding:12px}
   .more-in .nav-item.on{background:var(--surface-2);color:var(--ink);box-shadow:none}.more-in .nav-item.on svg{color:var(--acc)}
 }
+.nav-badge{font-style:normal;margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center}
+.nav-item.on .nav-badge{background:#fff;color:var(--ink)}
+@media(max-width:899px){.bnav a{position:relative}.bnav .nav-badge{position:absolute;top:2px;left:54%;margin:0;min-width:16px;height:16px;font-size:10px;padding:0 4px}}

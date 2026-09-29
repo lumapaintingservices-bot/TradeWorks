@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { setTop } from "../data/repo";
@@ -7,6 +7,8 @@ import { useT } from "../i18n";
 import { useUi } from "../store/ui";
 import { Icon } from "../ui/Icon";
 import { Logo } from "../ui/Logo";
+import { useNavBadges } from "../pages/FollowUps";
+import { useInvoices } from "../data/hooks";
 import { BOTTOM, BUSINESS, MORE, WORK, type NavItem } from "./nav";
 import "./shell.css";
 
@@ -21,11 +23,13 @@ function LangSwitch() {
   );
 }
 
+const Badges = createContext<Record<string, number>>({});
 const Item = ({ it, onClick }: { it: NavItem; onClick?: () => void }) => {
   const t = useT();
+  const n = useContext(Badges)[it.to] || 0;
   return (
     <NavLink to={it.to} end={it.to === "/"} onClick={onClick} className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}>
-      <Icon name={it.icon} /><span>{t(it.en, it.es)}</span>
+      <Icon name={it.icon} /><span>{t(it.en, it.es)}</span>{n > 0 && <em className="nav-badge">{n}</em>}
     </NavLink>
   );
 };
@@ -37,6 +41,9 @@ export default function Shell() {
   const { user, company } = useAuth();
   const toast = useUi((s) => s.toastMsg);
   const [more, setMore] = useState(false);
+  const nb = useNavBadges();
+  const { rows: invs } = useInvoices();
+  const badges = { "/": nb.dashboard, "/pipeline": nb.pipeline, "/invoices": invs.filter((v) => v.status !== "Paid").length };
   useEffect(() => setMore(false), [loc.pathname]);
   // public branding for the lead form (public/{companyId}); readable by anyone with the link, holds no private data
   useEffect(() => {
@@ -46,6 +53,7 @@ export default function Shell() {
   const newEstimate = () => nav("/estimates?new=1");
 
   return (
+    <Badges.Provider value={badges}>
     <div className="shell">
       <aside className="sb">
         <div className="sb-top" onClick={() => nav("/")}>
@@ -88,12 +96,13 @@ export default function Shell() {
       <nav className="bnav">
         {BOTTOM.map((it) => (
           <NavLink key={it.to} to={it.to} end={it.to === "/"} className={({ isActive }) => (isActive ? "on" : "")}>
-            <Icon name={it.icon} /><span>{t(it.en, it.es)}</span>
+            <Icon name={it.icon} /><span>{t(it.en, it.es)}</span>{(badges as Record<string, number>)[it.to] > 0 && <em className="nav-badge">{(badges as Record<string, number>)[it.to]}</em>}
           </NavLink>
         ))}
         <button className={more ? "on" : ""} onClick={() => setMore((m) => !m)}><Icon name="more" /><span>{t("More", "Más")}</span></button>
       </nav>
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
+    </Badges.Provider>
   );
 }

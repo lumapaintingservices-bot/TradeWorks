@@ -118,7 +118,7 @@ export default function Pipeline() {
         {!w && c.note && <div className="pipe-x">{c.note.slice(0, 140)}</div>}
         <div className="pipe-act">
           {c.phone && <a className="btn sm wa" href={waUrl(c.phone)} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
-          <button className="btn sm pri" onClick={() => nav(`/estimates?new=1&client=${c.id}`)}>{t("Estimate", "Presupuesto")}</button>
+          <button className="btn sm pri" onClick={() => nav(`/estimates?new=1&client=${c.id}`)}>{t("Estimate", "Cotizar")}</button>
           <button className="btn sm" title={t("Not interested", "No le interesa")} aria-label={t("Not interested", "No le interesa")} onClick={() => drop(c)}>✕</button>
         </div>
       </div>

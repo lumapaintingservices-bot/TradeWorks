@@ -25,9 +25,11 @@ export default function MessageTemplatesCard() {
   const set = (k: TplKey, l: "en" | "es", v: string) => setDraft({ ...draft, [k]: { ...draft[k], [l]: v } });
 
   async function save() {
-    // only store what differs from the defaults, so future improvements to the defaults still reach untouched templates
+    // Only store what differs from the defaults, so future improvements to the defaults still reach untouched templates.
+    // A template that was stored before and is now reset is written back as the default text: Firestore merges maps,
+    // so leaving the key out would keep the old wording.
     const mt: MessageTemplates = {};
-    TPL_KEYS.forEach((k) => { if (!isDefault(draft, k)) mt[k] = { en: draft[k].en, es: draft[k].es }; });
+    TPL_KEYS.forEach((k) => { if (!isDefault(draft, k) || settings.messageTemplates?.[k]) mt[k] = { en: draft[k].en, es: draft[k].es }; });
     const n = Math.max(1, Math.round(Number(days) || 5));
     await update({ messageTemplates: mt, followUpDays: n });
     setDays(String(n));
