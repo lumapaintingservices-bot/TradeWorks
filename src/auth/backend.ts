@@ -43,7 +43,9 @@ const fbBackend: Backend = {
     else {
       await setDoc(ref, { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       await setDoc(doc(db, "companies", id, "members", uid), { role: "owner", createdAt: serverTimestamp() });
-      await updateDoc(doc(db, "users", uid), { companies: arrayUnion(id), activeCompanyId: id });
+      // merge-write: also creates the profile if sign-up failed to save it earlier
+      const me = auth.currentUser;
+      await setDoc(doc(db, "users", uid), { name: me?.displayName || "", email: me?.email || "", companies: arrayUnion(id), activeCompanyId: id }, { merge: true });
     }
     return full;
   },
