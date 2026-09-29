@@ -23,7 +23,7 @@ export async function saveRec<T extends Rec>(cid: string, col: string, rec: T): 
   if (hasFirebase) {
     const { id, ...data } = rec;
     const clean = JSON.parse(JSON.stringify(data));
-    await setDoc(doc(db, "companies", cid, col, id), { ...clean, companyId: cid, createdAt: rec.createdAt ?? serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, "companies", cid, col, id), { ...clean, companyId: cid, createdAt: rec.createdAt ?? serverTimestamp(), updatedAt: serverTimestamp() }); // full-document write so cleared fields really disappear
     return;
   }
   const rows = readLocal<T>(cid, col), now = new Date().toISOString();

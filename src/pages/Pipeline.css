@@ -10,6 +10,8 @@
 .pipe-h.Accepted{background:var(--tile-green);color:var(--up-ink)}
 .pipe-h.DepositPaid{background:var(--tile-teal);color:var(--icon-teal)}
 .pipe-h.PaidinFull{background:var(--ink);color:var(--bg)}
+.pipe-h.Sent,.pipe-h.Viewed,.pipe-h.Accepted,.pipe-h.DepositPaid{box-shadow:inset 0 3px 0 currentColor}
+html.tw-dark .pipe-h.Sent,html.tw-dark .pipe-h.Viewed,html.tw-dark .pipe-h.Accepted,html.tw-dark .pipe-h.DepositPaid{background:var(--surface-2)}
 .pipe-cards{padding:8px;display:flex;flex-direction:column;gap:8px}
 .pipe-card{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);cursor:pointer}
 .pipe-card:hover{border-color:var(--ink-3)}

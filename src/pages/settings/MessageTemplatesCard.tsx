@@ -39,7 +39,7 @@ export default function MessageTemplatesCard() {
       <div className="card-h"><h2>{t("Messages & follow-ups", "Mensajes y seguimiento")}</h2></div>
       <div className="card-b">
         <label className="f">{t("Flag an estimate after this many days with no answer", "Avisar de un presupuesto después de estos días sin respuesta")}
-          <input type="number" min={1} step={1} inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value)} style={{ maxWidth: 120 }} /></label>
+          <input type="number" min={1} step={1} inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value)} style={{ maxWidth: 120, display: "block" }} /></label>
         <p className="muted" style={{ fontSize: 12.5, margin: "0 0 14px" }}>
           {t("The pre-written messages you send from “Who to write to today”. Each one is sent in the client's language. You can change the wording here and still edit it before every send.",
             "Los mensajes ya escritos que envías desde “A quién escribirle hoy”. Cada uno sale en el idioma del cliente. Puedes cambiar el texto aquí y aun así editarlo antes de cada envío.")}
@@ -56,8 +56,8 @@ export default function MessageTemplatesCard() {
             </div>
             {open === k && (
               <div style={{ marginTop: 10 }}>
-                <label className="f">English<textarea rows={8} value={draft[k].en} onChange={(e) => set(k, "en", e.target.value)} style={{ fontSize: 13.5 }} /></label>
-                <label className="f">Español<textarea rows={8} value={draft[k].es} onChange={(e) => set(k, "es", e.target.value)} style={{ fontSize: 13.5 }} /></label>
+                <label className="f">English<textarea rows={10} value={draft[k].en} onChange={(e) => set(k, "en", e.target.value)} style={{ fontSize: 13.5 }} /></label>
+                <label className="f">Español<textarea rows={10} value={draft[k].es} onChange={(e) => set(k, "es", e.target.value)} style={{ fontSize: 13.5 }} /></label>
               </div>
             )}
           </div>

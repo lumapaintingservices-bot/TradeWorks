@@ -13,6 +13,8 @@ import Estimates from "./pages/Estimates";
 import Onboarding from "./pages/Onboarding";
 import LeadForm from "./pages/public/LeadForm";
 import PortalPage from "./pages/public/PortalPage";
+import InvoiceDoc from "./pages/InvoiceDoc";
+import Invoices from "./pages/Invoices";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
@@ -57,14 +59,14 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/reset" element={<AuthPage mode="reset" />} />
       <Route path="/onboarding" element={<Onboarding />} />
-      <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /></Route>
+      <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /><Route path="/invoices/:id/doc" element={<InvoiceDoc />} /></Route>
       <Route element={<Gate />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={P("Pipeline", "Embudo", "leads", 4)} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/estimates" element={<Estimates />} />
         <Route path="/estimates/:id" element={<EstimateEditor />} />
-        <Route path="/invoices" element={P("Invoices", "Facturas", "invoices", 4)} />
+        <Route path="/invoices" element={<Invoices />} />
         <Route path="/clients" element={<Clients />} />
         <Route path="/expenses" element={P("Expenses", "Gastos", "chart", 5)} />
         <Route path="/reports" element={P("Reports", "Reportes", "chart", 6)} />

@@ -86,7 +86,7 @@ export default function Invoices() {
           {list.length === 0 ? <div className="card"><p className="muted" style={{ padding: 24 }}>{t("No invoices match this search.", "Ninguna factura coincide con la búsqueda.")}</p></div> : (
             <>
               <div className="card only-desk tbl-wrap">
-                <table className="tbl">
+                <table className="tbl iv-tbl">
                   <thead><tr><th>#</th><th>{t("Client", "Cliente")}</th><th>{t("Estimate", "Presupuesto")}</th><th>{t("Type", "Tipo")}</th><th>{t("Date", "Fecha")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Status", "Estado")}</th><th /></tr></thead>
                   <tbody>{list.map((v) => (
                     <tr key={v.id} className="click" onClick={() => window.open(`/invoices/${v.id}/doc`, "_blank")}>

@@ -26,3 +26,6 @@
   .iv-row{grid-template-columns:minmax(0,1fr) auto}
   .iv-row .iv-act{grid-column:1/-1;justify-content:flex-start}
 }
+.iv-tbl td,.iv-tbl th{padding:12px 12px}
+.iv-tbl td:nth-child(1),.iv-tbl td:nth-child(2),.iv-tbl td:nth-child(3),.iv-tbl td:nth-child(5),.iv-tbl td:nth-child(6),.iv-tbl td:nth-child(7),.iv-tbl td:nth-child(8){white-space:nowrap}
+.iv-tbl .iv-act{flex-wrap:nowrap}

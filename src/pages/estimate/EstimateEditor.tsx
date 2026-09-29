@@ -10,7 +10,9 @@ import { useUi } from "../../store/ui";
 import { statusLabel } from "../../ui/StatusBadge";
 import { subscribeTop } from "../../data/repo";
 import { portalApply, type PortalDoc } from "../../lib/portal";
+import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
+import InvoicesTab from "./InvoicesTab";
 import LinkTab, { publishPortal } from "./LinkTab";
 import PricingTab from "./PricingTab";
 import ScopeTab from "./ScopeTab";
@@ -18,7 +20,7 @@ import "./estimate.css";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
-  ["co", "Change orders", "Cambios", 4], ["inv", "Invoices", "Facturas", 4], ["link", "Link & chat", "Enlace y chat", 0],
+  ["co", "Change orders", "Cambios", 0], ["inv", "Invoices", "Facturas", 0], ["link", "Link & chat", "Enlace y chat", 0],
   ["photos", "Photos", "Fotos", 5], ["jobday", "Job day", "Día de trabajo", 5],
 ] as const;
 
@@ -174,6 +176,8 @@ export default function EstimateEditor() {
           {tab === "scope" && <ScopeTab {...props} saveStandard={update} />}
           {tab === "costs" && <CostsTab {...props} />}
           {tab === "link" && <LinkTab {...props} />}
+          {tab === "co" && <ChangeOrdersTab {...props} />}
+          {tab === "inv" && <InvoicesTab {...props} />}
           {TABS.filter(([k]) => k === tab && TABS.find(([kk]) => kk === k)![3] > 0).map(([k, en, es, ph]) => (
             <div className="card" key={k}><div className="es"><h3>{t(en, es)}</h3><p>{t(`This tab arrives in phase ${ph}.`, `Esta pestaña llega en la fase ${ph}.`)}</p></div></div>))}
         </div>
