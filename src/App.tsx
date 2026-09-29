@@ -1,9 +1,13 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./auth/AuthProvider";
 import Shell from "./layout/Shell";
 import AuthPage from "./pages/AuthPage";
+import Clients from "./pages/Clients";
 import Dashboard from "./pages/Dashboard";
+import EstimateDoc from "./pages/estimate/EstimateDoc";
+import EstimateEditor from "./pages/estimate/EstimateEditor";
+import Estimates from "./pages/Estimates";
 import Onboarding from "./pages/Onboarding";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
@@ -16,6 +20,15 @@ function Gate() {
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname + loc.search }} />;
   if (!company?.onboarded) return <Navigate to="/onboarding" replace />;
   return <Shell />;
+}
+
+function Bare() {
+  const { ready, user, company } = useAuth();
+  const loc = useLocation();
+  if (!ready) return null;
+  if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
+  if (!company?.onboarded) return <Navigate to="/onboarding" replace />;
+  return <Outlet />;
 }
 
 const P = (en: string, es: string, icon: string, phase: number) => <Placeholder en={en} es={es} icon={icon} phase={phase} />;
@@ -36,13 +49,15 @@ export default function App() {
       <Route path="/signup" element={<AuthPage mode="signup" />} />
       <Route path="/reset" element={<AuthPage mode="reset" />} />
       <Route path="/onboarding" element={<Onboarding />} />
+      <Route element={<Bare />}><Route path="/estimates/:id/doc" element={<EstimateDoc />} /></Route>
       <Route element={<Gate />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/pipeline" element={P("Pipeline", "Embudo", "leads", 4)} />
         <Route path="/calendar" element={P("Calendar", "Calendario", "chart", 4)} />
-        <Route path="/estimates" element={P("Estimates", "Presupuestos", "estimates", 2)} />
+        <Route path="/estimates" element={<Estimates />} />
+        <Route path="/estimates/:id" element={<EstimateEditor />} />
         <Route path="/invoices" element={P("Invoices", "Facturas", "invoices", 4)} />
-        <Route path="/clients" element={P("Clients", "Clientes", "clients", 2)} />
+        <Route path="/clients" element={<Clients />} />
         <Route path="/expenses" element={P("Expenses", "Gastos", "chart", 5)} />
         <Route path="/reports" element={P("Reports", "Reportes", "chart", 6)} />
         <Route path="/team" element={P("Team", "Equipo", "clients", 5)} />

@@ -8,7 +8,7 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:#9DBBFF;box-shado
 label.f{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:14px}
 label.f>input,label.f>select,label.f>textarea{margin-top:6px;font-weight:400}
 a{color:var(--acc)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:500;box-shadow:var(--shadow-xs)}
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:500;box-shadow:var(--shadow-xs)}
 .btn:hover{background:var(--surface-2)}
 .btn.pri{background:var(--primary-btn);border-color:var(--primary-btn);color:var(--bg);font-weight:600}
 html:not(.tw-dark) .btn.pri{color:#fff}
@@ -41,3 +41,6 @@ html.tw-dark .tabs{background:var(--surface-2)}
 .seg button.on{background:var(--ink);color:var(--bg)}
 @media(max-width:640px){.page{padding:16px 16px calc(var(--bottomnav-h) + 24px)}.card-b{padding:16px}.page-h h1{font-size:22px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.page-h{flex-direction:column}.page-h .btn.pri{align-self:flex-start}}
