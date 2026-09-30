@@ -3,7 +3,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { blankEstimate } from "./estimate";
 import {
-  clockElapsed, clockEntry, clockHours, hourAmount, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats,
+  clockElapsed, clockEntry, clockHours, clockTimes, hourAmount, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats,
 } from "./team";
 import { defaultSettings } from "./settings";
 import { SERVICES } from "./services.data";
@@ -137,6 +137,13 @@ describe("clock in / out", () => {
     expect(en).toMatchObject({ workerId: "w9", hours: 3, rate: 21.5, estId: "e5", note: "Clock in/out" });
     expect(en.id).toBe(`h-clk-w9-${ms}`);
     expect(clockEntry({ at }, w, "x", ms + 3600000).estId).toBe("");
+    expect(en).toMatchObject({ start: at, end: new Date(ms + 3 * 3600000).toISOString() });
+  });
+  it("shows the clock-in and clock-out times", () => {
+    const tt = clockTimes({ start: "2026-05-04T13:02:00", end: "2026-05-04T21:15:00" }, "en");
+    expect(tt).toMatch(/1:02\s?PM – 9:15\s?PM/);
+    expect(clockTimes({}, "en")).toBe("");
+    expect(clockTimes({ start: "bad" }, "en")).toBe("");
   });
   it("assigns the job scheduled today, else none", () => {
     const s = defaultSettings();

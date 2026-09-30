@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { useT } from "../../i18n";
 import { todayISO } from "../../lib/estimate";
+import { clockTimes } from "../../lib/team";
 import { fmtMi, geocode, geoQuery, mapJobs, needsGeo, siteOf, whereIs, type Loc, type Site, type Where } from "../../lib/geo";
 import type { ClockRec, Estimate, HourEntry, Invoice, Worker } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -131,7 +132,7 @@ export default function TeamMap({ workers, clocks, hours, ests, invoices, label,
             return (
               <li key={h.id}>
                 <span className={"tm-dot " + (i.kind === "on" && o.kind === "on" ? "ok" : i.kind === "none" && o.kind === "none" ? "old" : "warn")} />
-                <div><b>{wName(h.workerId)}</b><small>{h.hours} h</small></div>
+                <div><b>{wName(h.workerId)}</b><small>{[clockTimes(h, lang), h.hours + " h"].filter(Boolean).join(" · ")}</small></div>
                 <span className="tm-where">{t("In: ", "Entrada: ")}{whereText(i)}<br />{t("Out: ", "Salida: ")}{whereText(o)}</span>
               </li>);
           })}</ul>

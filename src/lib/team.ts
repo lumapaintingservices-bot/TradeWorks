@@ -113,5 +113,13 @@ export function clockEntry(clock: { at: string; estId?: string }, worker: Worker
   return {
     id: `h-clk-${worker.id}-${Date.parse(clock.at) || 0}`, workerId: worker.id, date: localDay(clock.at),
     hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note, rate: num(worker.rate),
+    start: clock.at, end: new Date(nowMs).toISOString(),
   };
+}
+
+/** "8:02 AM – 4:15 PM" for an entry made by the time clock ("" for manual hours). */
+export function clockTimes(h: Pick<HourEntry, "start" | "end">, lang: "en" | "es"): string {
+  const f = (iso?: string) => { const d = new Date(String(iso || "")); return isNaN(d.getTime()) ? "" : d.toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }); };
+  const a = f(h.start), b = f(h.end);
+  return a && b ? `${a} – ${b}` : a || b;
 }

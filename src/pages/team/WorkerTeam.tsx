@@ -6,7 +6,7 @@ import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { getLocation } from "../../lib/geo";
 import { num } from "../../lib/money";
-import { RANGE_KEYS, clockElapsed, rangeBounds, type RangeKey } from "../../lib/team";
+import { RANGE_KEYS, clockElapsed, clockTimes, rangeBounds, type RangeKey } from "../../lib/team";
 import { isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
 import type { HourEntry } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -129,10 +129,10 @@ function WorkerBody({ workerId }: { workerId: string }) {
           <>
             <div className="only-desk tbl-wrap">
               <table className="tbl tm-tbl">
-                <thead><tr><th>{t("Date", "Fecha")}</th><th className="r">{t("Hours", "Horas")}</th><th>{t("Note", "Nota")}</th><th /></tr></thead>
+                <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("In – out", "Entrada – salida")}</th><th className="r">{t("Hours", "Horas")}</th><th>{t("Note", "Nota")}</th><th /></tr></thead>
                 <tbody>{list.slice(0, 80).map((h) => (
                   <tr key={h.id}>
-                    <td className="nw">{fmtDate(h.date, lang)}</td><td className="r nw">{hrs(num(h.hours))}</td><td className="muted tm-note">{h.note || ""}</td>
+                    <td className="nw">{fmtDate(h.date, lang)}</td><td className="nw">{clockTimes(h, lang) || <span className="muted">—</span>}</td><td className="r nw">{hrs(num(h.hours))}</td><td className="muted tm-note">{h.note || ""}</td>
                     <td className="r"><button className="btn sm danger" disabled={busy["h" + h.id]} onClick={() => delHours(h.id)} aria-label={t("Delete", "Borrar")} title={t("Delete", "Borrar")}>×</button></td>
                   </tr>))}</tbody>
               </table>
@@ -140,6 +140,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
             <div className="cards only-phone tm-cards">{list.slice(0, 80).map((h) => (
               <div key={h.id} className="tm-card">
                 <div className="l1"><span>{fmtDate(h.date, lang)}</span><span>{hrs(num(h.hours))}</span></div>
+                {clockTimes(h, lang) && <div className="l2"><span>🕒 {clockTimes(h, lang)}</span></div>}
                 <div className="l2"><span>{h.note || "—"}</span><button className="btn sm danger" disabled={busy["h" + h.id]} onClick={() => delHours(h.id)} aria-label={t("Delete", "Borrar")}>×</button></div>
               </div>))}</div>
           </>

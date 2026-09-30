@@ -47,6 +47,8 @@ export type Task = { id: string; title: string; date: string; time?: string; not
 export type MessageTemplates = Partial<Record<string, { en: string; es: string }>>;
 export type Worker = { id: string; name: string; phone?: string; role?: string; rate: number; active?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type HourEntry = { id: string; workerId: string; date: string; hours: number; rate: number; estId?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+  /** Clock-in / clock-out time (ISO) of an entry made by the time clock; manual entries have none. */
+  start?: string; end?: string;
   /** Where the worker's phone was at clock-in / clock-out (src/lib/geo.ts). */
   inLoc?: Loc; outLoc?: Loc };
 export type Payout = { id: string; workerId: string; date: string; amount: number; method?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };

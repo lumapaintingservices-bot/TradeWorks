@@ -28,8 +28,10 @@ service cloud.firestore {
         && d[k].at is string && d[k].at.size() <= 40);
     }
     function hoursShapeOk() {
-      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'start', 'end', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
         && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000
+        && (!('start' in request.resource.data) || (request.resource.data.start is string && request.resource.data.start.size() <= 40))
+        && (!('end' in request.resource.data) || (request.resource.data.end is string && request.resource.data.end.size() <= 40))
         && locOk(request.resource.data, 'inLoc') && locOk(request.resource.data, 'outLoc');
     }
     function clockShapeOk() {

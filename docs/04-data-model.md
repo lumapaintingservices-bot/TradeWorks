@@ -38,7 +38,7 @@ companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, workerId, done }
 companies/{cid}/workers/{id}         { name, phone, role, rate, active }
-companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note, inLoc?, outLoc? }
+companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }

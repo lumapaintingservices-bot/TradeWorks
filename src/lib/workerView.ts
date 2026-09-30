@@ -44,6 +44,7 @@ export function workerClockEntry(clock: { at: string; estId?: string }, workerId
   const date = isNaN(d.getTime()) ? String(clock.at).slice(0, 10) : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
   const e: Omit<HourEntry, "rate"> & { rate?: number } = {
     id: `h-clk-${workerId}-${Date.parse(clock.at) || 0}`, workerId, date, hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note,
+    start: clock.at, end: new Date(nowMs).toISOString(),
   };
   if (worker && (worker.rate as unknown) !== undefined && (worker.rate as unknown) !== "") e.rate = num(worker.rate);
   return e;

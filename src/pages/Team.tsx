@@ -8,7 +8,7 @@ import { calcEstimate, todayISO, uid } from "../lib/estimate";
 import { fmtDate, waLink } from "../lib/format";
 import { money, num, r2 } from "../lib/money";
 import {
-  PAY_METHODS, RANGE_KEYS, clockElapsed, clockEntry, hourAmount, inBounds, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats, type RangeKey,
+  PAY_METHODS, RANGE_KEYS, clockElapsed, clockEntry, clockTimes, hourAmount, inBounds, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats, type RangeKey,
 } from "../lib/team";
 import type { Estimate, HourEntry, Payout, Task, Worker } from "../lib/types";
 import { useUi } from "../store/ui";
@@ -208,10 +208,11 @@ function OwnerTeam() {
 
           {section(t("Hours", "Horas"), <button className="btn sm" onClick={() => openHours()}>{t("+ Hours", "+ Horas")}</button>, t("No hours in this period.", "No hay horas en este periodo."), hoursIn.length > 0,
             <table className="tbl tm-tbl">
-              <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("Worker", "Trabajador")}</th><th>{t("Job", "Trabajo")}</th><th className="r">{t("Hours", "Horas")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Note", "Nota")}</th><th /></tr></thead>
+              <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("Worker", "Trabajador")}</th><th>{t("In – out", "Entrada – salida")}</th><th>{t("Job", "Trabajo")}</th><th className="r">{t("Hours", "Horas")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Note", "Nota")}</th><th /></tr></thead>
               <tbody>{hoursIn.slice(0, 80).map((h) => (
                 <tr key={h.id}>
                   <td className="nw">{fmtDate(h.date, lang)}</td><td>{wById(h.workerId)?.name || "—"}</td>
+                  <td className="nw">{clockTimes(h, lang) || <span className="muted">—</span>}</td>
                   <td className="muted nw" title={jobLabel(estById(h.estId))}>{estById(h.estId)?.number || "—"}</td>
                   <td className="r nw">{hrs(num(h.hours))}</td><td className="r nw">{money(hourAmount(h, wById(h.workerId)))}</td><td className="muted tm-note">{h.note || ""}</td>
                   <td className="r"><button className="btn sm" onClick={() => openHours(undefined, h.id)}>{t("Edit", "Editar")}</button></td>
@@ -221,6 +222,7 @@ function OwnerTeam() {
               <div key={h.id} className="tm-card click" onClick={() => openHours(undefined, h.id)}>
                 <div className="l1"><span>{wById(h.workerId)?.name || "—"}</span><span>{money(hourAmount(h, wById(h.workerId)))}</span></div>
                 <div className="l2"><span>{fmtDate(h.date, lang)} · {hrs(num(h.hours))}{estById(h.estId) ? " · " + estById(h.estId)!.number : ""}</span><span>{t("Edit", "Editar")}</span></div>
+                {clockTimes(h, lang) && <div className="l2"><span>🕒 {clockTimes(h, lang)}</span></div>}
                 {h.note && <div className="l2"><span>{h.note}</span></div>}
               </div>)))}
 
@@ -374,7 +376,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
   entry?: HourEntry; workers: Worker[]; startWorker?: string; jobs: Job[]; onSite: string;
   onSave(h: HourEntry): Promise<void>; onDelete(id: string): Promise<void>; onClose(): void;
 }) {
-  const t = useT(), toast = useUi((s) => s.toast);
+  const t = useT(), toast = useUi((s) => s.toast), lang = useUi((s) => s.lang);
   const isNew = !entry;
   const [h, setH] = useState<HourEntry>(() => {
     if (entry) return entry;
@@ -392,6 +394,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
   };
   return (
     <Modal title={isNew ? t("Log hours", "Anotar horas") : t("Edit hours", "Editar horas")} onClose={onClose}>
+      {clockTimes(h, lang) && <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>🕒 {t("Time clock: ", "Reloj: ")}{clockTimes(h, lang)}</p>}
       <div className="grid2">
         <label className="f">{t("Worker", "Trabajador")}
           <select value={h.workerId} onChange={(e) => pickWorker(e.target.value)}>
