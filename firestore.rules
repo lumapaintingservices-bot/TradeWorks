@@ -177,6 +177,31 @@ service cloud.firestore {
       }
     }
 
+    // Invoice payment link: paylink/{token} = { owner, invId, data, client: { views, paid }, updatedAt }.
+    // Anyone with the secret token reads it; the company's owners/admins list theirs (query where owner == cid) to pick up claims.
+    // A visitor may only add views and say "I paid" ({ method, at, note }) - the invoice is marked paid only by the owner.
+    function payClientOk(c) {
+      return c is map && c.keys().hasOnly(['views', 'paid'])
+        && c.get('views', []) is list && c.get('views', []).size() <= 100
+        && (!('paid' in c) || (c.paid is map && c.paid.keys().hasOnly(['method', 'at', 'note'])
+            && c.paid.method is string && c.paid.method.size() <= 40
+            && c.paid.at is string && c.paid.at.size() <= 40
+            && c.paid.get('note', '') is string && c.paid.get('note', '').size() <= 300));
+    }
+    match /paylink/{token} {
+      allow get: if true;
+      allow list: if admin(resource.data.owner);
+      allow create: if admin(request.resource.data.owner)
+        && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'updatedAt'])
+        && request.resource.data.get('data', '') is string && request.resource.data.get('data', '').size() <= 200000;
+      allow delete: if admin(resource.data.owner);
+      allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner
+            && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'updatedAt'])
+            && request.resource.data.get('data', '') is string && request.resource.data.get('data', '').size() <= 200000)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client'])
+            && payClientOk(request.resource.data.client));
+    }
+
     // Lead form: anyone can send a request (validated); only the company can read or manage it.
     // optional text field: absent, or a string of at most n characters
     function optStr(d, k, n) { return !(k in d) || (d[k] is string && d[k].size() <= n); }

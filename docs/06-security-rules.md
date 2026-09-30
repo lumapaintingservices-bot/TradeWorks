@@ -31,6 +31,17 @@ service cloud.firestore {
       match /photos/{pid} { allow get: if true; allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner); }
     }
 
+    // invoice payment link (/pay/:token): get by token; owners/admins list theirs (where owner == cid);
+    // a visitor may only add views and say "I paid" {method<=40, at<=40, note<=300} - never mark the invoice paid.
+    // Full version with shape checks: firestore.rules (payClientOk). Tests: rules-tests/rules.security.test.mjs.
+    match /paylink/{token} {
+      allow get: if true;
+      allow list, delete: if admin(resource.data.owner);
+      allow create: if admin(request.resource.data.owner);
+      allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner)
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client']) && payClientOk(request.resource.data.client));
+    }
+
     match /leads/{lid} {
       allow create: if exists(/databases/$(db)/documents/companies/$(request.resource.data.owner))
         && request.resource.data.keys().hasOnly(['owner','name','phone','email','city','address','service','message','heard','lang','photos','details','at','page'])

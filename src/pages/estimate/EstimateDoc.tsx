@@ -1,4 +1,5 @@
 import { payMethodsOf } from "../../lib/payMethods";
+import { payHandleLines } from "../../lib/paylink";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
@@ -33,7 +34,7 @@ export default function EstimateDoc() {
         <button className="btn pri" onClick={() => window.print()}>{T("Print / Save as PDF", "Imprimir / Guardar PDF")}</button>
       </div></div>
       <EstimateSheet e={e} s={s} lang={lang} compact={compact} biz={company} services={servicesLine(e, s, lang)}
-        pay={{ zelle: s.payZelle || "", zelleName: s.payZelleName || "", note: s.payNote || "", methods: payMethodsOf(s.payMethods) }} />
+        pay={{ zelle: s.payZelle || "", zelleName: s.payZelleName || "", note: s.payNote || "", methods: payMethodsOf(s.payMethods), handles: payHandleLines(s, lang === "es") }} />
     </div>
   );
 }

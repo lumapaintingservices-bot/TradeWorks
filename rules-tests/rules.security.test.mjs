@@ -105,6 +105,45 @@ await no("visitor writes a portal photo", () => setDoc(doc(anon, "portal/tokA/ph
 await no("c2 admin writes a c1 portal photo", () => setDoc(doc(adm2, "portal/tokA/photos/p2"), { data: "x" }));
 await ok("c1 admin writes a portal photo", () => setDoc(doc(adm1, "portal/tokA/photos/p2"), { data: "x" }));
 
+// ---------------------------------------------------------------- invoice payment link (paylink): get by token; visitors may only add views / say "I paid"
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), "paylink/payA"), { owner: "c1", invId: "i1", data: "{}", client: {} });
+});
+await ok("anyone gets a paylink by token", () => getDoc(doc(anon, "paylink/payA")));
+await no("nobody lists paylinks", () => getDocs(collection(anon, "paylink")));
+await no("visitor queries paylinks by owner", () => getDocs(query(collection(anon, "paylink"), where("owner", "==", "c1"))));
+await no("c2 owner queries c1 paylinks", () => getDocs(query(collection(own2, "paylink"), where("owner", "==", "c1"))));
+await no("c1 worker queries c1 paylinks", () => getDocs(query(collection(wrk1, "paylink"), where("owner", "==", "c1"))));
+await ok("c1 admin queries own paylinks", () => getDocs(query(collection(adm1, "paylink"), where("owner", "==", "c1"))));
+await no("even c1 owner cannot list the whole collection", () => getDocs(collection(own1, "paylink")));
+await ok("visitor view mark", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.views": arrayUnion("2026-09-30T10:00:00Z") }));
+await ok("visitor says they paid", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "Venmo", at: "2026-09-30T10:00:00Z", note: "conf 123" } }));
+await ok("visitor says they paid, no note", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "Zelle", at: "x" } }));
+await no("visitor marks the invoice paid in the snapshot", () => updateDoc(doc(fresh(), "paylink/payA"), { data: "{\"inv\":{\"paid\":true}}" }));
+await no("visitor changes the owner", () => updateDoc(doc(fresh(), "paylink/payA"), { owner: "c2" }));
+await no("visitor changes invId", () => updateDoc(doc(fresh(), "paylink/payA"), { invId: "i2" }));
+await no("visitor adds an unknown client key", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.chat": [] }));
+await no("visitor adds an unknown paid key", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "Zelle", at: "x", amount: 1 } }));
+await no("visitor sends a 41-char method", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "m".repeat(41), at: "x" } }));
+await no("visitor sends a 301-char note", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "Zelle", at: "x", note: "n".repeat(301) } }));
+await no("visitor wipes the paid claim (only the owner may)", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": null }));
+await no("visitor sends a paid without time", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.paid": { method: "Zelle" } }));
+await no("visitor stuffs 101 views", () => updateDoc(doc(fresh(), "paylink/payA"), { "client.views": Array.from({ length: 101 }, (_, i) => "v" + i) }));
+await no("visitor sets client to a string", () => updateDoc(doc(fresh(), "paylink/payA"), { client: "x" }));
+await no("visitor creates a paylink", () => setDoc(doc(fresh(), "paylink/payNew"), { owner: "c1", invId: "i", data: "{}" }));
+await no("stranger creates a paylink for c1", () => setDoc(doc(stranger, "paylink/payNew"), { owner: "c1", invId: "i", data: "{}" }));
+await no("visitor deletes a paylink", () => deleteDoc(doc(fresh(), "paylink/payA")));
+await no("c2 admin edits c1 paylink data", () => updateDoc(doc(adm2, "paylink/payA"), { data: "x" }));
+await no("c2 admin deletes c1 paylink", () => deleteDoc(doc(adm2, "paylink/payA")));
+await no("c1 worker creates a paylink", () => setDoc(doc(wrk1, "paylink/payW"), { owner: "c1", invId: "i", data: "{}" }));
+await ok("c1 admin creates a paylink", () => setDoc(doc(adm1, "paylink/payB"), { owner: "c1", invId: "i2", data: "{}", updatedAt: serverTimestamp() }));
+await no("c1 admin creates a paylink with an extra key", () => setDoc(doc(adm1, "paylink/payC"), { owner: "c1", invId: "i3", data: "{}", secret: 1 }));
+await no("c1 admin creates a 200 KB+ snapshot", () => setDoc(doc(adm1, "paylink/payD"), { owner: "c1", invId: "i4", data: "x".repeat(200001) }));
+await ok("c1 admin re-publishes the snapshot", () => setDoc(doc(adm1, "paylink/payB"), { data: "{\"v\":1}", updatedAt: serverTimestamp() }, { merge: true }));
+await no("c1 admin hands a paylink to c2", () => updateDoc(doc(adm1, "paylink/payB"), { owner: "c2" }));
+await ok("c1 admin clears a claim that never arrived", () => updateDoc(doc(adm1, "paylink/payB"), { "client.paid": null }));
+await ok("c1 admin deletes a paylink", () => deleteDoc(doc(adm1, "paylink/payB")));
+
 // ---------------------------------------------------------------- lead form abuse
 const JPG = "data:image/jpeg;base64,";
 const lead = (over = {}) => ({ owner: "c1", name: "Ana Ruiz", phone: "555-123-4567", email: "a@x.com", city: "Austin", address: "1 Main", service: "Kitchen cabinets", message: "hi", heard: "Google", lang: "en", photos: [], details: { v: 2, types: ["cabinets"], other: "" }, at: "2026-09-29T10:00:00.000Z", page: "https://x.com/request?c=c1", ...over });

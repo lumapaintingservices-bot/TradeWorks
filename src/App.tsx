@@ -19,6 +19,7 @@ import Estimates from "./pages/Estimates";
 import Onboarding from "./pages/Onboarding";
 import LeadForm from "./pages/public/LeadForm";
 import PortalPage from "./pages/public/PortalPage";
+import PayPage from "./pages/public/PayPage";
 import InvoiceDoc from "./pages/InvoiceDoc";
 import Invoices from "./pages/Invoices";
 import Pipeline from "./pages/Pipeline";
@@ -128,6 +129,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/p/:token" element={<PortalPage />} />
+      <Route path="/pay/:token" element={<PayPage />} />
       <Route path="/request" element={<LeadForm />} />
       <Route path="/login" element={<AuthPage mode="signin" />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />

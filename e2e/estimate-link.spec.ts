@@ -8,7 +8,7 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   await page.goto("/settings?section=client");
   await page.getByLabel("Zelle email or phone").fill("pay@luma.example");
   await page.getByLabel("Name on the Zelle account").fill("Luma Painting");
-  await page.locator(".card", { hasText: "Client link & Zelle deposit" }).getByRole("button", { name: "Save", exact: true }).click();
+  await page.locator(".card", { hasText: "How clients pay you" }).getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved").first()).toBeVisible();
 
   // new kitchen-cabinet estimate for a client: 10 doors x $80 + 5 drawers x $55 = $1,075

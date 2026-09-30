@@ -29,3 +29,11 @@
 .iv-tbl td,.iv-tbl th{padding:12px 12px}
 .iv-tbl td:nth-child(1),.iv-tbl td:nth-child(2),.iv-tbl td:nth-child(3),.iv-tbl td:nth-child(5),.iv-tbl td:nth-child(6),.iv-tbl td:nth-child(7),.iv-tbl td:nth-child(8){white-space:nowrap}
 .iv-tbl .iv-act{flex-wrap:nowrap}
+/* payment link: "client says they paid" notice, WhatsApp button, pay-link state */
+.iv-claim{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:10px 14px;flex-wrap:wrap;background:var(--tile-green);border:1px solid var(--ok);border-radius:12px;padding:10px 14px;margin:6px 0 2px}
+.iv-claim>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0;font-size:13.5px}
+.iv-claim .muted{font-size:12.5px}
+.iv-tbl .iv-claim-row td{padding-top:0;border-top:0}
+.btn.wa-btn{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.wa-btn:hover{background:var(--ok);filter:brightness(.95)}
+.iv-linked{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
