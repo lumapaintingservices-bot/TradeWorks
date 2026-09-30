@@ -19,8 +19,10 @@ type Ctx = {
   activeCompanyId: string | null;
   /** True while the user is creating an additional company with the onboarding steps (the old company is untouched). */
   creating: boolean;
-  /** Account data could not be loaded (offline / rules). The app shows a retry screen instead of onboarding. */
+  /** Account data could not be loaded (offline / rules / too slow). The app shows a retry screen instead of onboarding. */
   loadError: boolean;
+  /** Signed in, and the account (companies, role) is still loading: the sign-in page shows "Signing you in…". */
+  loadingAccount: boolean;
   /** Updates the active company, or (no id and none active) creates a NEW one and makes it active. */
   saveCompany(c: Partial<Company> & { name: string }): Promise<Company>;
   switchCompany(id: string): Promise<void>;
@@ -45,6 +47,15 @@ export function useWorkerScope(): { isWorker: boolean; workerId: string | null }
   return { isWorker: role === "worker", workerId };
 }
 
+/** Account loading gives up after this long (a stuck connection, e.g. Safari's storage after the tab slept) and offers a retry. */
+export const LOAD_TIMEOUT_MS = 20_000;
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("load-timeout")), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -55,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [loadingAccount, setLoadingAccount] = useState(false);
   const seq = useRef(0);
   const userRef = useRef<User | null>(null);
   userRef.current = user;
@@ -66,12 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null); setMembers([]); setActiveId(null); setDraft(false); setInviteDoc(null); setDismissed([]); setLoadError(false); setReady(true);
       return;
     }
-    setReady(false);
+    setReady(false); setLoadingAccount(true);
     let list: Membership[] = [], active: string | null = null, err = false;
-    try { ({ list, activeId: active } = await backend.loadMemberships(u.uid)); } catch { err = true; }
-    const inv = err ? null : await backend.getInvite(u.email).catch(() => null);
+    try { ({ list, activeId: active } = await withTimeout(backend.loadMemberships(u.uid), LOAD_TIMEOUT_MS)); } catch { err = true; }
+    const inv = err ? null : await withTimeout(backend.getInvite(u.email), 8000).catch(() => null);
     if (mine !== seq.current) return;
-    setUser(u); setMembers(list); setActiveId(active); setDraft(false); setInviteDoc(inv); setDismissed([]); setLoadError(err); setReady(true);
+    setUser(u); setMembers(list); setActiveId(active); setDraft(false); setInviteDoc(inv); setDismissed([]); setLoadError(err); setReady(true); setLoadingAccount(false);
   }), [retry]);
 
   const active = useMemo(() => members.find((m) => m.company.id === activeId) ?? null, [members, activeId]);
@@ -123,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     ready, user, company, role: draft ? null : active?.role ?? null, workerId: draft ? null : active?.workerId ?? null,
     companies: members.map((m) => ({ id: m.company.id, name: m.company.name, logoUrl: m.company.logoUrl, role: m.role })),
-    activeCompanyId: activeId, creating: draft, loadError,
+    activeCompanyId: activeId, creating: draft, loadError, loadingAccount,
     saveCompany, switchCompany,
     createCompany: () => setDraft(true),
     cancelCreateCompany: () => setDraft(false),

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { LoadingScreen } from "../ui/LoadingScreen";
 import { backend } from "../auth/backend";
 import { useT } from "../i18n";
 import { useUi } from "../store/ui";
@@ -11,11 +12,12 @@ import "./auth.css";
 export default function AuthPage({ mode }: { mode: "signin" | "signup" | "reset" }) {
   const t = useT();
   const { lang, setLang } = useUi();
-  const { user } = useAuth();
+  const { user, loadingAccount } = useAuth();
   const loc = useLocation();
   const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [pw, setPw] = useState("");
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [sent, setSent] = useState(false);
   if (user) return <Navigate to={(loc.state as { from?: string } | null)?.from || "/"} replace />;
+  if (loadingAccount) return <LoadingScreen />;
 
   const message = (e: unknown) => {
     const c = String((e as Error).message);
