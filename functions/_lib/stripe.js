@@ -12,6 +12,9 @@ export function formEncode(obj, prefix = "", out = []) {
   return out;
 }
 
+/** API version sent with v2 requests (Stripe requires one; bump it deliberately). */
+export const STRIPE_V2_VERSION = "2026-08-26.dahlia";
+
 export function stripeClient(secretKey, fetchImpl = fetch) {
   // `account`: a connected account id (acct_...) to act ON that account (Stripe Connect direct charges).
   async function call(method, path, params, idempotencyKey, account) {
@@ -29,15 +32,24 @@ export function stripeClient(secretKey, fetchImpl = fetch) {
     if (!res.ok) throw new Error(`Stripe ${method} ${path}: ${res.status} ${data?.error?.message || ""}`);
     return data;
   }
+  // Stripe v2 APIs (Accounts v2): JSON bodies and a pinned API version.
+  async function callV2(method, path, json, idempotencyKey) {
+    const headers = { Authorization: "Bearer " + secretKey, "Stripe-Version": STRIPE_V2_VERSION };
+    if (method === "POST") { headers["Content-Type"] = "application/json"; if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey; }
+    const res = await fetchImpl("https://api.stripe.com" + path, { method, headers, body: method === "POST" ? JSON.stringify(json || {}) : undefined });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(`Stripe ${method} ${path.split("?")[0]}: ${res.status} ${data?.error?.code || ""} ${data?.error?.message || ""}`);
+    return data;
+  }
   return {
     createCustomer: (params, idem) => call("POST", "/v1/customers", params, idem),
     createCheckoutSession: (params) => call("POST", "/v1/checkout/sessions", params),
     createPortalSession: (params) => call("POST", "/v1/billing_portal/sessions", params),
     getSubscription: (id) => call("GET", "/v1/subscriptions/" + encodeURIComponent(id)),
-    // Stripe Connect: card payments on invoice payment links (see ./connect.js)
-    createAccount: (params, idem) => call("POST", "/v1/accounts", params, idem),
-    getAccount: (id) => call("GET", "/v1/accounts/" + encodeURIComponent(id)),
-    createAccountLink: (params) => call("POST", "/v1/account_links", params),
+    // Stripe Connect with Accounts v2: card payments on invoice payment links (see ./connect.js)
+    createAccount: (json, idem) => callV2("POST", "/v2/core/accounts", json, idem),
+    getAccount: (id) => callV2("GET", "/v2/core/accounts/" + encodeURIComponent(id) + "?include[0]=configuration.merchant&include[1]=requirements"),
+    createAccountLink: (json) => callV2("POST", "/v2/core/account_links", json),
     createAccountCheckoutSession: (account, params) => call("POST", "/v1/checkout/sessions", params, undefined, account),
   };
 }

@@ -1,4 +1,4 @@
-// Card / bank payments on invoice payment links, with Stripe Connect (Standard accounts, direct charges):
+// Card / bank payments on invoice payment links, with Stripe Connect (Accounts v2, direct charges):
 // each company connects ITS OWN Stripe account; the client pays on a Stripe Checkout page created ON that account,
 // so the money goes straight to the contractor and Stripe's fee is charged to them. TradeWorks never holds the money.
 // Pure logic over injected `db` / `stripe` objects (unit-tested with fakes in connect.test.js).
@@ -6,18 +6,40 @@
 import { statusAfterPayment } from "../../src/lib/invoices.ts";
 import { isSafeId } from "./util.js";
 
-/** Company fields written from a Stripe account object (only the webhook / functions write them; see firestore.rules). */
-export const accountFields = (acct, now = Date.now()) => ({
-  stripeReady: !!(acct && acct.charges_enabled),
-  stripeDetails: !!(acct && acct.details_submitted),
-  stripeCheckedAt: new Date(now).toISOString(),
+/**
+ * A new connected account (Accounts v2), the equivalent of a v1 "Standard" account: the contractor gets the full Stripe
+ * Dashboard, Stripe charges its fees to them and takes the losses, and Stripe collects the identity details during onboarding.
+ */
+export const newAccountBody = ({ companyId, uid, email, name }) => ({
+  contact_email: email || undefined,
+  display_name: name ? String(name).slice(0, 100) : undefined,
+  identity: { country: "us" },
+  dashboard: "full",
+  configuration: { merchant: { capabilities: { card_payments: { requested: true }, ach_debit_payments: { requested: true } } } },
+  defaults: { currency: "usd", responsibilities: { fees_collector: "stripe", losses_collector: "stripe" } },
+  metadata: { companyId, ownerUid: uid },
+  include: ["configuration.merchant"],
 });
+
+/** Can the account take card payments? Accounts v2 (configuration.merchant) or a v1-style object (account.updated events). */
+export const accountReady = (acct) => !!acct && (acct.configuration?.merchant?.capabilities?.card_payments?.status === "active" || acct.charges_enabled === true);
+
+/** Company fields written from a Stripe account object (only the webhook / functions write them; see firestore.rules). */
+export const accountFields = (acct, now = Date.now()) => {
+  const ready = accountReady(acct);
+  const entries = acct?.requirements?.entries;
+  return {
+    stripeReady: ready,
+    stripeDetails: ready || acct?.details_submitted === true || (Array.isArray(entries) && entries.length === 0),
+    stripeCheckedAt: new Date(now).toISOString(),
+  };
+};
 
 // the same switch the app uses to show the "Pay by card" button
 export { cardPayOn } from "../../src/lib/paylink.ts";
 
 /** Stripe says the account does not exist (or is not ours) with this key, e.g. a test-mode account after switching to live keys. */
-export const isGone = (e) => /: (403|404) |No such account|does not have access/i.test(String(e && e.message));
+export const isGone = (e) => /: (403|404) |No such account|does not have access|v1_account_instead_of_v2_account|not_found/i.test(String(e && e.message));
 
 export const toCents = (amount) => Math.round((Number(amount) || 0) * 100);
 export const MIN_CENTS = 50; // Stripe's minimum charge in USD

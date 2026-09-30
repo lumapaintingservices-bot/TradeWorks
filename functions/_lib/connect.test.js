@@ -2,6 +2,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { accountFields, applyConnectEvent, cardPayOn, dayIn, invoiceCheckoutParams, sessionOutcome } from "./connect.js";
 import { _resetKeyCache, _resetTokenCache } from "./jwt.js";
+import { STRIPE_V2_VERSION, stripeClient } from "./stripe.js";
 import { hmacSha256Hex } from "./stripeSig.js";
 import { idTokenClaims, makeKeyPair, signIdToken } from "./testkeys.js";
 import { start } from "../api/connect/start.js";
@@ -34,7 +35,7 @@ function fakeStripe() {
   return {
     calls,
     async createAccount(p, idem) { calls.push(["account", p, idem]); return { id: "acct_new" }; },
-    async getAccount(id) { calls.push(["getAccount", id]); return { id, charges_enabled: true, details_submitted: true }; },
+    async getAccount(id) { calls.push(["getAccount", id]); return { id, object: "v2.core.account", configuration: { merchant: { capabilities: { card_payments: { status: "active" } } } }, requirements: { entries: [] } }; },
     async createAccountLink(p) { calls.push(["link", p]); return { url: "https://connect.stripe.test/setup/x" }; },
     async createAccountCheckoutSession(acct, p) { calls.push(["checkout", acct, p]); return { url: "https://checkout.stripe.test/c1" }; },
   };
@@ -56,7 +57,13 @@ const ev = (type, object, account = "acct_1") => ({ id: "evt_" + type, type, acc
 
 describe("helpers", () => {
   it("account fields, switch and outcomes", () => {
-    expect(accountFields({ charges_enabled: true, details_submitted: false }, NOW)).toEqual({ stripeReady: true, stripeDetails: false, stripeCheckedAt: new Date(NOW).toISOString() });
+    expect(accountFields({ charges_enabled: true, details_submitted: false }, NOW)).toEqual({ stripeReady: true, stripeDetails: true, stripeCheckedAt: new Date(NOW).toISOString() });
+    // Accounts v2: ready when the card_payments capability is active
+    const v2 = (status, entries) => ({ configuration: { merchant: { capabilities: { card_payments: { status } } } }, requirements: { entries } });
+    expect(accountFields(v2("active", []), NOW)).toMatchObject({ stripeReady: true, stripeDetails: true });
+    expect(accountFields(v2("restricted", [{ description: "x" }]), NOW)).toMatchObject({ stripeReady: false, stripeDetails: false });
+    expect(accountFields(v2("pending", []), NOW)).toMatchObject({ stripeReady: false, stripeDetails: true });
+    expect(accountFields({}, NOW)).toMatchObject({ stripeReady: false, stripeDetails: false });
     expect(cardPayOn({ stripeAccountId: "acct_1", stripeReady: true }, {})).toBe(true);
     expect(cardPayOn({ stripeAccountId: "acct_1", stripeReady: true }, { cardPay: { on: false } })).toBe(false);
     expect(cardPayOn({ stripeAccountId: "acct_1", stripeReady: false }, {})).toBe(false);
@@ -78,6 +85,24 @@ describe("helpers", () => {
     expect(p.payment_intent_data.application_fee_amount).toBeUndefined();
     expect(invoiceCheckoutParams({ token: TOKEN, companyId: "c1", inv: { id: "d1", amount: 100, email: "nope" }, model: null, origin: "o", lang: "en", feePct: 1 }))
       .toMatchObject({ locale: "en", payment_intent_data: { application_fee_amount: 100 } });
+  });
+});
+
+describe("Stripe client (Accounts v2)", () => {
+  it("sends JSON with a pinned version; errors carry the code; checkout acts on the connected account", async () => {
+    const calls = [];
+    const fetchImpl = async (url, init) => { calls.push({ url, init }); return url.includes("fail") ? new Response(JSON.stringify({ error: { code: "not_found", message: "No such account" } }), { status: 404 }) : new Response(JSON.stringify({ id: "acct_1", url: "u" })); };
+    const st = stripeClient("sk_test_x", fetchImpl);
+    await st.createAccount({ display_name: "Luma" }, "idem-1");
+    expect(calls[0].url).toBe("https://api.stripe.com/v2/core/accounts");
+    expect(calls[0].init.headers).toMatchObject({ "Stripe-Version": STRIPE_V2_VERSION, "Content-Type": "application/json", "Idempotency-Key": "idem-1" });
+    expect(JSON.parse(calls[0].init.body)).toEqual({ display_name: "Luma" });
+    await st.getAccount("acct_1");
+    expect(calls[1].url).toBe("https://api.stripe.com/v2/core/accounts/acct_1?include[0]=configuration.merchant&include[1]=requirements");
+    expect(calls[1].init.body).toBeUndefined();
+    await st.createAccountCheckoutSession("acct_9", { mode: "payment" });
+    expect(calls[2].init.headers).toMatchObject({ "Stripe-Account": "acct_9", "Content-Type": "application/x-www-form-urlencoded" });
+    await expect(st.getAccount("fail")).rejects.toThrow(/404 not_found No such account/);
   });
 });
 
@@ -157,9 +182,15 @@ describe("HTTP handlers", () => {
     const db = fakeDb(d), stripe = fakeStripe();
     const res = await start({ request: await ownerReq("owner1", { companyId: "c1" }), env: env() }, { db, stripe, keys: [pair.jwk] });
     expect(await res.json()).toEqual({ url: "https://connect.stripe.test/setup/x" });
-    expect(stripe.calls[0]).toEqual(["account", { type: "standard", email: "owner1@example.com", business_profile: { name: "Luma Painting" }, metadata: { companyId: "c1", ownerUid: "owner1" } }, "tw-acct-c1"]);
+    expect(stripe.calls[0]).toEqual(["account", {
+      contact_email: "owner1@example.com", display_name: "Luma Painting", identity: { country: "us" }, dashboard: "full",
+      configuration: { merchant: { capabilities: { card_payments: { requested: true }, ach_debit_payments: { requested: true } } } },
+      defaults: { currency: "usd", responsibilities: { fees_collector: "stripe", losses_collector: "stripe" } },
+      metadata: { companyId: "c1", ownerUid: "owner1" }, include: ["configuration.merchant"],
+    }, "tw-acct-c1"]);
     expect(db.docs["companies/c1"]).toMatchObject({ stripeAccountId: "acct_new", stripeReady: false });
-    expect(stripe.calls[1][1]).toEqual({ account: "acct_new", type: "account_onboarding", refresh_url: "https://app.example.com/settings?section=client&stripe=refresh", return_url: "https://app.example.com/settings?section=client&stripe=return" });
+    expect(stripe.calls[1][1]).toEqual({ account: "acct_new", use_case: { type: "account_onboarding", account_onboarding: { configurations: ["merchant"],
+      refresh_url: "https://app.example.com/settings?section=client&stripe=refresh", return_url: "https://app.example.com/settings?section=client&stripe=return" } } });
     const stripe2 = fakeStripe();
     await start({ request: await ownerReq("owner1", { companyId: "c1" }), env: env() }, { db, stripe: stripe2, keys: [pair.jwk] });
     expect(stripe2.calls.map((c) => c[0])).toEqual(["getAccount", "link"]);

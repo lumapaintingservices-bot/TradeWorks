@@ -13,7 +13,7 @@ La función está **apagada** hasta que termines esta guía. Mientras falten las
 
 1. El dueño de cada empresa abre **Ajustes > Enlace del cliente y pagos > Pagos con tarjeta y banco** y toca **Conectar Stripe**.
    Stripe le pide los datos de su negocio y su cuenta de banco, y crea para él **su propia cuenta de Stripe**
-   (tipo "Standard"). El contratista entra a esa cuenta en dashboard.stripe.com con su propio correo.
+   (con el sistema nuevo de Stripe, "Accounts v2", con panel completo de Stripe). El contratista entra a esa cuenta en dashboard.stripe.com con su propio correo.
 2. Desde ese momento, el enlace de pago de cada factura (`/pay/...`) muestra un botón grande:
    **"Pagar $X con tarjeta o banco"**.
 3. El cliente toca el botón y paga en la página segura de Stripe (tarjeta, Apple Pay o Google Pay, o su banco si el contratista lo activó).
@@ -60,8 +60,9 @@ Nunca pongas estas claves en el código, en Git ni en el chat.
 1. Entra a https://dashboard.stripe.com con tu cuenta (la de TradeWorks).
 2. Deja el interruptor **Test mode / Modo de prueba** encendido (arriba a la derecha) para practicar sin dinero real.
 3. En el menú de la izquierda busca **Connect** y toca **Get started / Comenzar**.
-4. Cuando pregunte, elige que eres una **plataforma** ("Platform") y que las cuentas conectadas son **Standard**
-   (el contratista tiene su propio panel de Stripe y Stripe cobra su comisión a él).
+4. Cuando pregunte cómo fluyen los pagos, elige **"Your merchants collect payments directly"**
+   (el contratista cobra directo, tiene su propio panel de Stripe y Stripe le cobra su comisión a él).
+   No hace falta activar "Accounts v1 support": TradeWorks usa Accounts v2.
 5. Completa el **perfil de la plataforma** que te pide Stripe (qué hace TradeWorks: software para contratistas; quién cobra: cada contratista a sus clientes).
 
 ---
