@@ -87,7 +87,7 @@ send, rsend, _dmarc). Dry run OK. Owner still has to switch "Automatic reminders
 snooze on the referrer); client profile shows each friend's status + "Give reward" (friend.refReward, optional marketing expense
 category ads / source Referral, id x-ref-{friendId}); review message and paid invoice page invite to share the referral link.
 `jobStatus` moved to src/lib/jobStatus.ts (re-exported by followups).
-8d card & bank payments - DONE in code (setup pending, see docs/10-card-payments.md): Stripe Connect Standard accounts,
+8d card & bank payments - DONE in code (setup pending, see docs/10-card-payments.md): Stripe Connect Accounts v2 (POST /v2/core/accounts, dashboard full, fees+losses collector stripe; Stripe refuses v1 for new platforms),
 direct charges. Owner connects in Settings > Client link & payments > CardPayCard (`/api/connect/start|status`, owner only);
 company fields stripeAccountId/stripeReady/stripeDetails/stripeCheckedAt are server-only (billingUntouched in rules).
 Pay page button "Pay by card or bank" -> `/api/pay/checkout` (public, token only; amount read from the invoice) -> Stripe Checkout
