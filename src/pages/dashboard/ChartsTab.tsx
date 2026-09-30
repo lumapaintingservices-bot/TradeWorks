@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LineChart from "../../components/LineChart";
+import { isPaintingTrade } from "../../lib/trades";
 import { useMetricsCtx } from "../../data/metrics";
 import { useT } from "../../i18n";
 import { jobTypeLabel, jobTypeOf } from "../../lib/estimate";
@@ -84,7 +85,7 @@ export default function ChartsTab() {
         <ChartsCard title={t("Close rate by lead source", "Tasa de cierre por origen")} sub={t("Won / sent, and the money won from each source.", "Ganados / enviados, y el dinero ganado de cada origen.")}>
           {groupRows(ins.bySource, "Pick the source on each estimate and it shows up here.", "Escoge el origen en cada estimado y aparece aquí.")}
         </ChartsCard>
-        <ChartsCard title={t("By job type", "Por tipo de trabajo")} sub={t("Won / sent and money won for cabinets, interior, exterior…", "Ganados / enviados y dinero ganado en gabinetes, interior, exterior…")}>
+        <ChartsCard title={t("By job type", "Por tipo de trabajo")} sub={isPaintingTrade(ctx.settings.trade) ? t("Won / sent and money won for cabinets, interior, exterior…", "Ganados / enviados y dinero ganado en gabinetes, interior, exterior…") : t("Won / sent and money won for each kind of job.", "Ganados / enviados y dinero ganado en cada tipo de trabajo.")}>
           {groupRows(ins.byType, "No estimates sent in this period.", "No hay estimados enviados en este periodo.")}
         </ChartsCard>
       </div>

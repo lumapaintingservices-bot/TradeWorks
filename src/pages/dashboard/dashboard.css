@@ -90,6 +90,7 @@ html.tw-dark .db-av{background:var(--surface-2)}
 .db-kl-f{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap}
 .db-kl-f b{font-size:13px}
 .db-kl-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:14px}
+.db-kl-sec{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin-top:4px}
 
 /* ---------- Today ---------- */
 .db-today{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--s4);align-items:start}
