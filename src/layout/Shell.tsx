@@ -15,6 +15,7 @@ import { Logo } from "../ui/Logo";
 import { useNavBadges } from "../pages/FollowUps";
 import { useInvoices } from "../data/hooks";
 import { usePayLinkSync } from "../data/paylinks";
+import { useTeamPhotoSync } from "../data/teamPhotos";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
@@ -85,6 +86,7 @@ function WorkspaceList({ onDone, signOut }: { onDone(): void; signOut?: boolean 
 /** Badge counts read owner-only collections (invoices, estimates, clients...), so workers never mount this. */
 function AdminBadges({ children }: { children: ReactNode }) {
   usePayLinkSync(); // invoice payment links: keep the public copies fresh and pick up "I paid" claims
+  useTeamPhotoSync(); // before / after photos workers take land on their jobs
   const nb = useNavBadges();
   const { rows: invs } = useInvoices();
   const badges = { "/": nb.dashboard, "/pipeline": nb.pipeline, "/invoices": invs.filter((v) => v.status !== "Paid").length };

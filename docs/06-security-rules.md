@@ -64,6 +64,10 @@ service cloud.firestore {
   }
 }
 ```
-Storage: companies/{cid}/** read/write for members; public read only for showcase + portal photos.
+Storage: companies/{cid}/** read/write for owners/admins (images < 5 MB). Workers: only companies/{cid}/jobphotos/{theirWorkerId}/*
+(get + create new JPEGs < 5 MB; no overwrite, no delete, so a photo shown in "Our recent work" never breaks).
+jobphotos (Firestore): a worker reads / creates / deletes only their own (workerId == theirs); create checks the shape
+(jobPhotoOk: known keys, kind in before|after|detail|'', path = their own folder + doc id, url = the Firebase Storage URL of
+exactly that file). No worker updates. The owner's app deletes the file when a photo is taken off the job.
 Add App Check and rate limiting (Cloud Functions) before public launch; move lead photos to Storage via a
 signed-upload Cloud Function to avoid anonymous writes.

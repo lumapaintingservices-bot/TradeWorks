@@ -33,3 +33,20 @@
 .wk-loc{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.45}
 .wk-job{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-3);margin-top:6px}
 .wk-job select{min-width:0;max-width:280px}
+/* job photos (WorkerPhotos.tsx) */
+.wk-ph-n{font-size:13px}
+.wk-ph-b{padding:4px 24px 18px;display:grid;gap:12px}
+.wk-ph-job{margin:0;max-width:360px}
+.wk-ph-one{margin:0;font-size:14px;font-weight:500}
+.wk-ph-kind{align-self:start;justify-self:start}
+.wk-ph-kind button{padding:6px 14px;font-size:13px}
+.wk-ph-btns{display:flex;gap:8px;flex-wrap:wrap}
+.wk-ph-btns .btn{height:44px;padding:0 18px;gap:8px}
+.wk-ph-none,.wk-ph-note{margin:0;font-size:12.5px}
+.wk-ph-g{display:grid;gap:6px;min-width:0}
+.wk-ph-gh{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+@media(max-width:640px){
+  .wk-ph-b{padding:4px 16px 14px}
+  .wk-ph-btns .btn{flex:1;justify-content:center}
+  .wk-ph .att-v{width:132px}
+}

@@ -285,6 +285,26 @@ await no("worker job name too long", () => setDoc(doc(wrk1, "companies/c1/clock/
 await no("worker cannot create payouts", () => setDoc(doc(wrk1, "companies/c1/payouts/p1"), { workerId: "w1", amount: 999 }));
 await ok("admin may still record any rate (owner decides pay)", () => setDoc(doc(adm1, "companies/c1/hours/n10"), { workerId: "w1", date: "2026-05-02", hours: 2, rate: 35 }));
 
+// ---------------------------------------------------------------- worker job photos (jobphotos)
+const jpUrl = (wid, id) => `https://firebasestorage.googleapis.com/v0/b/tw.appspot.com/o/companies%2Fc1%2Fjobphotos%2F${wid}%2F${id}.jpg?alt=media&token=t`;
+const jp = (id, o = {}) => ({ workerId: "w1", estId: "e1", jobLabel: "EST-1 · Ana", kind: "before", caption: "", url: jpUrl("w1", id), path: `companies/c1/jobphotos/w1/${id}.jpg`, date: "2026-05-04", at: "2026-05-04T13:00:00Z", size: 240000, ...o });
+await ok("worker adds a job photo", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp1"), jp("jp1")));
+await ok("worker reads their own job photos", () => getDocs(query(collection(wrk1, "companies/c1/jobphotos"), where("workerId", "==", "w1"))));
+await no("worker cannot list every job photo", () => getDocs(collection(wrk1, "companies/c1/jobphotos")));
+await no("worker adds a photo as another worker", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp2"), jp("jp2", { workerId: "w2", url: jpUrl("w2", "jp2"), path: "companies/c1/jobphotos/w2/jp2.jpg" })));
+await no("worker photo pointing at another site", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp3"), jp("jp3", { url: "https://evil.example/x.jpg" })));
+await no("worker photo pointing at another file", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp4"), jp("jp4", { url: jpUrl("w1", "jp1") })));
+await no("worker photo with a wrong path", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp5"), jp("jp5", { path: "companies/c1/photos/e1/x.jpg" })));
+await no("worker photo with an unknown type", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp6"), jp("jp6", { kind: "selfie" })));
+await no("worker photo with an extra key", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp7"), jp("jp7", { inWork: true })));
+await no("worker photo without a job", () => setDoc(doc(wrk1, "companies/c1/jobphotos/jp8"), jp("jp8", { estId: "" })));
+await no("worker cannot edit a job photo", () => updateDoc(doc(wrk1, "companies/c1/jobphotos/jp1"), { kind: "after" }));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "companies/c1/jobphotos/jpw2"), jp("jpw2", { workerId: "w2" })); });
+await no("worker cannot read another worker's photo", () => getDoc(doc(wrk1, "companies/c1/jobphotos/jpw2")));
+await no("worker cannot delete another worker's photo", () => deleteDoc(doc(wrk1, "companies/c1/jobphotos/jpw2")));
+await ok("worker deletes their own photo", () => deleteDoc(doc(wrk1, "companies/c1/jobphotos/jp1")));
+await ok("admin reads every job photo", () => getDocs(collection(adm1, "companies/c1/jobphotos")));
+
 // ---------------------------------------------------------------- billing fields and company shape
 await no("admin cannot flip the plan", () => updateDoc(doc(adm1, "companies/c1"), { plan: "pro" }));
 await no("admin cannot delete a billing field", () => updateDoc(doc(adm1, "companies/c1"), { trialEndsAt: deleteField() }));

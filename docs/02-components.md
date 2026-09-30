@@ -43,6 +43,13 @@ comparison series gray dashed. Dashed horizontal grid (5 lines), y labels left (
 below (month short). Hover/tap: vertical band (blue 14% → 0), white dot with 3px colored ring,
 tooltip card (white, radius 10, shadow-pop) with month + value per series. Optional click → select month.
 
+## Attachment [.att] → /components/Attachment.tsx (port of shadcn/ui Attachment)
+Card with media (40px icon box or photo), title + description, small icon actions, optional full-card trigger.
+Props: state idle|uploading|processing|error|done (uploading/processing shimmer the title, error = red border/tint),
+size default|sm|xs, orientation horizontal|vertical (photo on top, 150px wide), progress 0..1 (2px bar).
+AttachmentGroup = horizontal snapping row with an edge fade. Upload queue (progress, retry): /components/UploadQueue.tsx.
+Photo viewer: /components/Lightbox.tsx.
+
 ## List row [.owe] (e.g. Still to collect, client jobs)
 Border 1px --line radius 12, padding 9×10: avatar 32 (initials, soft color) · name 13.5/600 + meta 12 ·
 amount 600 · chevron. Hover --surface-2.

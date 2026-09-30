@@ -124,6 +124,7 @@ describe("worker data scope", () => {
   it("matches the security rules", () => {
     expect(workerScope("tasks")).toEqual({ field: "workerId" });
     expect(workerScope("hours")).toEqual({ field: "workerId" });
+    expect(workerScope("jobphotos")).toEqual({ field: "workerId" });
     expect(workerScope("clock")).toEqual({ docId: true });
     expect(workerScope("workers")).toEqual({ docId: true });
     expect(workerScope("expenses")).toBeNull();

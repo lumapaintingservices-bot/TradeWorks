@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
-import { useSettings } from "../../data/hooks";
+import { Lightbox } from "../../components/Lightbox";
+import { UploadList, useUploadQueue } from "../../components/UploadQueue";
+import { useJobPhotos, useSettings } from "../../data/hooks";
 import { useT } from "../../i18n";
 import { jobTypeLabel, jobTypeOf, uid } from "../../lib/estimate";
+import { fmtDate } from "../../lib/format";
 import { shrinkImage } from "../../lib/image";
 import { addShowcase, removeShowcase, SHOWCASE_MAX, showcaseCaption } from "../../lib/jobday";
 import { deleteImage, putImage } from "../../lib/storage";
@@ -22,8 +25,8 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
   const photos = e.photos || [];
   const latest = useRef<PhotoRef[]>(photos);
   latest.current = photos;
-  const [busy, setBusy] = useState(0);
   const [over, setOver] = useState(false);
+  const { remove: removeTeamPhoto } = useJobPhotos();
   const [zoom, setZoom] = useState(-1);
   const fileIn = useRef<HTMLInputElement>(null);
   const camIn = useRef<HTMLInputElement>(null);
@@ -33,24 +36,17 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
   const write = (next: PhotoRef[]) => { latest.current = next; set({ photos: next }); };
   const patch = (id: string, p: Partial<PhotoRef>) => write(latest.current.map((x) => (x.id === id ? { ...x, ...p } : x)));
 
-  const addFiles = async (files: FileList | File[] | null) => {
-    const list = Array.from(files || []).filter((f) => /^image\//.test(f.type));
-    if (!list.length) return;
+  // each photo shows as an upload card (progress, retry) until it is saved on the job
+  const q = useUploadQueue<null>(async (f, _m, onProgress) => {
+    if (!company) throw new Error("signed out");
+    const data = await shrinkImage(f, 1100, 0.8);
+    const id = uid("ph");
+    const { url, path } = await putImage(`companies/${company.id}/photos/${e.id}/${id}.jpg`, data, onProgress);
+    write([...latest.current, { id, kind: "", caption: "", inWork: false, url, path }]);
+  });
+  const addFiles = (files: FileList | File[] | null) => {
     if (!company) { toast(t("Sign in first.", "Primero inicia sesión.")); return; }
-    setBusy((n) => n + list.length);
-    let ok = 0;
-    for (const f of list) {
-      try {
-        const data = await shrinkImage(f, 1100, 0.8);
-        const id = uid("ph");
-        const { url, path } = await putImage(`companies/${company.id}/photos/${e.id}/${id}.jpg`, data);
-        write([...latest.current, { id, kind: "", caption: "", inWork: false, url, path }]);
-        ok++;
-      } catch {
-        toast(t("Couldn't add a photo. Check your connection and try again.", "No se pudo agregar una foto. Revisa tu conexión e inténtalo de nuevo."));
-      } finally { setBusy((n) => n - 1); }
-    }
-    if (ok) toast(ok === 1 ? t("Photo added.", "Foto agregada.") : t(`${ok} photos added.`, `${ok} fotos agregadas.`));
+    q.add(files, null);
   };
 
   const remove = async (ph: PhotoRef) => {
@@ -58,6 +54,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
     if (!confirm(t("Remove this photo?", "¿Quitar esta foto?") + extra)) return;
     write(latest.current.filter((x) => x.id !== ph.id));
     setZoom(-1);
+    if (ph.teamId) removeTeamPhoto(ph.teamId).catch(() => {}); // a worker's photo: gone from their phone list too
     if (!ph.inWork) await deleteImage(ph.path); // a photo shared with "Our recent work" keeps its file, the showcase still points at it
   };
 
@@ -82,19 +79,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
     } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Inténtalo de nuevo.")); }
   };
 
-  // lightbox: Esc closes, arrows move
-  useEffect(() => {
-    if (zoom < 0) return;
-    const h = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") setZoom(-1);
-      else if (ev.key === "ArrowRight") setZoom((z) => Math.min(latest.current.length - 1, z + 1));
-      else if (ev.key === "ArrowLeft") setZoom((z) => Math.max(0, z - 1));
-    };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, [zoom]);
-  const zp = zoom >= 0 ? photos[zoom] : undefined;
-  useEffect(() => { if (zoom >= photos.length) setZoom(photos.length - 1); }, [photos.length, zoom]);
+  const closeZoom = () => setZoom(-1);
 
   return (
     <div className="stack">
@@ -114,10 +99,10 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
             <input ref={fileIn} type="file" accept="image/*" multiple hidden onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ""; }} />
             <input ref={camIn} type="file" accept="image/*" capture="environment" hidden onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ""; }} />
           </div>
-          {busy > 0 && <p className="ph-busy" role="status">{t(`Adding ${busy} photo${busy === 1 ? "" : "s"}…`, `Agregando ${busy} foto${busy === 1 ? "" : "s"}…`)}</p>}
+          {q.items.length > 0 && <div className="ph-ups"><UploadList q={q} /></div>}
           {e.showPhotos && photos.length > 0 && <p className="muted" style={{ fontSize: 12.5, marginTop: 12 }}>{t("The client sees these photos on their link, between the summary and the scope of work.", "El cliente ve estas fotos en su enlace, entre el resumen y el alcance del trabajo.")}</p>}
 
-          {photos.length === 0 && busy === 0
+          {photos.length === 0 && !q.items.length
             ? <p className="muted" style={{ fontSize: 13.5, marginTop: 14 }}>{t("No photos on this job yet.", "Todavía no hay fotos en este trabajo.")}</p>
             : <div className="ph-grid">{photos.map((ph, i) => (
               <div className="ph-card" key={ph.id}>
@@ -125,6 +110,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
                   {ph.url ? <img src={ph.url} alt={ph.caption || t("Job photo", "Foto del trabajo")} loading="lazy" /> : null}
                   {ph.kind && <span className="ph-tag">{kindLabel(ph.kind)}</span>}
                   {ph.inWork && <span className="ph-star">★ {t("Our work", "Nuestro trabajo")}</span>}
+                  {ph.teamId && <span className="ph-by">{ph.by || t("Team", "Equipo")}{ph.at ? " · " + fmtDate(ph.at.slice(0, 10), lang) : ""}</span>}
                 </button>
                 <div className="ph-meta">
                   <input value={ph.caption} placeholder={t("Caption (optional)", "Descripción (opcional)")} aria-label={t("Caption", "Descripción")} onChange={(ev) => patch(ph.id, { caption: ev.target.value })} />
@@ -146,14 +132,8 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
         </div>
       </div>
 
-      {zp?.url && (
-        <div className="ph-light" role="dialog" aria-modal aria-label={t("Photo", "Foto")} onClick={() => setZoom(-1)}>
-          <img src={zp.url} alt={zp.caption || ""} onClick={(ev) => ev.stopPropagation()} />
-          <button type="button" className="x" aria-label={t("Close", "Cerrar")} onClick={() => setZoom(-1)}>×</button>
-          {zoom > 0 && <button type="button" className="prev" aria-label={t("Previous", "Anterior")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom - 1); }}>‹</button>}
-          {zoom < photos.length - 1 && <button type="button" className="next" aria-label={t("Next", "Siguiente")} onClick={(ev) => { ev.stopPropagation(); setZoom(zoom + 1); }}>›</button>}
-          {(zp.kind || zp.caption) && <div className="cap">{[zp.kind ? kindLabel(zp.kind) : "", zp.caption].filter(Boolean).join(" — ")}</div>}
-        </div>)}
+      <Lightbox index={zoom} onIndex={setZoom} onClose={closeZoom}
+        items={photos.map((p) => ({ url: p.url || "", cap: [p.kind ? kindLabel(p.kind) : "", p.caption, p.teamId && p.by ? "📷 " + p.by : ""].filter(Boolean).join(" — ") }))} />
     </div>
   );
 }

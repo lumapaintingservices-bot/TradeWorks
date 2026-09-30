@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
 import { normalizeTrade } from "../lib/trades";
-import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, Payout, Settings, Task, Worker } from "../lib/types";
+import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, JobPhoto, Payout, Settings, Task, Worker } from "../lib/types";
 import { subscriptionPlan } from "../lib/workerView";
 import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from "./repo";
 
@@ -10,7 +10,7 @@ import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from 
  * Live rows of one company collection.
  *  - owner / admin: the whole collection.
  *  - worker: Firestore rules are not filters, so only what the rules allow is requested (src/lib/workerView.ts subscriptionPlan):
- *    tasks / hours where workerId == mine, clock / workers only the doc with my worker id; every other collection is not
+ *    tasks / hours / payouts / jobphotos where workerId == mine, clock / workers only the doc with my worker id; every other collection is not
  *    subscribed at all (rows [] and loading false). `patch` changes single fields (a worker ticking a task).
  */
 export function useCollection<T extends Rec>(col: string) {
@@ -40,6 +40,7 @@ export const useHours = () => useCollection<HourEntry & Rec>("hours");
 export const usePayouts = () => useCollection<Payout & Rec>("payouts");
 export const useClock = () => useCollection<ClockRec & Rec>("clock");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
+export const useJobPhotos = () => useCollection<JobPhoto & Rec>("jobphotos");
 
 /** Company settings live in a single doc: settings/main. Missing fields fall back to defaults. */
 export function useSettings() {

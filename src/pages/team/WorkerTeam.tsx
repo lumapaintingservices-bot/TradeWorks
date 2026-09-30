@@ -9,6 +9,7 @@ import { num } from "../../lib/money";
 import { RANGE_KEYS, clockElapsed, clockTimes, rangeBounds, type RangeKey } from "../../lib/team";
 import { clockJobOptions, isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
 import { Link } from "react-router-dom";
+import { WorkerPhotos } from "./WorkerPhotos";
 import type { HourEntry } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
@@ -26,7 +27,7 @@ const RANGE_LABEL: Record<RangeKey, [string, string]> = {
 
 /**
  * The Team page for role "worker". It only ever reads what firestore.rules allow: my hours, my clock, my worker record and
- * the tasks assigned to me. No estimates, invoices, clients, settings, payouts, other workers, or any pay figure is shown.
+ * the tasks assigned to me (+ my own job photos). No estimates, invoices, clients, settings, payouts, other workers, or any pay figure is shown.
  */
 export function WorkerTeam() {
   const t = useT();
@@ -126,6 +127,8 @@ function WorkerBody({ workerId }: { workerId: string }) {
         {track && <p className="wk-loc muted">📍 {t("Your location is saved when you clock in and out, and every few minutes while TradeWorks is open during your shift, so your boss can see you're at the job. Nothing is saved when you're clocked out.",
           "Tu ubicación se guarda al marcar entrada y salida, y cada pocos minutos mientras TradeWorks esté abierto en tu turno, para que tu jefe vea que estás en el trabajo. No se guarda nada cuando no estás trabajando.")}</p>}
       </section>
+
+      <WorkerPhotos workerId={workerId} tasks={tasks} clock={clock} />
 
       <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
         <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...RANGE_LABEL[k])}</button>))}</div></div>

@@ -4,7 +4,8 @@ rules_version = '2';
 // Roles (companies/{cid}/members/{uid}.role), mirrored in src/lib/roles.ts:
 //   owner  everything, incl. members and roles
 //   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
-//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read)
+//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read),
+//          their own job photos (add, see, delete; jobphotos, file in Storage at companies/{cid}/jobphotos/{workerId}/{id}.jpg)
 // The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -39,6 +40,23 @@ service cloud.firestore {
       return request.resource.data.keys().hasOnly(['at', 'estId', 'jobLabel', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
         && (!('jobLabel' in request.resource.data) || (request.resource.data.jobLabel is string && request.resource.data.jobLabel.size() <= 120))
         && locOk(request.resource.data, 'loc') && locOk(request.resource.data, 'last');
+    }
+    // a before / after photo a worker took (src/lib/jobPhotos.ts): their own worker id, their own Storage file, a known type
+    function jobPhotoOk(cid, id) {
+      let d = request.resource.data;
+      let wid = myWorkerId(cid);
+      return d.keys().hasOnly(['workerId', 'estId', 'jobLabel', 'kind', 'caption', 'url', 'path', 'date', 'at', 'size', 'companyId', 'createdAt', 'updatedAt'])
+        && d.workerId == wid
+        && d.estId is string && d.estId.size() > 0 && d.estId.size() <= 100
+        && (!('jobLabel' in d) || (d.jobLabel is string && d.jobLabel.size() <= 120))
+        && d.kind in ['before', 'after', 'detail', '']
+        && (!('caption' in d) || (d.caption is string && d.caption.size() <= 300))
+        && d.path == 'companies/' + cid + '/jobphotos/' + wid + '/' + id + '.jpg'
+        && d.url is string && d.url.size() <= 2000
+        && d.url.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/?#]+/o/companies%2F' + cid + '%2Fjobphotos%2F' + wid + '%2F' + id + '[.]jpg[?].*')
+        && d.date is string && d.date.size() <= 10
+        && d.at is string && d.at.size() <= 40
+        && (!('size' in d) || (d.size is number && d.size >= 0 && d.size <= 20000000));
     }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
@@ -120,13 +138,13 @@ service cloud.firestore {
         );
       }
 
-      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock ...
+      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos ...
       // owners/admins everything. A worker only touches what is linked to their workerId (rules are not filters:
       // the app must query with the same filter, see src/lib/roles.ts workerScope()).
       match /{col}/{id} {
         allow read: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            ((col == 'tasks' || col == 'hours' || col == 'payouts') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, hours, payments
+            ((col == 'tasks' || col == 'hours' || col == 'payouts' || col == 'jobphotos') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, hours, payments, photos
             || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
           )));
 
@@ -135,6 +153,7 @@ service cloud.firestore {
             (col == 'hours' && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
               && (!('rate' in request.resource.data) || request.resource.data.rate == workerRate(cid)))
             || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
+            || (col == 'jobphotos' && jobPhotoOk(cid, id))
           )));
 
         allow update: if col != 'members' && (admin(cid) || (
@@ -151,6 +170,7 @@ service cloud.firestore {
           isWorker(cid) && myWorkerId(cid) != '' && (
             (col == 'hours' && resource.data.workerId == myWorkerId(cid))
             || (col == 'clock' && id == myWorkerId(cid))
+            || (col == 'jobphotos' && resource.data.workerId == myWorkerId(cid))   // the file stays: the owner's app cleans it up
           )));
       }
     }
