@@ -26,7 +26,11 @@ export default function AuthPage({ mode }: { mode: "signin" | "signup" | "reset"
     if (c.includes("popup-blocked")) return t("Your browser blocked the Google window. Allow pop-ups for this site and try again.", "Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes de este sitio e inténtalo de nuevo.");
     if (c.includes("unauthorized-domain")) return t("This web address is not authorized in Firebase yet.", "Esta dirección web todavía no está autorizada en Firebase.");
     if (c.includes("operation-not-allowed")) return t("Google sign-in is not turned on in Firebase yet.", "El inicio con Google todavía no está activado en Firebase.");
-    return t("Something went wrong. Try again.", "Algo salió mal. Inténtalo de nuevo.");
+    if (c.includes("network-request-failed")) return t("No connection. Check your internet and try again.", "Sin conexión. Revisa tu internet e inténtalo de nuevo.");
+    if (c.includes("too-many-requests")) return t("Too many attempts. Wait a few minutes and try again.", "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.");
+    if (c.includes("user-disabled")) return t("This account is disabled.", "Esta cuenta está desactivada.");
+    const code = /auth\/[a-z-]+/i.exec(c)?.[0];
+    return t("Something went wrong. Try again.", "Algo salió mal. Inténtalo de nuevo.") + (code ? ` (${code})` : "");
   };
   const submit = async (ev: FormEvent) => {
     ev.preventDefault(); setErr(""); setBusy(true);
