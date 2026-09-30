@@ -316,7 +316,9 @@ export default function LeadForm() {
       <div className="lf-top"><div className="lf-top-in">
         <a className="lf-brand" href={site || undefined} target="_blank" rel="noopener noreferrer">
           {safeImgSrc(pub.logoUrl) && <img src={safeImgSrc(pub.logoUrl)} alt="" />}
-          <div><b>{parts[0]}</b>{parts.length > 1 && <span>{parts.slice(1).join(" ")}</span>}</div>
+          {safeImgSrc(pub.logoUrl)
+            ? <div className="lf-name"><b>{pub.name}</b></div>
+            : <div><b>{parts[0]}</b>{parts.length > 1 && <span>{parts.slice(1).join(" ")}</span>}</div>}
         </a>
         <div className="lf-sp" />
         <div className="lf-lang">{(["en", "es"] as Lang[]).map((l) => <button key={l} className={lang === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}</div>

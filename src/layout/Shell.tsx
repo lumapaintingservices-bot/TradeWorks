@@ -142,7 +142,7 @@ function ShellBody() {
           <div className="me">
             <span className="av">{(user?.name || user?.email || "?").slice(0, 2).toUpperCase()}</span>
             <div><b>{user?.name || company?.name}</b><span>{role ? t(...roleLabel(role)) + " · " : ""}{user?.email}</span></div>
-            <button className="btn sm" title={t("Sign out", "Salir")} onClick={() => backend.signOut()}>⎋</button>
+            <button className="btn sm" title={t("Sign out", "Salir")} onClick={() => backend.signOut()}>{t("Sign out", "Salir")}</button>
           </div>
         </div>
       </aside>
