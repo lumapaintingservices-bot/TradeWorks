@@ -1,0 +1,50 @@
+/* Attachment card (port of shadcn/ui Attachment). Tokens only. */
+.att{position:relative;display:flex;align-items:center;gap:10px;min-width:0;padding:6px 8px 6px 6px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);color:var(--ink);overflow:hidden}
+.att-media{flex:none;width:40px;height:40px;border-radius:var(--r-md);background:var(--surface-2);color:var(--ink-2);display:grid;place-items:center;overflow:hidden}
+.att-img img{width:100%;height:100%;object-fit:cover;display:block}
+.att-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.att-title{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-desc{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.att-actions{position:relative;z-index:2;display:flex;align-items:center;gap:2px;flex:none}
+.att-act{width:28px;height:28px;padding:0;border:0;border-radius:var(--r-sm);background:transparent;color:var(--ink-2);display:grid;place-items:center;cursor:pointer}
+.att-act:hover{background:var(--surface-2);color:var(--ink)}
+.att-act:focus-visible,.att-trigger:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+.att-trigger{position:absolute;inset:0;z-index:1;padding:0;border:0;border-radius:inherit;background:transparent;cursor:zoom-in}
+.att-bar{position:absolute;left:0;bottom:0;height:2px;background:var(--acc);transition:width .25s ease}
+
+/* sizes */
+.att-sm{gap:8px;padding:4px 6px 4px 4px}
+.att-sm .att-media{width:32px;height:32px;border-radius:var(--r-sm)}
+.att-sm .att-title{font-size:12.5px}
+.att-sm .att-desc{font-size:11.5px}
+.att-xs{gap:6px;padding:3px 6px 3px 3px;border-radius:var(--r-md)}
+.att-xs .att-media{width:24px;height:24px;border-radius:6px}
+.att-xs .att-title{font-size:12px}
+.att-xs .att-desc{display:none}
+
+/* vertical: the photo on top, the text under it, the actions over the photo */
+.att-v{flex-direction:column;align-items:stretch;gap:6px;width:150px;padding:6px}
+.att-v .att-media{width:100%;height:auto;aspect-ratio:4/3;border-radius:var(--r-md)}
+.att-v .att-body{padding:0 4px 2px}
+.att-v .att-actions{position:absolute;top:10px;right:10px}
+.att-v .att-act{width:26px;height:26px;border-radius:999px;background:rgba(11,13,18,.62);color:#fff}
+.att-v .att-act:hover{background:rgba(11,13,18,.82);color:#fff}
+
+/* upload states */
+.att.is-idle{border-style:dashed}
+.att.is-uploading .att-title,.att.is-processing .att-title{
+  background:linear-gradient(90deg,var(--ink) 0 38%,var(--ink-3) 50%,var(--ink) 62% 100%);background-size:260% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:att-shimmer 1.6s linear infinite}
+.att.is-error{border-color:color-mix(in srgb,var(--bad) 45%,var(--line));background:color-mix(in srgb,var(--bad) 6%,var(--surface))}
+.att.is-error .att-media{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad)}
+.att.is-error .att-desc{color:var(--bad);white-space:normal}
+@keyframes att-shimmer{from{background-position:100% 0}to{background-position:-160% 0}}
+@media (prefers-reduced-motion:reduce){
+  .att.is-uploading .att-title,.att.is-processing .att-title{animation:none;background:none;color:var(--ink)}
+}
+
+/* group: one scrolling, snapping row with a fade at the end */
+.att-group{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 24px 6px 2px;margin-right:-2px;
+  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);scrollbar-width:thin}
+.att-group>*{flex:none;scroll-snap-align:start}
+.att-list{display:grid;gap:8px}

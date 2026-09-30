@@ -3,10 +3,23 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     function member(cid) {
-      // owners and admins only: workers never touch photos or receipts
+      // owners and admins only (workers: just their own job photos, below)
       return request.auth != null
         && firestore.exists(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid))
         && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role in ['owner', 'admin'];
+    }
+    // a worker login linked to worker record {wid} (members/{uid}.workerId)
+    function workerOf(cid, wid) {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role == 'worker'
+        && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.get('workerId', '') == wid;
+    }
+    // before / after photos a worker takes: they add new JPEGs to their own folder and see them; never overwrite or delete
+    // (a photo the owner shows in "Our recent work" must not break). Owners / admins: the rule below.
+    match /companies/{cid}/jobphotos/{wid}/{file} {
+      allow get: if workerOf(cid, wid);
+      allow create: if workerOf(cid, wid) && request.resource.size < 5 * 1024 * 1024 && request.resource.contentType == 'image/jpeg';
     }
     // receipts, photos, logos: only members of that company
     match /companies/{cid}/{allPaths=**} {

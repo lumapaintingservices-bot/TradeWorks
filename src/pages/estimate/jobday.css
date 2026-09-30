@@ -45,13 +45,8 @@ pre.jd-shop{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14
 .ph-row select{flex:1;min-width:0}
 .ph-work{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2);cursor:pointer}
 .ph-work input{width:18px;height:18px;padding:0;accent-color:var(--ok);flex:none}
-.ph-busy{margin-top:12px;font-size:13px;color:var(--ink-2)}
-.ph-light{position:fixed;inset:0;z-index:90;background:rgba(11,13,18,.92);display:grid;place-items:center;padding:56px 12px 64px}
-.ph-light img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.ph-light .cap{position:absolute;left:0;right:0;bottom:16px;text-align:center;color:#fff;font-size:14px;padding:0 60px}
-.ph-light button{position:absolute;border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:999px;width:44px;height:44px;font-size:22px;line-height:1;display:grid;place-items:center}
-.ph-light button:hover{background:rgba(255,255,255,.26)}
-.ph-light .x{top:10px;right:10px}.ph-light .prev{left:10px;top:50%;transform:translateY(-50%)}.ph-light .next{right:10px;top:50%;transform:translateY(-50%)}
+.ph-ups{margin-top:12px}
+.ph-by{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);background:rgba(11,13,18,.72);color:#fff;font-size:11px;font-weight:500;border-radius:999px;padding:2px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @media(max-width:640px){
   .jd-crow.head{display:none}

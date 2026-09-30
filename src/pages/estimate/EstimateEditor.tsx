@@ -11,6 +11,7 @@ import { STATUSES, type Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { statusLabel } from "../../ui/StatusBadge";
 import { subscribeTop } from "../../data/repo";
+import { useTeamPhotosInto } from "../../data/teamPhotos";
 import { portalApply, type PortalDoc } from "../../lib/portal";
 import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
@@ -85,6 +86,9 @@ export default function EstimateEditor() {
       if (r.news) toast(r.news);
     });
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // before / after photos workers take on their phones land on this job too (src/data/teamPhotos.ts)
+  useTeamPhotosInto(e?.id, () => eRef.current?.photos, (photos) => set({ photos }));
 
   // keep the client's copy in step with edits (owner-only fields are stripped in portalSnapshot)
   useEffect(() => {

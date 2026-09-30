@@ -58,7 +58,10 @@ export type Payout = { id: string; workerId: string; date: string; amount: numbe
 export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** A running clock. loc = where the worker clocked in; last = latest position while the app was open (src/lib/geo.ts). */
 export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
-export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string };
+/** teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts). */
+export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string; teamId?: string; by?: string; at?: string };
+/** companies/{cid}/jobphotos/{id}: a before / after photo a worker took for a job. The file is at companies/{cid}/jobphotos/{workerId}/{id}.jpg. */
+export type JobPhoto = { id: string; workerId: string; estId: string; jobLabel?: string; kind: "before" | "after" | "detail" | ""; caption?: string; url: string; path: string; date: string; at: string; size?: number; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type ColorRow = { area: string; brand: string; color: string; sheen: string; code: string };
 export type JobTask = { id: string; day: number | string; text: string };
 export type ChatMsg = { from: "client" | "owner"; text: string; at: string };

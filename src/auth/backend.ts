@@ -159,7 +159,7 @@ const fbBackend: Backend = {
       }
     }
     await deleteDoc(doc(db, "public", cid)).catch(() => {});
-    for (const col of ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "clock"]) {
+    for (const col of ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "clock", "jobphotos"]) {
       const s = await getDocs(collection(db, "companies", cid, col));
       for (let i = 0; i < s.docs.length; i += 400) { const b = writeBatch(db); s.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref)); await b.commit(); }
     }

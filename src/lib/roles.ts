@@ -5,7 +5,7 @@
  *   owner  : everything, incl. members, roles and billing.
  *   admin  : everything about the business (clients, estimates, money, team...). Sees the member list, may invite / remove
  *            WORKERS only; cannot touch owners or admins, cannot change roles, cannot delete the company.
- *   worker : Calendar (own tasks), Team (own hours / clock in-out), Timesheet (own hours, pay, payments) and Settings -> language & theme.
+ *   worker : Calendar (own tasks), Team (own hours / clock in-out / job photos), Timesheet (own hours, pay, payments) and Settings -> language & theme.
  *
  * The company creator (`company.ownerUid`, the "primary owner") can never be removed or demoted; that guarantees a company
  * always keeps at least one owner (firestore.rules enforce the same thing, they cannot count owners).
@@ -140,7 +140,7 @@ export function canLinkWorker(actor: Role | null | undefined, target: Role): boo
  *  - null       -> a worker may not read this collection at all
  */
 export function workerScope(col: string): { field: string } | { docId: true } | null {
-  if (col === "tasks" || col === "hours" || col === "payouts") return { field: "workerId" };
+  if (col === "tasks" || col === "hours" || col === "payouts" || col === "jobphotos") return { field: "workerId" };
   if (col === "clock" || col === "workers") return { docId: true };
   return null;
 }
