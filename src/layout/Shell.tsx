@@ -18,6 +18,7 @@ import { usePayLinkSync } from "../data/paylinks";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
+import LocationPing from "../pages/team/LocationPing";
 
 function LangSwitch() {
   const { lang, setLang } = useUi();
@@ -93,7 +94,8 @@ function AdminBadges({ children }: { children: ReactNode }) {
 export default function Shell() {
   const { role } = useAuth();
   const body = <ShellBody />;
-  return role === "worker" ? <Badges.Provider value={{}}>{body}</Badges.Provider> : <AdminBadges>{body}</AdminBadges>;
+  // workers: keep their position fresh on the running clock (team map), only while clocked in and the app is open
+  return role === "worker" ? <Badges.Provider value={{}}><LocationPing />{body}</Badges.Provider> : <AdminBadges>{body}</AdminBadges>;
 }
 
 function ShellBody() {
