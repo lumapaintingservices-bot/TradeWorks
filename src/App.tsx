@@ -30,6 +30,7 @@ import Reports from "./pages/Reports";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import { applyTheme, useUi } from "./store/ui";
+import { LoadingScreen } from "./ui/LoadingScreen";
 
 /** Publishes the calendar feed; it reads owner-only collections, so workers never run it. */
 function FeedSync() { const { role } = useAuth(); return can(role, "data.all") ? <FeedSyncRun /> : null; }
@@ -38,14 +39,13 @@ function FeedSyncRun() { useCalendarFeedSync(); return null; }
 /** Shown instead of the onboarding wizard when the account could not be read (offline / rules) — never treat that as "no company yet". */
 function LoadFailed() {
   const t = useT();
-  const { retryLoad } = useAuth();
   return (
     <div className="auth">
       <div className="auth-card card">
         <div className="auth-top"><Logo size={40} /><b>TradeWorks</b></div>
         <h1>{t("Could not load your account", "No se pudo cargar tu cuenta")}</h1>
-        <p className="muted" style={{ marginBottom: 16 }}>{t("Check your internet connection and try again.", "Revisa tu conexión a internet e inténtalo de nuevo.")}</p>
-        <button className="btn pri" style={{ width: "100%", height: 42 }} onClick={retryLoad}>{t("Try again", "Reintentar")}</button>
+        <p className="muted" style={{ marginBottom: 16 }}>{t("It took too long or the connection failed. Check your internet and try again.", "Tardó demasiado o falló la conexión. Revisa tu internet e inténtalo de nuevo.")}</p>
+        <button className="btn pri" style={{ width: "100%", height: 42 }} onClick={() => window.location.reload()}>{t("Try again", "Reintentar")}</button>
         <div className="auth-links"><button className="link-btn" onClick={() => backend.signOut()}>{t("Sign out", "Salir")}</button></div>
       </div>
     </div>
@@ -55,7 +55,7 @@ function LoadFailed() {
 function Gate() {
   const { ready, user, company, loadError } = useAuth();
   const loc = useLocation();
-  if (!ready) return null;
+  if (!ready) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname + loc.search }} />;
   if (loadError) return <LoadFailed />;
   if (!company?.onboarded) return <Navigate to="/onboarding" replace />;
@@ -74,7 +74,7 @@ function Guard() {
 function Bare() {
   const { ready, user, company, role, loadError } = useAuth();
   const loc = useLocation();
-  if (!ready) return null;
+  if (!ready) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
   if (loadError) return <LoadFailed />;
   if (!company?.onboarded) return <Navigate to="/onboarding" replace />;
@@ -89,7 +89,7 @@ function OnboardingRoute() {
   const nav = useNavigate();
   const { ready, user, company, companies, activeCompanyId, creating, invite, cancelCreateCompany, switchCompany, loadError } = useAuth();
   const [skipInvite, setSkipInvite] = useState(false);
-  if (!ready) return null;
+  if (!ready) return <LoadingScreen />;
   if (user && loadError) return <LoadFailed />;
   if (user && invite && !company && !creating && !skipInvite) return <JoinPrompt onSkip={() => setSkipInvite(true)} />;
   // a plain worker never sets up a company of their own: back to their calendar
