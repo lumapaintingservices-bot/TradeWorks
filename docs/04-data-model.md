@@ -14,6 +14,7 @@ companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbe
                                        templates[], jobTemplates[], leadSources[], production, services[],
                                        followUpDays, websiteUrl, instagramUrl, reviewUrl, portalUrl,
                                        payZelle, payZelleName, payNote, payMethods[] (chips), payHandles{venmo,cashapp,paypal,checkTo},
+                                       autoEmail{on,kinds[]}, invoiceDueDays,
                                        goal{sales}, dashCards[],
                                        recurring[], bankRules[], expCats[], calOn, calToken, showcase[] }
 companies/{cid}/clients/{id}         { name, phone, email, address, source, lang, note, lead, archived, archivedAt,
@@ -38,6 +39,7 @@ companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }
 companies/{cid}/clock/{workerId}     { at, estId }
+companies/{cid}/autoemails/{itemId}  { item, kind, estId, invId, to, subject, status:'sending'|'sent'|'failed', sentAt, error }  written ONLY by workers/reminders
 
 portal/{token}                       { owner(cid), estId, data (snapshot JSON), updatedAt, client:{ views[], picks{}, sign{}, chat[], paid{}, co{} } }
 portal/{token}/photos/{id}           { owner, data }

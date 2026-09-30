@@ -1,6 +1,7 @@
 /** Follow-ups ("who to write to today") — pure port of followUpsV4() plus the small date/status helpers it needs. */
 import { calcEstimate } from "./estimate";
 import { fmtDate } from "./format";
+import { asInv } from "./invoices";
 import { money, num } from "./money";
 import type { TplKey } from "./messages";
 import type { Client, EstStatus, Estimate, Invoice, Settings } from "./types";
@@ -74,14 +75,18 @@ export function openedText(n: number, when?: string, lang: "en" | "es" = "en", c
 }
 
 /* ---------------- follow-ups ---------------- */
-export type FollowKind = "lead" | "chat" | "noview" | "viewed" | "follow" | "deposit" | "co" | "payclaim" | "balance" | "review" | "warranty";
+export type FollowKind = "lead" | "chat" | "noview" | "viewed" | "follow" | "deposit" | "co" | "payclaim" | "balance" | "review" | "warranty" | "tomorrow" | "overdue";
 export type FollowUp = {
   /** Unique per item: "{estId|clientId}:{key}". */
   id: string;
-  /** Snooze key (estimate.snooze[key] / client.snooze[key]); "co{id}" for change orders. */
+  /** Snooze key (estimate.snooze[key] / client.snooze[key]); "co{id}" for change orders, "inv{id}" / "claim{id}" for invoices. */
   key: string;
   kind: FollowKind;
   estId?: string; clientId?: string; coId?: string;
+  /** The invoice a money reminder is about (deposit, balance, overdue, invoice payment claims). */
+  invId?: string;
+  /** Day the daily worker e-mailed this reminder (then it stays out of the list for SNOOZE_DAYS). */
+  emailed?: string;
   /** CSS colour token for the little bar on the left. */
   color: string;
   /** Urgency, biggest first. */
@@ -105,11 +110,15 @@ export type FollowUpInput = {
   /** Needed for deposit / balance / paid rules; without it estimates keep their own status. */
   invoices?: Invoice[];
   now?: Date; lang?: "en" | "es";
+  /** Reminders the daily worker already e-mailed: item id -> day sent (companies/{cid}/autoemails). */
+  autoSent?: Record<string, string>;
 };
+export const DEFAULT_INVOICE_DUE_DAYS = 7;
 
-export function followUps({ estimates, clients, settings, invoices = [], now = new Date(), lang = "en" }: FollowUpInput): FollowUp[] {
+export function followUps({ estimates, clients, settings, invoices = [], now = new Date(), lang = "en", autoSent = {} }: FollowUpInput): FollowUp[] {
   const es = lang === "es", L = (en: string, sp: string) => (es ? sp : en);
   const today = todayISO(now), limit = num(settings.followUpDays) || DEFAULT_FOLLOWUP_DAYS;
+  const dueDays = num(settings.invoiceDueDays) || DEFAULT_INVOICE_DUE_DAYS;
   const out: FollowUp[] = [];
   const byId = new Map(clients.map((c) => [c.id, c]));
 
@@ -148,12 +157,21 @@ export function followUps({ estimates, clients, settings, invoices = [], now = n
           detail: L(`sent ${d} days ago, ${money(t.total)}`, `enviado hace ${d} días, ${money(t.total)}`) });
     }
 
+    // invoices a reminder already covers (deposit / balance), so "overdue" does not repeat them
+    const covered = new Set<string>();
+    const claimed = (v?: Invoice) => !!(v && asInv(v).payClaim && v.status !== "Paid");
+
     if (st === "Accepted" && !isSnoozed(e, "deposit", today)) {
       const first = main.find((v) => v.kind === "deposit") || main[0];
-      if (!first || first.status !== "Paid")
-        push("deposit", "deposit", { tpl: "deposit", color: "var(--icon-teal)", sort: 50, title: L("Collect the deposit", "Cobrar el depósito"),
+      if (first) covered.add(first.id);
+      if ((!first || first.status !== "Paid") && !claimed(first))
+        push("deposit", "deposit", { tpl: "deposit", invId: first?.id, color: "var(--icon-teal)", sort: 50, title: L("Collect the deposit", "Cobrar el depósito"),
           detail: money(first ? first.amount : t.deposit) + (e.startDate ? ", " + L("starts", "empieza") + " " + dfmt(e.startDate) : "") });
     }
+
+    if ((st === "Accepted" || st === "Deposit Paid") && e.startDate && e.startDate === addDaysISO(today, 1) && !isSnoozed(e, "tomorrow", today))
+      push("tomorrow", "tomorrow", { tpl: "tomorrow", color: "var(--acc)", sort: 80, title: L("Job starts tomorrow", "El trabajo empieza mañana"),
+        detail: L("remind the client", "recuérdale al cliente") + " · " + dfmt(e.startDate) });
 
     (e.changeOrders || []).forEach((co) => {
       const key = "co" + (co.id ?? co.n);
@@ -171,9 +189,27 @@ export function followUps({ estimates, clients, settings, invoices = [], now = n
     if (st === "Deposit Paid" && endD && endD < today && !isSnoozed(e, "balance", today)) {
       const bal = main.filter((v) => v.status !== "Paid").slice(-1)[0];
       const paid = invoicesOf(invoices, e.id).reduce((a, v) => a + (v.status === "Paid" ? num(v.amount) : 0), 0);
-      push("balance", "balance", { tpl: "balance", color: "var(--acc)", sort: 55, title: L("Collect the balance", "Cobrar el saldo"),
-        detail: money(bal ? bal.amount : Math.max(0, t.total - paid)) + " · " + L("job ended", "el trabajo terminó") + " " + dfmt(endD) });
+      if (bal) covered.add(bal.id);
+      if (!claimed(bal))
+        push("balance", "balance", { tpl: "balance", invId: bal?.id, color: "var(--acc)", sort: 55, title: L("Collect the balance", "Cobrar el saldo"),
+          detail: money(bal ? bal.amount : Math.max(0, t.total - paid)) + " · " + L("job ended", "el trabajo terminó") + " " + dfmt(endD) });
     }
+
+    // invoices: the client said "I paid" on the payment link -> confirm; anything else unpaid for too long -> overdue
+    invoicesOf(invoices, e.id).forEach((v0) => {
+      const v = asInv(v0);
+      if (v.status === "Paid") return;
+      if (v.payClaim) {
+        if (!isSnoozed(e, "claim" + v.id, today))
+          push("claim" + v.id, "payclaim", { invId: v.id, color: "var(--ok)", open: true, sort: 900, title: L(`Confirm payment ${v.number}`, `Confirmar pago ${v.number}`),
+            detail: L(`client says ${money(v.amount)} was sent by ${v.payClaim.method}`, `el cliente dice que envió ${money(v.amount)} por ${v.payClaim.method}`) });
+        return;
+      }
+      const d = daysBetween(v.date, today);
+      if (covered.has(v.id) || d < dueDays || isSnoozed(e, "inv" + v.id, today)) return;
+      push("inv" + v.id, "overdue", { tpl: "overdue", invId: v.id, color: "var(--bad)", sort: 56 + Math.min(d, 30) / 10, title: L("Invoice overdue", "Factura vencida"),
+        detail: `${v.number} · ${money(v.amount)} · ` + L(`${d} days`, `${d} días`) });
+    });
 
     if (st === "Paid in Full" && e.reviewAsked && !e.warrantyChecked && (endD || e.date) && daysBetween(endD || e.date, today) >= 330 && !isSnoozed(e, "warranty", today))
       push("warranty", "warranty", { tpl: "warranty", color: "var(--icon-purple)", sort: 2, title: L("Warranty check-in", "Revisión de garantía"),
@@ -184,5 +220,8 @@ export function followUps({ estimates, clients, settings, invoices = [], now = n
         detail: L("job paid in full", "trabajo pagado completo") });
   });
 
-  return out.sort((a, b) => b.sort - a.sort);
+  // e-mailed by the daily worker: out of the list for a few days, then back for a personal nudge (WhatsApp)
+  return out.map((f) => (autoSent[f.id] ? { ...f, emailed: autoSent[f.id] } : f))
+    .filter((f) => !f.emailed || daysBetween(f.emailed, today) >= SNOOZE_DAYS)
+    .sort((a, b) => b.sort - a.sort);
 }

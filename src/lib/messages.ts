@@ -3,14 +3,21 @@ import { calcEstimate } from "./estimate";
 import { fmtDate } from "./format";
 import { addDaysISO, todayISO as todayOf } from "./followups";
 import { money } from "./money";
+import { payOptionsText } from "./paylink";
 import type { Estimate, MessageTemplates, Settings } from "./types";
 
 export type Lang = "en" | "es";
-export type TplKey = "lead" | "send" | "follow" | "noview" | "viewed" | "deposit" | "balance" | "review" | "warranty";
-export const TPL_KEYS: TplKey[] = ["lead", "send", "follow", "noview", "viewed", "deposit", "balance", "review", "warranty"];
+export type TplKey = "lead" | "send" | "follow" | "noview" | "viewed" | "deposit" | "balance" | "review" | "warranty" | "tomorrow" | "overdue";
+export const TPL_KEYS: TplKey[] = ["lead", "send", "follow", "noview", "viewed", "deposit", "balance", "overdue", "tomorrow", "review", "warranty"];
 
-/** Placeholders every template understands ({first} is new: first name, used by the lead greeting). */
-export const PLACEHOLDERS = ["{client}", "{first}", "{number}", "{total}", "{deposit}", "{balance}", "{valid}", "{start}", "{business}", "{phone}", "{email}", "{website}", "{date}"];
+/**
+ * Placeholders every template understands ({first} is new: first name, used by the lead greeting).
+ * {invoice} {amount} {paylink}: the invoice a reminder is about and its payment link; {howtopay}: the ways to pay, one per line.
+ */
+export const PLACEHOLDERS = ["{client}", "{first}", "{number}", "{total}", "{deposit}", "{balance}", "{valid}", "{start}", "{business}", "{phone}", "{email}", "{website}", "{date}",
+  "{invoice}", "{amount}", "{paylink}", "{howtopay}"];
+/** Reminders about money: the invoice's payment link is added at the end when the text does not already carry it. */
+export const PAY_KEYS: TplKey[] = ["deposit", "balance", "overdue"];
 
 export const TPL_LABELS: Record<TplKey, { en: string; es: string }> = {
   lead: { en: "First reply to a new lead", es: "Primera respuesta a un lead nuevo" },
@@ -22,6 +29,8 @@ export const TPL_LABELS: Record<TplKey, { en: string; es: string }> = {
   balance: { en: "Balance due", es: "Saldo pendiente" },
   review: { en: "Ask for a review", es: "Pedir una reseña" },
   warranty: { en: "Warranty check-in", es: "Revisión de garantía" },
+  tomorrow: { en: "Job starts tomorrow", es: "El trabajo empieza mañana" },
+  overdue: { en: "Invoice overdue", es: "Factura vencida" },
 };
 
 export const DEFAULT_TEMPLATES: Record<TplKey, { en: string; es: string }> = {
@@ -61,6 +70,14 @@ export const DEFAULT_TEMPLATES: Record<TplKey, { en: string; es: string }> = {
     en: "Hi {client},\n\nIt's been about a year since we finished your project, so I wanted to check in. Everything is covered by your warranty — if you notice any chip or wear, just send me a photo and I'll take care of it.\n\nThank you again!\n{business}\n{phone}",
     es: "Hola {client},\n\nYa pasó cerca de un año desde que terminamos su proyecto y quería saber cómo sigue. Todo está cubierto por su garantía — si nota algún desgaste o golpe, mándeme una foto y lo arreglo.\n\n¡Gracias otra vez!\n{business}\n{phone}",
   },
+  tomorrow: {
+    en: "Hi {client},\n\nA quick reminder: we start your project tomorrow, {start}. Please make sure we can get in and that the work area is clear.\n\nIf anything changed, just reply to this message.\n\nSee you tomorrow!\n{business}\n{phone}",
+    es: "Hola {client},\n\nUn recordatorio: mañana, {start}, comenzamos su proyecto. Por favor asegúrese de que podamos entrar y de que el área de trabajo esté despejada.\n\nSi algo cambió, respóndame este mensaje.\n\n¡Nos vemos mañana!\n{business}\n{phone}",
+  },
+  overdue: {
+    en: "Hi {client},\n\nA friendly reminder that invoice {invoice} for {amount} is still open.\n\nYou can pay by:\n{howtopay}\n\nIf you already sent it, thank you — just let me know so I can mark it paid.\n\n{business}\n{phone}",
+    es: "Hola {client},\n\nUn recordatorio amable: la factura {invoice} por {amount} sigue pendiente.\n\nPuede pagar por:\n{howtopay}\n\nSi ya la pagó, muchas gracias — avíseme para marcarla como pagada.\n\n{business}\n{phone}",
+  },
 };
 
 /** Email subjects (not editable; same placeholders). */
@@ -74,16 +91,22 @@ export const DEFAULT_SUBJECTS: Record<TplKey, { en: string; es: string }> = {
   balance: { en: "Balance for {number}", es: "Saldo de {number}" },
   review: { en: "Thank you — {client}", es: "Gracias — {client}" },
   warranty: { en: "How are your cabinets holding up?", es: "¿Cómo siguen sus gabinetes?" },
+  tomorrow: { en: "We start tomorrow — {number}", es: "Mañana comenzamos — {number}" },
+  overdue: { en: "Invoice {invoice} — {amount} open", es: "Factura {invoice} — {amount} pendiente" },
 };
 
 export type Business = { name: string; phone: string; email?: string; website?: string };
 export type MsgCtx = {
-  settings: Pick<Settings, "pricing" | "tax" | "discounts"> & Partial<Pick<Settings, "messageTemplates" | "reviewUrl">>;
+  settings: Pick<Settings, "pricing" | "tax" | "discounts">
+    & Partial<Pick<Settings, "messageTemplates" | "reviewUrl" | "payZelle" | "payZelleName" | "payMethods" | "payHandles">>;
   business: Business;
   /** App origin for the client link; defaults to location.origin. */
   origin?: string;
   /** Used by {client}/{first} when there is no estimate (a lead). */
   clientName?: string;
+  /** The invoice a money reminder is about ({invoice} {amount}) and its payment link ({paylink}). */
+  invoice?: { number: string; amount: number };
+  payUrl?: string;
 };
 
 /** Template text: the contractor's override for this language, else the default. */
@@ -110,6 +133,10 @@ export function fillTemplate(txt: string, e: Estimate | null | undefined, lang: 
     "{start}": e && e.startDate ? fmtDate(e.startDate, lang) : "",
     "{business}": b.name || "", "{phone}": b.phone || "", "{email}": b.email || "",
     "{website}": b.website || "", "{date}": fmtDate(today, lang),
+    "{invoice}": ctx.invoice ? ctx.invoice.number || "" : "",
+    "{amount}": ctx.invoice ? money(ctx.invoice.amount) : "",
+    "{paylink}": ctx.payUrl || "",
+    "{howtopay}": payOptionsText(ctx.settings as Settings, lang === "es"),
   };
   let out = String(txt || "");
   for (const k in map) out = out.split(k).join(map[k]);
@@ -126,6 +153,7 @@ export function buildMessage(key: TplKey, e: Estimate | null | undefined, lang: 
   const reviewUrl = ctx.settings.reviewUrl;
   if (key === "review" && reviewUrl && body.indexOf(reviewUrl) < 0) body += "\n\n" + reviewUrl;
   if ((key === "noview" || key === "viewed") && e && e.portal && e.portal.token) body += "\n\n" + clientLink(e.portal.token, ctx.origin);
+  if (PAY_KEYS.includes(key) && ctx.payUrl && body.indexOf(ctx.payUrl) < 0) body += "\n\n" + (lang === "es" ? "Puede pagar aquí: " : "You can pay here: ") + ctx.payUrl;
   return { subject, body };
 }
 

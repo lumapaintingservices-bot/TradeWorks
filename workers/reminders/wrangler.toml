@@ -1,0 +1,17 @@
+# TradeWorks daily reminders worker. Deploy: see README.md in this folder.
+name = "tradeworks-reminders"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# Every day at 14:00 UTC = 10 AM Eastern (9 AM in winter), 7 AM Pacific.
+[triggers]
+crons = ["0 14 * * *"]
+
+[vars]
+APP_URL = "https://tradeworks-app.pages.dev"
+# An address on a domain verified in Resend, e.g. "avisos@lumapaintingservices.com". Set it here or in the dashboard.
+MAIL_FROM_ADDRESS = ""
+# "1" only once TradeWorks subscriptions (Stripe) are live.
+ENFORCE_BILLING = "0"
+
+# Secrets (never in this file):  npx wrangler secret put FIREBASE_SERVICE_ACCOUNT / RESEND_API_KEY / RUN_TOKEN

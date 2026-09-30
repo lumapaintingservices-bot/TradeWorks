@@ -62,6 +62,36 @@ export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {
       });
       if (!res.ok) throw new Error(`Firestore patch ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
     },
+    /** Every document of a collection path (e.g. "companies" or "companies/x/invoices") -> [{ id, data }], all pages. */
+    async list(path, { pageSize = 300, max = 20000 } = {}) {
+      const out = [];
+      let token = "";
+      do {
+        const q = `pageSize=${pageSize}` + (token ? `&pageToken=${encodeURIComponent(token)}` : "");
+        const res = await fetchImpl(`${base}/${segs(path)}?${q}`, { headers: await auth() });
+        if (!res.ok) throw new Error(`Firestore list ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+        const j = await res.json();
+        for (const d of j.documents || []) out.push({ id: d.name.split("/").pop(), data: fromFsFields(d.fields) });
+        token = j.nextPageToken || "";
+      } while (token && out.length < max);
+      return out;
+    },
+    /** Creates path with data ONLY if it does not exist yet. -> true when created, false when it was already there. */
+    async create(path, data) {
+      const res = await fetchImpl(`${base}/${segs(path)}?currentDocument.exists=false`, {
+        method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(data) }),
+      });
+      if (res.ok) return true;
+      const txt = await res.text();
+      if (res.status === 409 || /FAILED_PRECONDITION|ALREADY_EXISTS/.test(txt)) return false;
+      throw new Error(`Firestore create ${path}: ${res.status} ${txt.slice(0, 200)}`);
+    },
+    /** Writes (creates or replaces) the given fields; missing documents are created. */
+    async set(path, data) {
+      const mask = Object.keys(data).map((k) => "updateMask.fieldPaths=" + encodeURIComponent(k)).join("&");
+      const res = await fetchImpl(`${base}/${segs(path)}?${mask}`, { method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(data) }) });
+      if (!res.ok) throw new Error(`Firestore set ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+    },
     /** First document of `collection` where `field == value` -> { id, data } or null. */
     async findOne(collection, field, value) {
       const res = await fetchImpl(`${base}:runQuery`, {

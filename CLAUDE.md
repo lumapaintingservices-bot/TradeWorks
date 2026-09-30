@@ -74,9 +74,13 @@ Docs: `docs/07-security-review.md`, `08-billing-setup.md`, `09-deploy-cloudflare
 8a invoice payment link - DONE (not deployed): public `/pay/:token` (`paylink/{token}`, `src/lib/paylink.ts`, `src/data/paylinks.ts`,
 `PayPage.tsx`, `invoices/PayParts.tsx`); ways to pay = payment-method chips + `settings.payHandles` (Venmo, Cash App, PayPal, checks);
 client says "I paid" -> owner confirms (marks paid + method) or "Not received"; `usePayLinkSync` in the Shell keeps links fresh.
-Deploy needs the new `firestore.rules` published. Rules tests added but NOT run on this Windows PC (no Java).
-Next: 8b reminders (daily one-tap WhatsApp/SMS queue + automatic email by a Cloudflare cron worker with Resend),
-8c reviews & referrals (ask for a review when paid; referral rewards pending/paid), 8d card payments with Stripe Connect.
+Merged (PR #10) and rules published 2026-09-30. Rules tests added but NOT run on this Windows PC (no Java).
+8b reminders - DONE in code: new follow-ups "job starts tomorrow", "invoice overdue" (settings.invoiceDueDays, default 7),
+"confirm payment INV-x"; money reminders carry {invoice} {amount} {paylink} {howtopay} (prototype template text kept verbatim,
+pay link appended). Automatic e-mails: `src/lib/autoEmail.ts` (what to send) + `workers/reminders` (Cloudflare cron + Resend,
+log in companies/{cid}/autoemails, once per reminder, creates missing pay links). Settings > Leads & messages > AutoEmailCard.
+Worker NOT deployed yet: owner needs Resend account + verified domain + service-account key (steps: workers/reminders/README.md).
+Next: 8c reviews & referrals (ask for a review when paid; referral rewards pending/paid), 8d card payments with Stripe Connect.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
