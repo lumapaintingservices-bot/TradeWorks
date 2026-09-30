@@ -92,6 +92,8 @@ export type Settings = {
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
   numbering: { nextEst: number; nextInv?: number };
   payZelle: string; payZelleName: string; payNote: string; payMethods?: string[];
+  /** App handles shown on the invoice payment link (/pay/:token), stored as typed; see src/lib/paylink.ts payOptionsOf. */
+  payHandles?: { venmo?: string; cashapp?: string; paypal?: string; checkTo?: string };
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
   calOn?: boolean; calToken?: string;

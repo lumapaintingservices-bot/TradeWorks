@@ -13,7 +13,8 @@ import "./DocSheet.css";
     invoiceSheet / changeInvoiceSheet. Always light, always in the CLIENT's language, with the contractor's branding. */
 
 export type SheetBiz = { name: string; phone: string; email?: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string };
-export type PayInfo = { zelle: string; zelleName: string; note: string; methods?: string[] };
+/** `handles`: printable Venmo / Cash App / PayPal / check lines (src/lib/paylink.ts payHandleLines); `payUrl`: the invoice's payment link. */
+export type PayInfo = { zelle: string; zelleName: string; note: string; methods?: string[]; handles?: string[]; payUrl?: string };
 type Lang = "en" | "es";
 type Base = { e: Estimate; s: Settings; biz: SheetBiz; lang: Lang; compact?: boolean; pay: PayInfo; services: string; sigImg?: string };
 
@@ -134,10 +135,14 @@ const Exclusions = ({ e, T }: { e: Estimate; T: Tx }) => {
   const out = [e.frameMode === "none" && T.framesNo, e.boxMode === "none" && T.boxesNo].filter(Boolean) as string[];
   return out.length ? <Sec title={T.notIncluded}><ul className="scope">{out.map((x) => <li key={x}>{x}</li>)}</ul></Sec> : null;
 };
-const Payment = ({ T, pay, es }: { T: Tx; pay: PayInfo; es: boolean }) => (
-  <Sec title={T.payment}><div className="pay-row">{payMethodsOf(pay.methods).map((k) => <span className="pay-chip" key={k}>{PAY_METHODS[k][es ? 1 : 0]}</span>)}</div>
-    {(pay.zelle || pay.note) && <div className="doc-notes">{[pay.zelle && `Zelle: ${pay.zelle}${pay.zelleName ? " · " + pay.zelleName : ""}`, pay.note].filter(Boolean).join("\n")}</div>}</Sec>
-);
+const Payment = ({ T, pay, es }: { T: Tx; pay: PayInfo; es: boolean }) => {
+  const lines = [pay.zelle && `Zelle: ${pay.zelle}${pay.zelleName ? " · " + pay.zelleName : ""}`, ...(pay.handles || []), pay.note,
+    pay.payUrl && `${es ? "Pague en línea" : "Pay online"}: ${pay.payUrl}`].filter(Boolean);
+  return (
+    <Sec title={T.payment}><div className="pay-row">{payMethodsOf(pay.methods).map((k) => <span className="pay-chip" key={k}>{PAY_METHODS[k][es ? 1 : 0]}</span>)}</div>
+      {lines.length > 0 && <div className="doc-notes">{lines.join("\n")}</div>}</Sec>
+  );
+};
 const Photos = ({ e, T }: { e: Estimate; T: Tx }) => {
   const ph = e.showPhotos ? (e.photos || []).filter((x) => safeImgSrc(x.url)) : [];
   if (!ph.length) return null;

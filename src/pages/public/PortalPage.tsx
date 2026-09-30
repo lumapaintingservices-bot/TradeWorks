@@ -49,7 +49,7 @@ const PT = {
 const now = () => new Date().toISOString();
 const addDays = (iso: string, days: number) => { const p = String(iso).split("-"); const d = new Date(num(p[0]), num(p[1]) - 1, num(p[2])); d.setDate(d.getDate() + num(days)); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const initialsOf = (s: string) => { const w = String(s || "").replace(/\(.*?\)/g, "").trim().split(/\s+/).filter((x) => /[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(x.charAt(0))); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); };
-const TwMark = () => <svg className="tw-mark" viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" rx="40" fill="#1a1a2e" /><path d="M100 40 L150 68 L150 132 L100 160 L50 132 L50 68 Z" stroke="#fff" strokeWidth="12" strokeLinejoin="round" fill="none" /><circle cx="100" cy="100" r="18" fill="#fff" /></svg>;
+export const TwMark = () => <svg className="tw-mark" viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" rx="40" fill="#1a1a2e" /><path d="M100 40 L150 68 L150 132 L100 160 L50 132 L50 68 Z" stroke="#fff" strokeWidth="12" strokeLinejoin="round" fill="none" /><circle cx="100" cy="100" r="18" fill="#fff" /></svg>;
 
 /** Public client link: /p/:token. Light theme, contractor's branding, EN/ES. Never writes owner data. */
 export default function PortalPage() {

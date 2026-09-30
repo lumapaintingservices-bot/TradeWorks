@@ -15,6 +15,11 @@ export type InvoiceRec = Omit<Invoice, "kind" | "status"> & {
   kind: InvKind; status: "Unpaid" | "Paid" | "Draft" | "Sent";
   estNumber?: string; clientId?: string; clientName?: string; address?: string; phone?: string; email?: string;
   percent?: number; stage?: number; stages?: number; label?: string; labelEs?: string; coN?: number; note?: string;
+  /** Public payment link (paylink/{token}), and what the client did on it (src/lib/paylink.ts payApply). */
+  pay?: { token: string }; payViews?: number;
+  payClaim?: { method: string; at: string; note?: string }; payClaimSeen?: string;
+  /** How it was paid (set when the owner confirms a payment). */
+  paidMethod?: string;
 };
 export const asInv = (v: Invoice): InvoiceRec => v as unknown as InvoiceRec;
 export const isPaid = (v: Pick<InvoiceRec, "status">) => v.status === "Paid";

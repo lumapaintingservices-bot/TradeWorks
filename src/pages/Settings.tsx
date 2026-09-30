@@ -177,16 +177,34 @@ function ClientLinkCard() {
   const { settings, update, loading } = useSettings();
   const [f, setF] = useState({ payZelle: "", payZelleName: "", payNote: "", reviewUrl: "", instagramUrl: "" });
   const [methods, setMethods] = useState<string[]>(PAY_METHOD_KEYS);
-  useEffect(() => { if (!loading) setF({ payZelle: settings.payZelle || "", payZelleName: settings.payZelleName || "", payNote: settings.payNote || "", reviewUrl: settings.reviewUrl || "", instagramUrl: settings.instagramUrl || "" }); setMethods(payMethodsOf(settings.payMethods)); }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [h, setH] = useState({ venmo: "", cashapp: "", paypal: "", checkTo: "" });
+  useEffect(() => {
+    if (!loading) {
+      setF({ payZelle: settings.payZelle || "", payZelleName: settings.payZelleName || "", payNote: settings.payNote || "", reviewUrl: settings.reviewUrl || "", instagramUrl: settings.instagramUrl || "" });
+      const ph = settings.payHandles || {};
+      setH({ venmo: ph.venmo || "", cashapp: ph.cashapp || "", paypal: ph.paypal || "", checkTo: ph.checkTo || "" });
+    }
+    setMethods(payMethodsOf(settings.payMethods));
+  }, [loading]); // eslint-disable-line react-hooks/exhaustive-deps
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+  const setHandle = (k: keyof typeof h) => (e: { target: { value: string } }) => setH({ ...h, [k]: e.target.value });
+  const save = async () => {
+    const payHandles = { venmo: h.venmo.trim(), cashapp: h.cashapp.trim(), paypal: h.paypal.trim(), checkTo: h.checkTo.trim() };
+    await update({ ...f, payMethods: PAY_METHOD_KEYS.filter((k) => methods.includes(k)), payHandles });
+    toast(t("Saved", "Guardado"));
+  };
   return (
     <div className="card">
-      <div className="card-h"><h2>{t("Client link & Zelle deposit", "Enlace del cliente y depósito Zelle")}</h2></div>
+      <div className="card-h"><h2>{t("How clients pay you", "Cómo te pagan tus clientes")}</h2></div>
       <div className="card-b">
-        <p className="muted" style={{ marginTop: 0 }}>{t("After a client signs, they see how to pay the deposit by Zelle. TradeWorks only shows the details — the money goes straight to you.", "Después de firmar, el cliente ve cómo pagar el depósito por Zelle. TradeWorks solo muestra los datos — el dinero va directo a ti.")}</p>
+        <p className="muted" style={{ marginTop: 0 }}>{t("Shown after a client signs, on your documents and on each invoice's payment link. TradeWorks only shows the details — the money goes straight to you.", "Se muestra al firmar, en tus documentos y en el enlace de pago de cada factura. TradeWorks solo muestra los datos — el dinero va directo a ti.")}</p>
         <div className="grid2">
           <label className="f">{t("Zelle email or phone", "Correo o teléfono de Zelle")}<input value={f.payZelle} onChange={set("payZelle")} /></label>
           <label className="f">{t("Name on the Zelle account", "Nombre en la cuenta Zelle")}<input value={f.payZelleName} onChange={set("payZelleName")} /></label>
+          <label className="f">{t("Venmo username (optional)", "Usuario de Venmo (opcional)")}<input value={h.venmo} placeholder="@yourbusiness" onChange={setHandle("venmo")} /></label>
+          <label className="f">{t("Cash App $cashtag (optional)", "$cashtag de Cash App (opcional)")}<input value={h.cashapp} placeholder="$yourbusiness" onChange={setHandle("cashapp")} /></label>
+          <label className="f">{t("PayPal.me link or name (optional)", "Enlace o nombre de PayPal.me (opcional)")}<input value={h.paypal} placeholder="paypal.me/yourbusiness" onChange={setHandle("paypal")} /></label>
+          <label className="f">{t("Checks payable to (optional)", "Cheques a nombre de (opcional)")}<input value={h.checkTo} onChange={setHandle("checkTo")} /></label>
         </div>
         <div className="f"><span>{t("Payment methods shown on documents", "Formas de pago que salen en los documentos")}</span>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 6 }}>
@@ -197,7 +215,7 @@ function ClientLinkCard() {
           <label className="f">{t("Reviews link", "Enlace de reseñas")}<input value={f.reviewUrl} onChange={set("reviewUrl")} /></label>
           <label className="f">Instagram<input value={f.instagramUrl} onChange={set("instagramUrl")} /></label>
         </div>
-        <button className="btn pri" onClick={async () => { await update({ ...f, payMethods: PAY_METHOD_KEYS.filter((k) => methods.includes(k)) }); toast(t("Saved", "Guardado")); }}>{t("Save", "Guardar")}</button>
+        <button className="btn pri" onClick={save}>{t("Save", "Guardar")}</button>
       </div>
     </div>
   );
@@ -238,7 +256,7 @@ const SECTIONS: Section[] = [
     body: () => <JobTypesCard /> },
   { id: "leads", icon: "tag", en: "Leads & messages", es: "Clientes y mensajes", descEn: "Where your clients come from and the messages you send them.", descEs: "De dónde vienen tus clientes y los mensajes que les mandas.",
     body: () => <><LeadSourcesCard /><MessageTemplatesCard /></> },
-  { id: "client", icon: "send", en: "Client link & Zelle", es: "Enlace del cliente y Zelle", descEn: "What your client sees: payment details, request form and your recent work.", descEs: "Lo que ve tu cliente: datos de pago, formulario de solicitud y tus trabajos recientes.",
+  { id: "client", icon: "send", en: "Client link & payments", es: "Enlace del cliente y pagos", descEn: "What your client sees: how to pay you, request form and your recent work.", descEs: "Lo que ve tu cliente: cómo pagarte, formulario de solicitud y tus trabajos recientes.",
     body: () => <><ClientLinkCard /><RequestLinkCard /><ShowcaseCard /></> },
   { id: "calendar", icon: "calendar", en: "Calendar", es: "Calendario", descEn: "Your jobs and tasks in Google, Outlook or Apple calendar.", descEs: "Tus trabajos y tareas en el calendario de Google, Outlook o Apple.",
     body: () => <CalendarCard /> },

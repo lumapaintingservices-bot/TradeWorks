@@ -8,6 +8,10 @@ export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "a
   "chat", "chatUnread", "extraHrs", "crewNotes", "leadSource", "portalViews", "reviewAsked", "portal", "laborMode", "payClaim", "createdAt", "updatedAt", "companyId"];
 
 export type Brand = { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string };
+/** Only the public branding fields of a company (never billing fields or owner ids). */
+export const brandOf = (c: Brand): Brand =>
+  ({ name: c.name, phone: c.phone, email: c.email, website: c.website, area: c.area, logoUrl: c.logoUrl, brandColor: c.brandColor,
+    ...(c.address ? { address: c.address } : {}), ...(c.hours ? { hours: c.hours } : {}), ...(c.hoursEs ? { hoursEs: c.hoursEs } : {}) });
 export type PortalModel = {
   v: 1; e: Estimate;
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];

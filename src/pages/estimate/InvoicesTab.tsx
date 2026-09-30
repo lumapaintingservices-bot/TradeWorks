@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useInvoices, useSettings } from "../../data/hooks";
-import type { Rec } from "../../data/repo";
+import { deleteTop, patchTop, type Rec } from "../../data/repo";
 import { useT } from "../../i18n";
 import { calcEstimate, todayISO } from "../../lib/estimate";
 import {
@@ -13,6 +13,7 @@ import { money, num } from "../../lib/money";
 import type { ChangeOrder, Estimate, Invoice } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
+import { PayClaimBar, PayLinkModal } from "../invoices/PayParts";
 import "../Invoices.css";
 import type { TabProps } from "./types";
 
@@ -41,19 +42,35 @@ export function useInvoiceOps() {
     await put(v); await bump(n + 1);
     return v;
   }
-  /** Marks paid / unpaid. Returns the invoice list as it is after the change (use it with statusAfterPayment). */
-  async function setPaid(v: InvoiceRec, paid: boolean): Promise<InvoiceRec[]> {
-    const next: InvoiceRec = { ...v, status: paid ? "Paid" : "Unpaid", paidDate: paid ? v.paidDate || todayISO() : "" };
+  /**
+   * Marks paid / unpaid (paying also settles a "client says they paid" claim; `method` records how).
+   * Returns the invoice list as it is after the change (use it with statusAfterPayment).
+   */
+  async function setPaid(v: InvoiceRec, paid: boolean, method?: string): Promise<InvoiceRec[]> {
+    const next: InvoiceRec = { ...v, status: paid ? "Paid" : "Unpaid", paidDate: paid ? v.paidDate || todayISO() : "",
+      paidMethod: paid ? method || v.paidMethod : undefined, payClaim: paid ? undefined : v.payClaim };
     await put(next);
     return invoices.map((x) => (x.id === v.id ? next : x));
   }
-  async function removeInv(v: InvoiceRec): Promise<InvoiceRec[]> { await remove(v.id); return invoices.filter((x) => x.id !== v.id); }
+  /**
+   * The client said they paid but the money never arrived: drop the claim (the same claim never comes back) and clear it on the
+   * payment link, so the client sees the ways to pay again and can tell us once more.
+   */
+  async function dismissClaim(v: InvoiceRec) {
+    await put({ ...v, payClaim: undefined });
+    if (v.pay?.token) await patchTop("paylink", v.pay.token, { set: { "client.paid": null } }).catch(() => {});
+  }
+  async function removeInv(v: InvoiceRec): Promise<InvoiceRec[]> {
+    if (v.pay?.token) await deleteTop("paylink", v.pay.token).catch(() => {});
+    await remove(v.id);
+    return invoices.filter((x) => x.id !== v.id);
+  }
   async function syncAmounts(e: Estimate) {
     const ch = syncInvoiceAmounts(e, settings, invoices);
     for (const v of ch) await put(v);
     return ch.length;
   }
-  return { invoices, loading, settings, createStages, createChange, setPaid, removeInv, syncAmounts, put };
+  return { invoices, loading, settings, createStages, createChange, setPaid, dismissClaim, removeInv, syncAmounts, put };
 }
 
 /** Estimate patch for a status computed from the invoices (also clears the "client says they paid" claim). */
@@ -88,13 +105,15 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
     if (r.status) set({ status: r.status });
     toast(r.invoices.length > 1 ? t(`${r.invoices.length} invoices created.`, `${r.invoices.length} facturas creadas.`) : t("Invoice created.", "Factura creada."));
   });
-  const toggle = (v: InvoiceRec) => run(async () => {
+  const toggle = (v: InvoiceRec, method?: string) => run(async () => {
     const now = !isPaid(v);
-    const list = await ops.setPaid(v, now);
+    const list = await ops.setPaid(v, now, method);
     const patch = statusPatch(e, list);
     if (patch) set(patch);
     toast(now ? t(`${v.number} marked paid.`, `${v.number} marcada como pagada.`) : t(`${v.number} marked unpaid.`, `${v.number} marcada como no pagada.`));
   });
+  const [payFor, setPayFor] = useState("");
+  const payInv = mine.find((v) => v.id === payFor);
   const del = (v: InvoiceRec) => run(async () => {
     if (!confirm(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
     const list = await ops.removeInv(v);
@@ -130,9 +149,11 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
               <span className={"badge " + (isPaid(v) ? "b-green" : "b-gray")}><i />{isPaid(v) ? t("Paid", "Pagada") : t("Unpaid", "Sin pagar")}</span>
               <div className="iv-act">
                 <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
+                {!isPaid(v) && <button className="btn sm" onClick={() => setPayFor(v.id)}>{v.pay?.token ? t("Payment link ✓", "Enlace de pago ✓") : t("Payment link", "Enlace de pago")}</button>}
                 <Link className="btn sm" to={`/invoices/${v.id}/doc`} target="_blank">{t("Open", "Abrir")}</Link>
                 <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
               </div>
+              <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />
             </div>
           ))}
           {mine.length > 0 && (
@@ -152,6 +173,7 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
         </div>
       </div>
 
+      {payInv && <PayLinkModal v={payInv} e={e} onClose={() => setPayFor("")} />}
       {pick && (
         <Modal title={t("Invoice for a change order", "Factura de una orden de cambio")} onClose={() => setPick(false)}>
           {pending.length === 0 ? <p className="muted">{t("There is nothing to invoice. A change order gets its invoice once the client (or you) signs it — see the Change orders tab.", "No hay nada que facturar. Una orden de cambio tiene su factura cuando el cliente (o tú) la firma — mira la pestaña Cambios.")}</p>

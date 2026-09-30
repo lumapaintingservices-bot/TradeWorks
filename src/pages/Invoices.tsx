@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEstimates } from "../data/hooks";
 import { useT } from "../i18n";
@@ -8,9 +8,11 @@ import { money, num, r2 } from "../lib/money";
 import { useUi } from "../store/ui";
 import { EmptyState } from "../ui/EmptyState";
 import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
+import { PayClaimBar, PayLinkModal } from "./invoices/PayParts";
 import "./Invoices.css";
 
-type Filter = "all" | "unpaid" | "paid";
+type Filter = "all" | "unpaid" | "paid" | "claims";
+const hasClaim = (v: InvoiceRec) => !!v.payClaim && !isPaid(v);
 const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
 
 export default function Invoices() {
@@ -21,17 +23,19 @@ export default function Invoices() {
   const ops = useInvoiceOps();
   const { rows: ests, save: saveEst } = useEstimates();
   const [q, setQ] = useState(""); const [f, setF] = useState<Filter>("all"); const [busy, setBusy] = useState(false);
+  const [payFor, setPayFor] = useState("");
   const estOf = (v: InvoiceRec) => ests.find((e) => e.id === v.estId);
   const nameOf = (v: InvoiceRec) => estOf(v)?.clientName || v.clientName || t("Unnamed client", "Cliente sin nombre");
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return ops.invoices.filter((v) => (f === "all" || (f === "paid") === isPaid(v)) &&
+    return ops.invoices.filter((v) => (f === "all" || (f === "claims" ? hasClaim(v) : (f === "paid") === isPaid(v))) &&
       (!s || [v.number, v.estNumber, v.clientName, estOf(v)?.clientName].some((x) => (x || "").toLowerCase().includes(s))))
       .sort((a, b) => String(b.number).localeCompare(String(a.number), undefined, { numeric: true }));
   }, [ops.invoices, ests, q, f]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const unpaid = ops.invoices.filter((v) => !isPaid(v)), paid = ops.invoices.filter(isPaid);
+  const claims = ops.invoices.filter(hasClaim);
   const since = daysAgo(30);
   const recent = paid.filter((v) => (v.paidDate || v.date || "") >= since);
   const sum = (a: InvoiceRec[]) => r2(a.reduce((x, v) => x + num(v.amount), 0));
@@ -43,9 +47,9 @@ export default function Invoices() {
     if (e && p) await saveEst({ ...e, ...p });
   };
   const run = async (fn: () => Promise<void>) => { if (busy) return; setBusy(true); try { await fn(); } finally { setBusy(false); } };
-  const toggle = (v: InvoiceRec) => run(async () => {
+  const toggle = (v: InvoiceRec, method?: string) => run(async () => {
     const now = !isPaid(v);
-    await syncStatus(v, await ops.setPaid(v, now));
+    await syncStatus(v, await ops.setPaid(v, now, method));
     toast(now ? t(`${v.number} marked paid.`, `${v.number} marcada como pagada.`) : t(`${v.number} marked unpaid.`, `${v.number} marcada como no pagada.`));
   });
   const del = (v: InvoiceRec) => run(async () => {
@@ -57,10 +61,13 @@ export default function Invoices() {
   const actions = (v: InvoiceRec) => (
     <div className="iv-act" onClick={(ev) => ev.stopPropagation()}>
       <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
+      {!isPaid(v) && <button className="btn sm" onClick={() => setPayFor(v.id)}>{v.pay?.token ? t("Pay link ✓", "Enlace ✓") : t("Pay link", "Enlace de pago")}</button>}
       <Link className="btn sm" to={`/invoices/${v.id}/doc`} target="_blank">{t("Document", "Documento")}</Link>
       <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
     </div>
   );
+  const claimBar = (v: InvoiceRec) => <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />;
+  const payInv = ops.invoices.find((v) => v.id === payFor);
   const badge = (v: InvoiceRec) => <span className={"badge " + (isPaid(v) ? "b-green" : "b-gray")}><i />{isPaid(v) ? t("Paid", "Pagada") : t("Unpaid", "Sin pagar")}</span>;
 
   return (
@@ -80,16 +87,16 @@ export default function Invoices() {
           </div>
           <div className="toolbar">
             <input placeholder={t("Search number or client…", "Buscar número o cliente…")} value={q} onChange={(ev) => setQ(ev.target.value)} />
-            <div className="pills">{(["all", "unpaid", "paid"] as const).map((k) => (
-              <button key={k} className={"pill" + (f === k ? " on" : "")} onClick={() => setF(k)}>{k === "all" ? t("All", "Todas") : k === "unpaid" ? t("Unpaid", "Sin pagar") : t("Paid", "Pagadas")}</button>))}</div>
+            <div className="pills">{(["all", "unpaid", "paid", ...(claims.length ? ["claims"] : [])] as Filter[]).map((k) => (
+              <button key={k} className={"pill" + (f === k ? " on" : "")} onClick={() => setF(k)}>{k === "all" ? t("All", "Todas") : k === "unpaid" ? t("Unpaid", "Sin pagar") : k === "paid" ? t("Paid", "Pagadas") : t(`To confirm (${claims.length})`, `Por confirmar (${claims.length})`)}</button>))}</div>
           </div>
           {list.length === 0 ? <div className="card"><p className="muted" style={{ padding: 24 }}>{t("No invoices match this search.", "Ninguna factura coincide con la búsqueda.")}</p></div> : (
             <>
               <div className="card only-desk tbl-wrap">
                 <table className="tbl iv-tbl">
                   <thead><tr><th>#</th><th>{t("Client", "Cliente")}</th><th>{t("Estimate", "Presupuesto")}</th><th>{t("Type", "Tipo")}</th><th>{t("Date", "Fecha")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Status", "Estado")}</th><th /></tr></thead>
-                  <tbody>{list.map((v) => (
-                    <tr key={v.id} className="click" onClick={() => window.open(`/invoices/${v.id}/doc`, "_blank")}>
+                  <tbody>{list.map((v) => (<Fragment key={v.id}>
+                    <tr className="click" onClick={() => window.open(`/invoices/${v.id}/doc`, "_blank")}>
                       <td><b className="num">{v.number}</b></td>
                       <td><b>{nameOf(v)}</b></td>
                       <td><Link to={`/estimates/${v.estId}`} onClick={(ev) => ev.stopPropagation()}>{v.estNumber || estOf(v)?.number || "—"}</Link></td>
@@ -98,7 +105,9 @@ export default function Invoices() {
                       <td className="r"><b>{money(v.amount)}</b></td>
                       <td>{badge(v)}</td>
                       <td className="r">{actions(v)}</td>
-                    </tr>))}</tbody>
+                    </tr>
+                    {hasClaim(v) && <tr className="iv-claim-row"><td colSpan={8}>{claimBar(v)}</td></tr>}
+                  </Fragment>))}</tbody>
                 </table>
               </div>
               <div className="cards only-phone">{list.map((v) => (
@@ -106,12 +115,14 @@ export default function Invoices() {
                   <div className="l1"><span>{nameOf(v)}</span><span>{money(v.amount)}</span></div>
                   <div className="l2"><span>{v.number} · {invKindText(v, es)} · {fmtDate(v.date, lang)}</span>{badge(v)}</div>
                   <div className="l2"><Link to={`/estimates/${v.estId}`} onClick={(ev) => ev.stopPropagation()}>{v.estNumber || estOf(v)?.number || "—"}</Link></div>
+                  {claimBar(v)}
                   {actions(v)}
                 </div>))}</div>
             </>
           )}
         </>
       )}
+      {payInv && <PayLinkModal v={payInv} e={estOf(payInv)} onClose={() => setPayFor("")} />}
     </div>
   );
 }
