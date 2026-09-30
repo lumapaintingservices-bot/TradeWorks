@@ -55,14 +55,14 @@ export default function WorkOrder() {
 
   return (
     <div className="doc-wrap" style={{ ["--brand" as string]: company.brandColor || "#EF6A2C" }}>
-      <div className="doc-bar wo-bar no-print">
+      <div className="docbar no-print"><div className="docbar-in">
         <Link className="btn" to={`/estimates/${e.id}`}>← {T("Back", "Atrás")}</Link>
         <div className="seg">{(["en", "es"] as const).map((l) => <button key={l} className={lang === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}</div>
         <label className="chk"><input type="checkbox" checked={showHours} onChange={(ev) => setShowHours(ev.target.checked)} />{T("Show hours", "Mostrar horas")}</label>
         {photos.length > 0 && <label className="chk"><input type="checkbox" checked={showPhotos} onChange={(ev) => setShowPhotos(ev.target.checked)} />{T("Show photos", "Mostrar fotos")}</label>}
-        <span className="grow" />
+        <span className="sp" />
         <button className="btn pri" onClick={() => window.print()}>{T("Print / Save PDF", "Imprimir / Guardar PDF")}</button>
-      </div>
+      </div></div>
 
       <article className="doc wo">
         <header>
