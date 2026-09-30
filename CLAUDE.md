@@ -97,7 +97,13 @@ marks the invoice Paid ("Card (Stripe)" / "Bank (Stripe)"), invoice.online + pay
 `settings.cardPay.on` switch; `cardPayOn()` in src/lib/paylink.ts. Merged (PR #14). TEST MODE set up 2026-09-30: rules published,
 Connect enabled in the Stripe sandbox (platform, merchants collect directly), Connect webhook `tradeworks-invoice-payments`
 (we_1ULUPCDcSz8Bge3yZjluWUVr, 5 events), Pages secrets STRIPE_SECRET_KEY / STRIPE_CONNECT_WEBHOOK_SECRET / FIREBASE_SERVICE_ACCOUNT.
-Still to do: first real test (connect + pay 4242), then live mode (docs/10 step 8).
+Switched to Accounts v2 (PR #16); "Connect Stripe" works (test account created, onboarding opened 2026-09-30).
+PAUSED by the owner before finishing onboarding. Still to do: finish test onboarding, pay an invoice with 4242, then live mode (docs/10 step 8).
+8e team map - DONE in code: owner turns on company.trackLocation (Team > "Where the team is", TeamMap.tsx). Workers' phones save
+{lat,lng,acc,at} at clock-in (clock.loc), every 5 min while the app is open and clocked in (clock.last, LocationPing in the Shell),
+and on the hours entry (inLoc/outLoc). Map = Leaflet + OpenStreetMap tiles (lazy chunk); job sites = jobs within 3 days,
+geocoded once per address with Nominatim (1 req/s) into estimate.geo. On site = within 0.25 mi (+ GPS accuracy, capped).
+Web apps can't track in the background: last known position. _headers: geolocation=(self), OSM tiles/nominatim in CSP.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

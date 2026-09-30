@@ -19,11 +19,23 @@ service cloud.firestore {
     function myWorkerId(cid) { return get(memberPath(cid, request.auth.uid)).data.get('workerId', ''); }
     // a worker may only stamp their OWN current pay rate on an hours entry (or none: the app then uses the worker record's rate)
     function workerRate(cid) { return get(/databases/$(db)/documents/companies/$(cid)/workers/$(myWorkerId(cid))).data.get('rate', null); }
-    function hoursShapeOk() {
-      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'companyId', 'createdAt', 'updatedAt'])
-        && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000;
+    // a phone position { lat, lng, acc, at } (team map, src/lib/geo.ts): absent, or exactly this shape
+    function locOk(d, k) {
+      return !(k in d) || (d[k] is map && d[k].keys().hasOnly(['lat', 'lng', 'acc', 'at'])
+        && d[k].lat is number && d[k].lat >= -90 && d[k].lat <= 90
+        && d[k].lng is number && d[k].lng >= -180 && d[k].lng <= 180
+        && d[k].acc is number && d[k].acc >= 0 && d[k].acc <= 100000
+        && d[k].at is string && d[k].at.size() <= 40);
     }
-    function clockShapeOk() { return request.resource.data.keys().hasOnly(['at', 'estId', 'companyId', 'createdAt', 'updatedAt']); }
+    function hoursShapeOk() {
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+        && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000
+        && locOk(request.resource.data, 'inLoc') && locOk(request.resource.data, 'outLoc');
+    }
+    function clockShapeOk() {
+      return request.resource.data.keys().hasOnly(['at', 'estId', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
+        && locOk(request.resource.data, 'loc') && locOk(request.resource.data, 'last');
+    }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
     function isInvitee(email) { return signedIn() && myEmail() != '' && myEmail() == email; }

@@ -27,3 +27,7 @@
   .wk-tiles .tm-tile small{display:none}
   .wk-tasks{padding:4px 16px 8px}
 }
+
+/* location notice under the clock (only when the owner turned on location at clock-in) */
+.wk-clock{flex-wrap:wrap}
+.wk-loc{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.45}

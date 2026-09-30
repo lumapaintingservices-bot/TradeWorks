@@ -9,6 +9,8 @@ export type Company = {
   address?: string; hours?: string; hoursEs?: string;
   pricing: { door: number; drawer: number; depositPct: number };
   onboarded: boolean;
+  /** Save the workers' phone location when they clock in / out (Team > map). Off until the owner turns it on. */
+  trackLocation?: boolean;
   /* --- TradeWorks subscription (see docs/08-billing-setup.md). Dates are ISO strings written by the billing
      backend / company creation; billingState() also accepts numbers, Dates and Firestore Timestamps. --- */
   plan?: "trial" | "pro";

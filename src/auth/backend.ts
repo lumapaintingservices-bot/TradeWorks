@@ -56,7 +56,9 @@ const toUser = (u: { uid: string; displayName: string | null; email: string | nu
   ({ uid: u.uid, name: u.displayName || "", email: u.email || "", emailVerified: u.emailVerified });
 const clean = <T extends object>(o: T): T => JSON.parse(JSON.stringify(o));
 // billing fields are written only by the Stripe webhook; a stale browser copy must never write them back
-const BILLING_FIELDS = ["plan", "subscriptionStatus", "stripeCustomerId", "stripeSubscriptionId", "trialEndsAt", "currentPeriodEnd", "pastDueSince", "stripeEventAt"];
+// written only by the server (firestore.rules billingUntouched): never sent back, or a stale copy would be refused
+const BILLING_FIELDS = ["plan", "subscriptionStatus", "stripeCustomerId", "stripeSubscriptionId", "trialEndsAt", "currentPeriodEnd", "pastDueSince", "stripeEventAt",
+  "stripeAccountId", "stripeReady", "stripeDetails", "stripeCheckedAt"];
 const stripBilling = <T extends Record<string, unknown>>(o: T): T => { const c = { ...o }; BILLING_FIELDS.forEach((k) => delete c[k]); return c; };
 const stripCompany = ({ id: _i, ownerUid: _o, createdAt: _c, updatedAt: _u, ...rest }: Record<string, unknown>) => stripBilling(rest);
 const TRIAL_DAYS = 14;

@@ -261,6 +261,15 @@ await ok("worker rewrites the entry with the same rate", () => setDoc(doc(wrk1, 
 await no("worker rewrites the entry dropping into another key", () => setDoc(doc(wrk1, "companies/c1/hours/h1"), { workerId: "w1", date: "2026-05-01", hours: 5, rate: 20, bonus: 100 }));
 await ok("worker clock in with the app's shape", () => setDoc(doc(wrk1, "companies/c1/clock/w1"), { at: "2026-05-04T13:00:00Z", estId: "", companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await no("worker clock in with an extra key", () => setDoc(doc(wrk1, "companies/c1/clock/w1"), { at: "x", rate: 1000 }));
+// team map: a phone position { lat, lng, acc, at } on the clock and on hours entries
+const LOC = { lat: 25.76, lng: -80.19, acc: 12, at: "2026-05-04T13:00:00Z" };
+await ok("worker clock in with a location", () => setDoc(doc(wrk1, "companies/c1/clock/w1"), { at: "2026-05-04T13:00:00Z", estId: "", loc: LOC, last: LOC }));
+await ok("worker refreshes their position", () => updateDoc(doc(wrk1, "companies/c1/clock/w1"), { last: { ...LOC, at: "2026-05-04T13:05:00Z" } }));
+await no("worker position with an extra key", () => updateDoc(doc(wrk1, "companies/c1/clock/w1"), { last: { ...LOC, speed: 3 } }));
+await no("worker position out of range", () => updateDoc(doc(wrk1, "companies/c1/clock/w1"), { last: { ...LOC, lat: 91 } }));
+await no("worker position as text", () => updateDoc(doc(wrk1, "companies/c1/clock/w1"), { loc: "Miami" }));
+await ok("worker clock-out hours with in/out positions", () => setDoc(doc(wrk1, "companies/c1/hours/nLoc"), { workerId: "w1", date: "2026-05-04", hours: 2, inLoc: LOC, outLoc: LOC }));
+await no("worker hours with a bad position", () => setDoc(doc(wrk1, "companies/c1/hours/nLoc2"), { workerId: "w1", date: "2026-05-04", hours: 2, outLoc: { lat: "x" } }));
 await no("worker cannot touch c2 hours", () => setDoc(doc(wrk1, "companies/c2/hours/n1"), { workerId: "w2", hours: 1 }));
 await no("worker cannot read payouts", () => getDocs(collection(wrk1, "companies/c1/payouts")));
 await no("worker cannot create payouts", () => setDoc(doc(wrk1, "companies/c1/payouts/p1"), { workerId: "w1", amount: 999 }));

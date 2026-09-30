@@ -8,7 +8,8 @@ companies/{companyId}. Field names below come from the prototype so logic can be
 users/{uid}                          { name, email, lang, theme, companies:[companyId], activeCompanyId }
 companies/{companyId}                { name, legalName, phone, email, website, area, services, servicesEs,
                                        logoUrl, brandColor, trade, plan, ownerUid, createdAt,
-                                       stripeAccountId, stripeReady, stripeDetails, stripeCheckedAt }   Stripe Connect fields: server only (docs/10)
+                                       stripeAccountId, stripeReady, stripeDetails, stripeCheckedAt,   Stripe Connect fields: server only (docs/10)
+                                       trackLocation }   save workers' phone location at clock-in/out (team map, src/lib/geo.ts)
 companies/{cid}/members/{uid}        { role:'owner'|'admin'|'worker', workerId? }
 companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbering{nextEst,nextInv},
                                        processDays, scope{en[],es[]}, terms{en[],es[]}, typePresets{interior,exterior,other},
@@ -30,17 +31,18 @@ companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId
                                        expenses[] (legacy receipts), photos[{id,kind,caption,inWork}], showPhotos,
                                        signature{name,img,date,via,at}, sentAt, portal{token}, portalViews[], portalSeen{},
                                        activity[], chat[], changeOrders[], check{key:iso}, jobTasks[{id,day,text}],
-                                       colors[{area,brand,color,sheen,code}], payClaim, reviewAsked, warrantyChecked, snooze{} }
+                                       colors[{area,brand,color,sheen,code}], payClaim, reviewAsked, warrantyChecked, snooze{},
+                                       geo{q,lat?,lng?} (job site position for the team map; looked up once per address with OpenStreetMap Nominatim) }
 companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'full'|'progress'|'co', amount, date, status, paidDate, paidMethod,
                                        pay{token}, payViews, payClaim{method,at,note}, payClaimSeen,
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, workerId, done }
 companies/{cid}/workers/{id}         { name, phone, role, rate, active }
-companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note }
+companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note, inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }
-companies/{cid}/clock/{workerId}     { at, estId }
+companies/{cid}/clock/{workerId}     { at, estId, loc?, last? }   loc/last = { lat, lng, acc(m), at } from the worker's phone
 companies/{cid}/autoemails/{itemId}  { item, kind, estId, invId, to, subject, status:'sending'|'sent'|'failed', sentAt, error }  written ONLY by workers/reminders
 
 portal/{token}                       { owner(cid), estId, data (snapshot JSON), updatedAt, client:{ views[], picks{}, sign{}, chat[], paid{}, co{} } }

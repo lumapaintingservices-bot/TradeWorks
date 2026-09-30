@@ -1,0 +1,25 @@
+/* Team map (LeafletMap.tsx). Map tiles are always light; markers and popups use the app tokens. */
+.tmap{height:360px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line);background:var(--surface-2);z-index:0}
+@media (max-width:640px){.tmap{height:280px}}
+.tmap-pin{background:none;border:none}
+.tmap-job{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink-2);border:2px solid var(--ink-3);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.tmap-w{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 12.5px/1 inherit;color:var(--surface);background:var(--ok);border:3px solid var(--surface);box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.tmap-w.warn{background:var(--warn)}
+.tmap-w.old{background:var(--ink-3)}
+.tmap .leaflet-popup-content-wrapper,.tmap .leaflet-popup-tip{background:var(--surface);color:var(--ink)}
+.tmap .leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.tmap .leaflet-popup-content span{color:var(--ink-2)}
+.tm-map-b{padding:0 20px 18px}
+.tm-map-h{font-size:13px;font-weight:600;color:var(--ink-2);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.tm-map-note{font-size:12.5px;margin:8px 0 0}
+.tm-map-list{list-style:none;margin:0;padding:0}
+.tm-map-list li{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.tm-map-list li:first-child{border-top:none}
+.tm-map-list li>div{flex:1;min-width:0}
+.tm-map-list b{display:block;font-size:14px}
+.tm-map-list small{color:var(--ink-3);font-size:12.5px}
+.tm-where{font-size:13px;color:var(--ink-2);text-align:right;max-width:55%}
+.tm-dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--ok)}
+.tm-dot.warn{background:var(--warn)}
+.tm-dot.old{background:var(--ink-3)}
+@media (max-width:640px){.tm-map-b{padding:0 14px 14px}.tm-where{max-width:50%;font-size:12.5px}}

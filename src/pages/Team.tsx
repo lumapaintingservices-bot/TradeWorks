@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useClients, useClock, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
@@ -16,6 +16,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { NumInput } from "../ui/NumInput";
+import TeamMap from "./team/TeamMap";
 import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 
@@ -44,7 +45,7 @@ function OwnerTeam() {
   const { rows: hours, save: saveHours, remove: removeHours } = useHours();
   const { rows: pays, save: savePay, remove: removePay } = usePayouts();
   const { rows: clocks, save: saveClock, remove: removeClock } = useClock();
-  const { rows: ests } = useEstimates();
+  const { rows: ests, patch: patchEst } = useEstimates();
   const { rows: invoices } = useInvoices();
   const { rows: clients } = useClients();
   const { rows: tasks, save: saveTask, remove: removeTask } = useTasks();
@@ -54,18 +55,20 @@ function OwnerTeam() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(Date.now());
+  const tracking = !!useAuth().company?.trackLocation;
   useEffect(() => {
-    if (!clocks.length) return;
+    if (!clocks.length && !tracking) return;
     setNow(Date.now());
     const i = setInterval(() => setNow(Date.now()), 30000);
     return () => clearInterval(i);
-  }, [clocks.length]);
+  }, [clocks.length, tracking]);
 
   const workers = useMemo(() => [...workerRows].sort((a, b) => (a.active === false ? 1 : 0) - (b.active === false ? 1 : 0) || a.name.localeCompare(b.name)), [workerRows]);
   const activeWorkers = useMemo(() => workers.filter((w) => w.active !== false), [workers]);
   const wById = (id?: string) => workers.find((w) => w.id === id);
   const estById = (id?: string) => ests.find((e) => e.id === id);
   const jobLabel = (e?: Estimate) => (e ? `${e.number} · ${clientNameOf(e, clients, lang)}` : "");
+  const mapLabel = useCallback((e: Estimate) => clientNameOf(e, clients, lang) || e.number, [clients, lang]);
   const b = useMemo(() => rangeBounds(range), [range]);
 
   const stats = useMemo(() => new Map(workers.map((w) => [w.id, workerStats(w, b, hours, pays)])), [workers, b, hours, pays]);
@@ -169,6 +172,8 @@ function OwnerTeam() {
         </EmptyState></div>
       ) : (
         <>
+          <TeamMap workers={workers} clocks={clocks} hours={hours} ests={ests} invoices={invoices} label={mapLabel} patchEst={patchEst} now={now} />
+
           <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
             <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...rangeLabel[k])}</button>))}</div></div>
 

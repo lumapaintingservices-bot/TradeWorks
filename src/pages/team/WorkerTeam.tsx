@@ -4,6 +4,7 @@ import { useClock, useHours, useTasks, useWorkers } from "../../data/hooks";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
+import { getLocation } from "../../lib/geo";
 import { num } from "../../lib/money";
 import { RANGE_KEYS, clockElapsed, rangeBounds, type RangeKey } from "../../lib/team";
 import { isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
@@ -42,6 +43,7 @@ export function WorkerTeam() {
 
 function WorkerBody({ workerId }: { workerId: string }) {
   const t = useT();
+  const track = !!useAuth().company?.trackLocation; // the owner turned on "location at clock-in" (Team > map)
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const { rows: hours, save: saveHours, remove: removeHours } = useHours();
   const { rows: clocks, save: saveClock, remove: removeClock } = useClock();
@@ -73,14 +75,18 @@ function WorkerBody({ workerId }: { workerId: string }) {
     setBusy((x) => ({ ...x, [key]: true }));
     try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); } finally { setBusy((x) => ({ ...x, [key]: false })); }
   };
+  const noLoc = () => toast(t("Clocked. Your location is off: allow it for TradeWorks so your boss sees you at the job.", "Registrado. Tu ubicación está apagada: permítela para TradeWorks y tu jefe verá que estás en el trabajo."));
   const clockIn = () => guard("clk", async () => {
     if (clock) return;
-    await saveClock({ id: workerId, at: new Date().toISOString(), estId: "" });
-    toast(t("Clocked in.", "Entrada registrada."));
+    const loc = track ? await getLocation() : null;
+    await saveClock({ id: workerId, at: new Date().toISOString(), estId: "", ...(loc ? { loc, last: loc } : {}) });
+    if (track && !loc) noLoc(); else toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = () => guard("clk", async () => {
     if (!clock) return;
-    const entry = workerClockEntry(clock, workerId, me, t("Clock in/out", "Entrada/salida"));
+    const outLoc = track ? await getLocation() : null;
+    const entry = { ...workerClockEntry(clock, workerId, me, t("Clock in/out", "Entrada/salida")), ...(clock.loc ? { inLoc: clock.loc } : {}), ...(outLoc ? { outLoc } : {}) };
+    if (track && !outLoc) noLoc();
     await saveHours(entry as unknown as HourEntry);
     await removeClock(workerId);
     toast(t(`${entry.hours} h saved.`, `${entry.hours} h guardadas.`));
@@ -104,6 +110,8 @@ function WorkerBody({ workerId }: { workerId: string }) {
         {el
           ? <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockOut}><Icon name="clock" size={18} />{t("Clock out", "Salida")}</button>
           : <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockIn}><Icon name="clock" size={18} />{t("Clock in", "Entrada")}</button>}
+        {track && <p className="wk-loc muted">📍 {t("Your location is saved when you clock in and out, and every few minutes while TradeWorks is open during your shift, so your boss can see you're at the job. Nothing is saved when you're clocked out.",
+          "Tu ubicación se guarda al marcar entrada y salida, y cada pocos minutos mientras TradeWorks esté abierto en tu turno, para que tu jefe vea que estás en el trabajo. No se guarda nada cuando no estás trabajando.")}</p>}
       </section>
 
       <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
