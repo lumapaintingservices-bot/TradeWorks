@@ -4,18 +4,21 @@ import { useT } from "../i18n";
 import { asInv, type InvoiceRec } from "../lib/invoices";
 import { payApply, payModel, type PayDoc } from "../lib/paylink";
 import { brandOf, newToken, type Brand } from "../lib/portal";
+import { referralLink } from "../lib/clientProfile";
 import type { Estimate, Settings } from "../lib/types";
 import { useUi } from "../store/ui";
 import { useEstimates, useInvoices, useSettings } from "./hooks";
 import { deleteTop, patchRec, setTop, subscribeOwned } from "./repo";
 
 export const payLinkOf = (token: string) => `${location.origin}/pay/${token}`;
+/** The client's personal referral link, shown on the paid invoice when the referral program is on. */
+const refUrlOf = (cid: string, e: Estimate) => (e.clientId ? referralLink(location.origin, cid, e.clientId) : undefined);
 
 type Co = Brand & { id: string };
 
 /** Writes the public copy of one invoice to paylink/{token}. */
 export function publishPayLink(v: InvoiceRec, token: string, e: Estimate, s: Settings, company: Co) {
-  return setTop("paylink", token, { owner: company.id, invId: v.id, data: JSON.stringify(payModel(v, e, s, brandOf(company))) }, true);
+  return setTop("paylink", token, { owner: company.id, invId: v.id, data: JSON.stringify(payModel(v, e, s, brandOf(company), { refUrl: refUrlOf(company.id, e) })) }, true);
 }
 
 /** New payment link for an invoice: public copy first, then the token on the invoice. */
@@ -73,7 +76,7 @@ export function usePayLinkSync() {
       const d = byToken.get(token);
       const e = ests.find((x) => x.id === v.estId);
       if (!d || !e) continue; // not written yet / estimate deleted: leave it alone
-      const data = JSON.stringify(payModel(v, e, settings, brandOf(company as Co)));
+      const data = JSON.stringify(payModel(v, e, settings, brandOf(company as Co), { refUrl: refUrlOf(company.id, e) }));
       if (d.data !== data) once("pub:" + token, () => setTop("paylink", token, { data }, true));
       const patch = payApply(v, d.client);
       if (patch) {

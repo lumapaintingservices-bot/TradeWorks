@@ -8,6 +8,7 @@ import { useT } from "../i18n";
 import { followUps, leadClients, snoozeDate, type FollowUp } from "../lib/followups";
 import { fmtDate } from "../lib/format";
 import { asInv, type InvoiceRec } from "../lib/invoices";
+import { referralLink } from "../lib/clientProfile";
 import { buildMessage, coMessage, mailUrl, smsUrl, waUrl, type MsgCtx, type TplKey } from "../lib/messages";
 import type { Client, Estimate } from "../lib/types";
 import { useUi } from "../store/ui";
@@ -17,6 +18,8 @@ import "./FollowUps.css";
 type Snz = { snooze?: Record<string, string> };
 /** companies/{cid}/autoemails/{id}, written by the daily reminders worker (workers/reminders). */
 type AutoLog = { item?: string; status?: string; sentAt?: string; to?: string; kind?: string };
+/** Message context plus the company id (for each client's referral link). */
+type FuCtx = MsgCtx & { companyId?: string };
 
 /** Everything the follow-up UI needs, computed once from the live collections. */
 export function useFollowUps() {
@@ -30,7 +33,7 @@ export function useFollowUps() {
   // reminders the daily worker already e-mailed: item id -> day sent
   const autoSent = useMemo(() => Object.fromEntries(sentLog.filter((r) => r.status === "sent" && r.item).map((r) => [r.item!, String(r.sentAt || "").slice(0, 10)])), [sentLog]);
   const items = useMemo(() => followUps({ estimates, clients, settings, invoices, lang, autoSent }), [estimates, clients, settings, invoices, lang, autoSent]);
-  const ctx = useMemo<MsgCtx>(() => ({ settings, business: { name: company?.name || "", phone: company?.phone || "", email: company?.email || "", website: company?.website || "" } }), [settings, company]);
+  const ctx = useMemo<FuCtx>(() => ({ settings, companyId: company?.id, business: { name: company?.name || "", phone: company?.phone || "", email: company?.email || "", website: company?.website || "" } }), [settings, company]);
   return { items, ctx, estimates, clients, invoices, settings, saveEst, saveClient, leads: leadClients(clients, estimates) };
 }
 
@@ -48,7 +51,8 @@ function messageFor(f: FollowUp, ctx: MsgCtx, est?: Estimate, client?: Client, i
   }
   if (!f.tpl) return null;
   return buildMessage(f.tpl as TplKey, est || null, f.lang, { ...ctx, clientName: client?.name || f.who,
-    invoice: inv ? { number: inv.number, amount: inv.amount } : undefined, payUrl: inv?.pay?.token ? payLinkOf(inv.pay.token) : undefined });
+    invoice: inv ? { number: inv.number, amount: inv.amount } : undefined, payUrl: inv?.pay?.token ? payLinkOf(inv.pay.token) : undefined,
+    friend: f.friend, refUrl: (ctx as FuCtx).companyId && client?.id ? referralLink(location.origin, (ctx as FuCtx).companyId!, client.id) : undefined });
 }
 
 export function FollowUpList({ limit = 5, title = true }: { limit?: number; title?: boolean }) {
@@ -80,7 +84,7 @@ export function FollowUpList({ limit = 5, title = true }: { limit?: number; titl
       if (c) await saveClient({ ...c, snooze: { ...((c as Snz).snooze || {}), [f.key]: until } } as never);
     }
   }
-  const open = (f: FollowUp) => (f.estId ? nav(`/estimates/${f.estId}`) : nav(`/estimates?new=1&client=${f.clientId}`));
+  const open = (f: FollowUp) => (f.estId ? nav(`/estimates/${f.estId}`) : f.kind === "reward" ? nav(`/clients/${f.clientId}`) : nav(`/estimates?new=1&client=${f.clientId}`));
 
   return (
     <section className="card fu-card" id="followCard">
@@ -101,7 +105,7 @@ export function FollowUpList({ limit = 5, title = true }: { limit?: number; titl
               <div className="fu-act">
                 {m && f.phone && <a className="btn sm wa" href={waUrl(f.phone, m.body)} target="_blank" rel="noopener noreferrer" onClick={() => done(f, "WhatsApp")}>WhatsApp</a>}
                 {m && <button className="btn sm" onClick={() => setMsg(f)}>{t("Message", "Mensaje")}</button>}
-                <button className="btn sm" onClick={() => open(f)}>{f.estId ? t("Open", "Abrir") : t("Estimate", "Presupuesto")}</button>
+                <button className="btn sm" onClick={() => open(f)}>{f.estId || f.kind === "reward" ? t("Open", "Abrir") : t("Estimate", "Presupuesto")}</button>
                 {f.kind !== "chat" && (
                   <button className="btn sm" title={t("Hide for 3 days", "Esconder 3 días")} onClick={async () => { await done(f); toast(t("Hidden for 3 days", "Escondido 3 días")); }}>{t("Snooze", "Posponer")}</button>
                 )}

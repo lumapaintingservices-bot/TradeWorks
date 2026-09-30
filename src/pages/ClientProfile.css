@@ -53,3 +53,7 @@ html:not(.tw-dark) .btn.cp-wa{color:#fff}
   .cp-color{flex-direction:column;gap:2px;padding:12px 16px}
   .cp-color .muted{width:auto}
 }
+.cp-ref-who{display:flex;gap:8px;align-items:center;flex-wrap:wrap;min-width:0}
+.cp-ref-rw{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;font-size:12.5px}
+@media(max-width:640px){.cp-refrow{flex-direction:column;align-items:flex-start}.cp-ref-rw{justify-content:flex-start}}
+.cp-ref-rw .btn{white-space:nowrap}

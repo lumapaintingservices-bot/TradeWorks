@@ -98,6 +98,15 @@ export default function PayPage() {
           </>}
         </section>}
 
+        {v.paid && m.refer && safeUrl(m.refer.url) && <section className="pt-sec" id="ptRefer"><h2>{T("Know someone who needs work done?", "¿Conoce a alguien que necesite un trabajo?")}</h2>
+          <p className="pt-hint">{T(`Share your personal link. When your friend's project is done, you get ${m.refer.rewardEn}.`, `Comparta su link personal. Cuando el proyecto de su amigo termine, usted recibe ${m.refer.rewardEs}.`)}</p>
+          <div className="pt-links">
+            <a className="btn wa" href={`https://wa.me/?text=${encodeURIComponent(T(`I recommend ${b.name}: `, `Te recomiendo a ${b.name}: `) + m.refer.url)}`} target="_blank" rel="noopener noreferrer">{T("Share by WhatsApp", "Compartir por WhatsApp")}</a>
+            <a className="btn" href={`sms:?&body=${encodeURIComponent(T(`I recommend ${b.name}: `, `Te recomiendo a ${b.name}: `) + m.refer.url)}`}>SMS</a>
+            <button className="btn" onClick={() => { navigator.clipboard?.writeText(m.refer!.url).then(() => say(T("Link copied.", "Link copiado."))).catch(() => say(m.refer!.url)); }}>{T("Copy link", "Copiar link")}</button>
+          </div>
+        </section>}
+
         <footer className="pt-foot">
           {b.phone && <><a className="btn" href={`tel:${wa}`}>{T("Call", "Llamar")}</a><a className="btn wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}
           {mailtoHref(b.email) && <a className="btn" href={mailtoHref(b.email)}>{b.email}</a>}

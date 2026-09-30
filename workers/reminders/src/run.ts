@@ -6,6 +6,7 @@
  */
 import { autoEmailOn, planEmails, withPayLink, type PlanInput, type PlannedEmail } from "../../../src/lib/autoEmail";
 import { billingState } from "../../../src/lib/billing";
+import { referralLink } from "../../../src/lib/clientProfile";
 import { asInv } from "../../../src/lib/invoices";
 import { payModel } from "../../../src/lib/paylink";
 import { brandOf, newToken, type Brand } from "../../../src/lib/portal";
@@ -44,7 +45,7 @@ export async function runCompany(db: Db, send: (m: Mail) => Promise<void>, env: 
   const business = { name: String(company.name || ""), phone: String(company.phone || ""), email: String(company.email || ""), website: String(company.website || "") };
   const inp: PlanInput = {
     estimates: rows<Estimate>(estimates).filter((e) => !(e as { deleted?: boolean }).deleted), clients: rows<Client>(clients), invoices: rows<Invoice>(invoices),
-    settings, business, origin, sent: new Set(logDocs.map((d) => d.id)), now: opt.now,
+    settings, business, origin, companyId: cid, sent: new Set(logDocs.map((d) => d.id)), now: opt.now,
   };
   const plan = planEmails(inp);
   res.planned = plan.length;
@@ -75,7 +76,7 @@ async function ensurePayLink(db: Db, cid: string, company: Record<string, any>, 
   const v = asInv(inv0);
   const token = newToken();
   const brand = brandOf({ name: "", phone: "", email: "", website: "", area: "", logoUrl: "", brandColor: "", ...company } as Brand);
-  await db.create(`paylink/${token}`, { owner: cid, invId: v.id, data: JSON.stringify(payModel(v, e, inp.settings, brand)), client: {}, updatedAt: new Date() });
+  await db.create(`paylink/${token}`, { owner: cid, invId: v.id, data: JSON.stringify(payModel(v, e, inp.settings, brand, { refUrl: e.clientId ? referralLink(inp.origin, cid, e.clientId) : undefined })), client: {}, updatedAt: new Date() });
   await db.patch(`companies/${cid}/invoices/${v.id}`, { pay: { token } });
   v.pay = { token }; // later reminders in this run reuse it
   return withPayLink(p, inp, token);
