@@ -5,7 +5,7 @@
  *   owner  : everything, incl. members, roles and billing.
  *   admin  : everything about the business (clients, estimates, money, team...). Sees the member list, may invite / remove
  *            WORKERS only; cannot touch owners or admins, cannot change roles, cannot delete the company.
- *   worker : Calendar (own tasks), Team (own hours / clock in-out) and Settings -> language & theme.
+ *   worker : Calendar (own tasks), Team (own hours / clock in-out), Timesheet (own hours, pay, payments) and Settings -> language & theme.
  *
  * The company creator (`company.ownerUid`, the "primary owner") can never be removed or demoted; that guarantees a company
  * always keeps at least one owner (firestore.rules enforce the same thing, they cannot count owners).
@@ -16,7 +16,7 @@ export const ROLES: Role[] = ["owner", "admin", "worker"];
 export const isRole = (v: unknown): v is Role => v === "owner" || v === "admin" || v === "worker";
 
 /** Routes a worker may open (prefix match). Everything else redirects to homeFor("worker"). */
-export const WORKER_ROUTES = ["/calendar", "/team", "/settings"];
+export const WORKER_ROUTES = ["/calendar", "/team", "/timesheet", "/settings"];
 
 /** May this person start a new company of their own? Not when every company they belong to has them as a plain worker. */
 export const canCreateCompany = (roles: Role[]): boolean => roles.length === 0 || roles.some((r) => r !== "worker");
@@ -140,7 +140,7 @@ export function canLinkWorker(actor: Role | null | undefined, target: Role): boo
  *  - null       -> a worker may not read this collection at all
  */
 export function workerScope(col: string): { field: string } | { docId: true } | null {
-  if (col === "tasks" || col === "hours") return { field: "workerId" };
+  if (col === "tasks" || col === "hours" || col === "payouts") return { field: "workerId" };
   if (col === "clock" || col === "workers") return { docId: true };
   return null;
 }

@@ -31,3 +31,5 @@
 /* location notice under the clock (only when the owner turned on location at clock-in) */
 .wk-clock{flex-wrap:wrap}
 .wk-loc{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.45}
+.wk-job{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--ink-3);margin-top:6px}
+.wk-job select{min-width:0;max-width:280px}

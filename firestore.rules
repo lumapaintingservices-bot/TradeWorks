@@ -4,7 +4,7 @@ rules_version = '2';
 // Roles (companies/{cid}/members/{uid}.role), mirrored in src/lib/roles.ts:
 //   owner  everything, incl. members and roles
 //   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
-//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record
+//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read)
 // The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -28,12 +28,16 @@ service cloud.firestore {
         && d[k].at is string && d[k].at.size() <= 40);
     }
     function hoursShapeOk() {
-      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'note', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'jobLabel', 'note', 'start', 'end', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+        && (!('jobLabel' in request.resource.data) || (request.resource.data.jobLabel is string && request.resource.data.jobLabel.size() <= 120))
         && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000
+        && (!('start' in request.resource.data) || (request.resource.data.start is string && request.resource.data.start.size() <= 40))
+        && (!('end' in request.resource.data) || (request.resource.data.end is string && request.resource.data.end.size() <= 40))
         && locOk(request.resource.data, 'inLoc') && locOk(request.resource.data, 'outLoc');
     }
     function clockShapeOk() {
-      return request.resource.data.keys().hasOnly(['at', 'estId', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['at', 'estId', 'jobLabel', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
+        && (!('jobLabel' in request.resource.data) || (request.resource.data.jobLabel is string && request.resource.data.jobLabel.size() <= 120))
         && locOk(request.resource.data, 'loc') && locOk(request.resource.data, 'last');
     }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
@@ -122,7 +126,7 @@ service cloud.firestore {
       match /{col}/{id} {
         allow read: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            ((col == 'tasks' || col == 'hours') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, my hours
+            ((col == 'tasks' || col == 'hours' || col == 'payouts') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, hours, payments
             || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
           )));
 

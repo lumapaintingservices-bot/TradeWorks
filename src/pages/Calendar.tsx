@@ -94,7 +94,8 @@ function OwnerCalendar() {
     if (!draft) return;
     if (!draft.title.trim()) { toast(t("Write what the task is.", "Escribe qué es la tarea.")); return; }
     const { isNew: _n, ...rec } = draft;
-    await saveTask({ ...rec, title: draft.title.trim(), date: draft.date || today });
+    const est = rec.estId ? estimates.find((x) => x.id === rec.estId) : undefined; // the job's name travels with the task (workers can't read estimates)
+    await saveTask({ ...rec, title: draft.title.trim(), date: draft.date || today, jobLabel: est ? `${est.number} · ${nameOf(est)}` : "" });
     setDay(draft.date || today); setMonth(monthKey(draft.date || today)); setDraft(null);
     toast(t("Task saved.", "Tarea guardada."));
   }

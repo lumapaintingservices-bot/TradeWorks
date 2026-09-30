@@ -36,13 +36,13 @@ companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId
 companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'full'|'progress'|'co', amount, date, status, paidDate, paidMethod,
                                        pay{token}, payViews, payClaim{method,at,note}, payClaimSeen,
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
-companies/{cid}/tasks/{id}           { title, date, time, note, estId, workerId, done }
+companies/{cid}/tasks/{id}           { title, date, time, note, estId, jobLabel ("EST-1001 · Ana Ruiz", for workers), workerId, done }
 companies/{cid}/workers/{id}         { name, phone, role, rate, active }
-companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note, inLoc?, outLoc? }
+companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }
-companies/{cid}/clock/{workerId}     { at, estId, loc?, last? }   loc/last = { lat, lng, acc(m), at } from the worker's phone
+companies/{cid}/clock/{workerId}     { at, estId, jobLabel?, loc?, last? }   loc/last = { lat, lng, acc(m), at } from the worker's phone
 companies/{cid}/autoemails/{itemId}  { item, kind, estId, invId, to, subject, status:'sending'|'sent'|'failed', sentAt, error }  written ONLY by workers/reminders
 
 portal/{token}                       { owner(cid), estId, data (snapshot JSON), updatedAt, client:{ views[], picks{}, sign{}, chat[], paid{}, co{} } }
