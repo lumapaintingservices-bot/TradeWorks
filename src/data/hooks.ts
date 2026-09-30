@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
+import { normalizeTrade } from "../lib/trades";
 import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, Payout, Settings, Task, Worker } from "../lib/types";
 import { subscriptionPlan } from "../lib/workerView";
 import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from "./repo";
@@ -42,14 +43,16 @@ export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
 
 /** Company settings live in a single doc: settings/main. Missing fields fall back to defaults. */
 export function useSettings() {
+  const { company } = useAuth();
   const { rows, loading, save } = useCollection<Rec & { data?: Partial<Settings> }>("settings");
+  const trade = normalizeTrade(company?.trade); // the company's trade is the single source of truth (company.trade)
   const settings = useMemo<Settings>(() => {
     const main = rows.find((r) => r.id === "main");
     const d = defaultSettings();
-    if (!main) return d;
+    if (!main) return { ...d, trade };
     const { id: _i, companyId: _c, createdAt: _a, updatedAt: _u, ...saved } = main as Record<string, unknown>;
-    return { ...d, ...(saved as Partial<Settings>) };
-  }, [rows]);
+    return { ...d, ...(saved as Partial<Settings>), trade };
+  }, [rows, trade]);
   const update = useCallback((patch: Partial<Settings>) => save({ id: "main", ...settings, ...patch } as unknown as Rec), [save, settings]);
   return { settings, loading, update };
 }

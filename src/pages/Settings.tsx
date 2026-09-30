@@ -22,7 +22,7 @@ import MaterialsCard from "./settings/MaterialsCard";
 import MessageTemplatesCard from "./settings/MessageTemplatesCard";
 import PricingCard from "./settings/PricingCard";
 import ProductionCard from "./settings/ProductionCard";
-import ServicesCard from "./settings/ServicesCard";
+import CatalogCard, { TradeCard } from "./settings/CatalogCard";
 import ShowcaseCard from "./settings/ShowcaseCard";
 import "./Settings.css";
 
@@ -229,7 +229,9 @@ const SECTIONS: Section[] = [
   { id: "general", icon: "settings", en: "General", es: "General", descEn: "How the app looks and your business details.", descEs: "Cómo se ve la app y los datos de tu negocio.",
     body: () => <><AppearanceCard /><BusinessGate /><OwnerOnly><DeleteCompanyCard /></OwnerOnly></> },
   { id: "pricing", icon: "dollar", en: "Prices", es: "Precios", descEn: "What a new estimate starts with: your rates, deposit, tax, discounts and numbering.", descEs: "Con qué empieza un presupuesto nuevo: tus precios, depósito, impuesto, descuentos y numeración.",
-    body: () => <><PricingCard /><DiscountsCard /><ServicesCard /></> },
+    body: () => <><PricingCard /><DiscountsCard /></> },
+  { id: "services", icon: "tag", en: "Services & prices", es: "Servicios y precios", descEn: "Your trade and your own priced services, picked on every estimate.", descEs: "Tu oficio y tus servicios con precio, que eliges en cada presupuesto.",
+    body: () => <><TradeCard /><CatalogCard /></> },
   { id: "profit", icon: "percent", en: "Costs & profit", es: "Costos y ganancia", descEn: "The numbers behind your profit: how long the work takes, what labor costs, and paint and supplies.", descEs: "Los números detrás de tu ganancia: cuánto tarda el trabajo, cuánto cuesta la mano de obra, y la pintura y suministros.",
     body: () => <><ProductionCard /><MaterialsCard /></> },
   { id: "jobtypes", icon: "estimates", en: "Job types", es: "Tipos de trabajo", descEn: "The texts each kind of job starts with.", descEs: "Los textos con que empieza cada tipo de trabajo.",

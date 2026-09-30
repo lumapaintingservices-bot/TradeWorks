@@ -2,6 +2,7 @@ import { useJobExpenses } from "../../data/jobExpenses";
 import { useT } from "../../i18n";
 import { calcMaterials, jobEconomics } from "../../lib/estimate";
 import { money } from "../../lib/money";
+import { usesCabinetTools } from "../../lib/trades";
 import type { Estimate } from "../../lib/types";
 import { NumInput } from "../../ui/NumInput";
 import type { TabProps } from "./types";
@@ -12,6 +13,7 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
   const x = jobEconomics(e, s, listed);
   const m = calcMaterials(e, s);
   const solo = x.mode === "solo";
+  const painting = usesCabinetTools(s.trade);
   const good = solo ? x.perHour >= x.targetHourly : x.margin >= x.target;
   const mid = solo ? x.perHour >= x.targetHourly * 0.75 : x.margin >= x.target - 15;
   const col = good ? "var(--ok)" : mid ? "var(--warn)" : "var(--bad)";
@@ -31,7 +33,7 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
       </div></div>
 
       <div className="card"><div className="card-h"><h2>{t("Production hours", "Horas de producción")}</h2><b>{x.h.total} h · ~{x.days.toFixed(1)} {t("days", "días")}</b></div><div className="card-b">
-        {x.h.rows.length === 0 && <p className="muted">{t("Add doors, drawers or lines to see hours.", "Agrega puertas, cajones o líneas para ver las horas.")}</p>}
+        {x.h.rows.length === 0 && <p className="muted">{painting ? t("Add doors, drawers or lines to see hours.", "Agrega puertas, cajones o líneas para ver las horas.") : t("Add service lines (with hours set in Settings → Services & prices) or type extra hours to see your hours.", "Agrega líneas de servicio (con horas en Ajustes → Servicios y precios) o escribe horas extra para ver tus horas.")}</p>}
         {x.h.rows.map((r, i) => <Row key={i} dim a={`${r.label} · ${Math.round(r.qty * 100) / 100} × ${r.per}`} b={`${Math.round(r.h * 100) / 100} h`} />)}
         <div className="grid4" style={{ marginTop: 12 }}>
           <label className="f">{t("Extra hours", "Horas extra")}<NumInput value={e.extraHrs} onChange={(n) => set({ extraHrs: n })} /></label>
@@ -42,7 +44,7 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
 
       <div className="card"><div className="card-h"><h2>{t("Materials", "Materiales")}</h2><b>{money(m.totalCost)}</b></div><div className="card-b">
         <label className="f" style={{ maxWidth: 320 }}>{t("Who buys the materials", "Quién compra los materiales")}<select value={e.matBuyer} onChange={(ev) => set({ matBuyer: ev.target.value as Estimate["matBuyer"] })}>
-          <option value="me">{t("Me", "Yo")}</option><option value="paint">{t("Client buys the paint", "El cliente compra la pintura")}</option><option value="client">{t("Client buys everything", "El cliente compra todo")}</option></select></label>
+          <option value="me">{t("Me", "Yo")}</option>{painting && <option value="paint">{t("Client buys the paint", "El cliente compra la pintura")}</option>}<option value="client">{t("Client buys everything", "El cliente compra todo")}</option></select></label>
         {m.sqft > 0 && <Row dim a={t(`Cabinet surface · ${m.sqft} sq ft`, `Superficie de gabinetes · ${m.sqft} pie²`)} b="" />}
         {m.buyPrimer > 0 && <Row a={`${s.materials.primerName} · ${m.buyPrimer} gal`} b={money(m.primerCost)} />}
         {m.buyPaint > 0 && <Row a={`${s.materials.paintName} · ${m.buyPaint} gal`} b={money(m.paintCost)} />}

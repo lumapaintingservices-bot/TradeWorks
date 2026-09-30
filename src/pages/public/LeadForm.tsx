@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { getTop, setTop } from "../../data/repo";
 import type { LeadDetails } from "../../lib/leads";
+import { leadFormFor, normalizeTrade, questionsFor, serviceLabel } from "../../lib/trades";
 import { safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import "./LeadForm.css";
 
 /** Public lead questionnaire: /request?c={companyId}&src=thumbtack&ref={clientId}. Always light, contractor-branded. */
-type Pub = { name?: string; phone?: string; website?: string; instagram?: string; reviews?: string; logoUrl?: string; brandColor?: string };
+type Pub = { trade?: string; name?: string; phone?: string; website?: string; instagram?: string; reviews?: string; logoUrl?: string; brandColor?: string };
 type Lang = "en" | "es";
 type Pair = [string, string];
 const MAX_PHOTOS = 5;
 const STEPS = ["intro", "types", "details", "tier", "when", "photos", "contact"] as const;
+/** Other trades have no finish-level step (that one is about cabinets and paint). */
+const STEPS_TRADE = ["intro", "types", "details", "when", "photos", "contact"] as const;
 const TYPES = ["cabinets", "vanity", "interior", "exterior", "other"] as const;
 const SVC_EN: Record<string, string> = { cabinets: "Kitchen cabinets", vanity: "Bathroom vanity", interior: "Interior painting", exterior: "Exterior painting", other: "Other" };
 const SRC_MAP: Record<string, string> = { referral: "Referral", ref: "Referral", thumbtack: "Thumbtack", tt: "Thumbtack", google: "Google", gbp: "Google", instagram: "Instagram", ig: "Instagram", facebook: "Facebook", fb: "Facebook", nextdoor: "Nextdoor", website: "Website", web: "Website" };
@@ -35,6 +38,12 @@ const ICO: Record<string, string> = {
   interior: '<rect x="4" y="3" width="13" height="6" rx="1.5"/><path d="M17 6h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-7v3"/><rect x="10" y="14" width="4" height="7" rx="1"/>',
   exterior: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
   other: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  sparkle: '<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.7 1.8 1.8.7-1.8.7L19 20l-.7-1.8-1.8-.7 1.8-.7z"/>',
+  home: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  plug: '<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v5"/>',
+  drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+  leaf: '<path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15"/><path d="M5 19 13 11"/>',
   cam: '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
 };
 
@@ -91,6 +100,7 @@ type Form = {
   types: string[]; cab: { doors: number; drawers: number; countMe: boolean; island: string; style: string; current: string; extras: string[] };
   intr: { rooms: string[]; bedrooms: number; bathrooms: number; surfaces: string[]; size: string }; ext: { stories: string; surfaces: string[] };
   other: string; tierCab: string; tierWall: string; when: string; date: string; photos: string[]; message: string;
+  ans: Record<string, string | string[] | number>; // answers of a non-painting trade's questions (question id -> value)
   name: string; phone: string; email: string; address: string; contact: string; heard: string;
 };
 
@@ -105,7 +115,7 @@ export default function LeadForm() {
   const [f, setF] = useState<Form>({
     types: [], cab: { doors: 0, drawers: 0, countMe: false, island: "", style: "", current: "", extras: [] },
     intr: { rooms: [], bedrooms: 1, bathrooms: 1, surfaces: [], size: "" }, ext: { stories: "", surfaces: [] },
-    other: "", tierCab: "", tierWall: "", when: "", date: "", photos: [], message: "",
+    other: "", tierCab: "", tierWall: "", when: "", date: "", photos: [], message: "", ans: {},
     name: q.get("name") || "", phone: q.get("phone") || "", email: q.get("email") || "", address: "", contact: "text", heard: SRC,
   });
   const [hp, setHp] = useState("");
@@ -127,8 +137,10 @@ export default function LeadForm() {
   const style = { "--acc": brand, ...(isDefaultBrand ? { "--acc-2": "#fdeee6", "--acc-ink": "#c2501b", "--acc-on": "#fffaf7" } : {}) } as React.CSSProperties;
   const isCab = f.types.includes("cabinets") || f.types.includes("vanity");
   const isWall = f.types.includes("interior") || f.types.includes("exterior");
-  const total = STEPS.length - 1;
-  const name = STEPS[step];
+  const tradeId = normalizeTrade(pub?.trade), TL = leadFormFor(tradeId); // TL = null: painting's own form
+  const steps: readonly (typeof STEPS)[number][] = TL ? STEPS_TRADE : STEPS;
+  const total = steps.length - 1;
+  const name = steps[step];
   const phone = pub?.phone || "";
   const site = safeUrl(pub?.website), insta = safeUrl(pub?.instagram), reviewsUrl = safeUrl(pub?.reviews); // user-entered links: only http(s) ever reaches an href
 
@@ -140,7 +152,7 @@ export default function LeadForm() {
     </div></div>
   );
 
-  const go = (d: number) => { setErr(""); setStep((s) => Math.max(0, Math.min(STEPS.length - 1, s + d))); window.scrollTo(0, 0); };
+  const go = (d: number) => { setErr(""); setStep((s) => Math.max(0, Math.min(steps.length - 1, s + d))); window.scrollTo(0, 0); };
   const next = () => {
     if (name === "types" && !f.types.length) { setErr(t("Pick at least one project.", "Escoja al menos un proyecto.")); return; }
     if (name === "contact") { void submit(); return; }
@@ -159,7 +171,18 @@ export default function LeadForm() {
     setErr(""); setBusy(true);
     const id = crypto.randomUUID(), photoIds = f.photos.map(() => crypto.randomUUID());
     const has = (k: string) => f.types.includes(k);
-    const details: LeadDetails = {
+    const answers: Record<string, string | string[] | number> = {};
+    if (TL) for (const qn of questionsFor(tradeId, f.types)) {
+      const v = f.ans[qn.id];
+      if (qn.kind === "text") { const x = String(v || "").trim().slice(0, 800); if (x) answers[qn.id] = x; }
+      else if (qn.kind === "multi") { if (Array.isArray(v) && v.length) answers[qn.id] = v.slice(0, 8); }
+      else if (qn.kind === "count") { if (typeof v === "number" && v > 0) answers[qn.id] = v; }
+      else if (typeof v === "string" && v) answers[qn.id] = v;
+    }
+    const details: LeadDetails = TL ? {
+      v: 2, types: f.types.slice(0, 5), trade: tradeId, answers, cab: null, intr: null, ext: null, other: "", tierCab: "", tierWall: "",
+      when: f.when, date: f.date, contact: f.contact, src: SRC, ref: String(q.get("ref") || "").slice(0, 60),
+    } : {
       v: 2, types: f.types.slice(0, 5),
       cab: isCab ? { doors: f.cab.countMe ? 0 : f.cab.doors, drawers: f.cab.countMe ? 0 : f.cab.drawers, countMe: !!f.cab.countMe, island: f.cab.island, style: f.cab.style, current: f.cab.current, extras: f.cab.extras.slice(0, 6) } : null,
       intr: has("interior") ? { rooms: f.intr.rooms.slice(0, 10), bedrooms: f.intr.rooms.includes("bedrooms") ? f.intr.bedrooms : 0, bathrooms: f.intr.rooms.includes("bathrooms") ? f.intr.bathrooms : 0, surfaces: f.intr.surfaces.slice(0, 8), size: f.intr.size } : null,
@@ -173,7 +196,7 @@ export default function LeadForm() {
       await setTop("leads", id, {
         owner: cid, name: f.name.trim().slice(0, 100), phone: f.phone.trim().slice(0, 30), email: f.email.trim().slice(0, 120),
         city: f.address.trim().slice(0, 80), address: f.address.trim().slice(0, 160),
-        service: f.types.map((k) => SVC_EN[k]).join(", ").slice(0, 120) || "Other",
+        service: f.types.map((k) => (TL ? serviceLabel(tradeId, k) : SVC_EN[k])).join(", ").slice(0, 120) || "Other",
         message: f.message.trim().slice(0, 1500), heard: (SRC || f.heard || "").slice(0, 40), lang,
         photos: photoIds, details, at: new Date().toISOString(), page: String(location.href).slice(0, 200),
       }, false);
@@ -206,10 +229,27 @@ export default function LeadForm() {
     </>,
     types: () => <>
       <h1>{t("What would you like done?", "¿Qué le gustaría hacer?")}</h1><p className="lf-lead">{t("Pick everything that applies.", "Escoja todo lo que aplique.")}</p>
-      <div className="lf-grid">{TYPES.map((k) => <Opt key={k} ico={k} on={f.types.includes(k)} title={t(...typeText[k])} sub={t(...typeSub[k])} onClick={() => { setErr(""); set({ types: toggle(f.types, k) }); }} />)}</div>
+      {TL ? <div className="lf-grid">{TL.services.map((x) => <Opt key={x.id} ico={x.icon} on={f.types.includes(x.id)} title={t(x.en, x.es)} sub={t(x.subEn, x.subEs)} onClick={() => { setErr(""); set({ types: toggle(f.types, x.id) }); }} />)}</div> :
+      <div className="lf-grid">{TYPES.map((k) => <Opt key={k} ico={k} on={f.types.includes(k)} title={t(...typeText[k])} sub={t(...typeSub[k])} onClick={() => { setErr(""); set({ types: toggle(f.types, k) }); }} />)}</div>}
     </>,
     details: () => {
       const c = f.cab, i = f.intr, x = f.ext;
+      if (TL) {
+        const setA = (id: string, v: string | string[] | number) => set({ ans: { ...f.ans, [id]: v } });
+        return <>
+          <h1>{t(TL.title.en, TL.title.es)}</h1><p className="lf-lead">{t(TL.sub.en, TL.sub.es)}</p>
+          {questionsFor(tradeId, f.types).map((qn) => {
+            const v = f.ans[qn.id], opts = Object.fromEntries((qn.options || []).map((o) => [o.id, t(o.en, o.es)]));
+            return (
+              <Box key={qn.id} title={t(qn.en, qn.es)} sub={qn.subEn ? t(qn.subEn, qn.subEs || qn.subEn) : undefined}>
+                {qn.kind === "one" && <Chips opts={opts} sel={typeof v === "string" ? v : ""} onPick={(k) => setA(qn.id, one(typeof v === "string" ? v : "", k))} />}
+                {qn.kind === "multi" && <Chips multi opts={opts} sel={Array.isArray(v) ? v : []} onPick={(k) => setA(qn.id, toggle(Array.isArray(v) ? v : [], k))} />}
+                {qn.kind === "count" && <div className="lf-count"><div className="lbl"><b>{t("How many?", "¿Cuántos?")}</b></div><Stepper v={typeof v === "number" ? v : 0} onChange={(n) => setA(qn.id, n)} /></div>}
+                {qn.kind === "text" && <textarea maxLength={800} value={typeof v === "string" ? v : ""} onChange={(e) => setA(qn.id, e.target.value)} placeholder={t(qn.placeholderEn || "", qn.placeholderEs || qn.placeholderEn || "")} />}
+              </Box>);
+          })}
+        </>;
+      }
       return <>
         <h1>{t("Tell us about your project", "Cuéntenos de su proyecto")}</h1><p className="lf-lead">{t("Rough numbers are perfectly fine.", "Números aproximados están perfectos.")}</p>
         {isCab && <>
@@ -272,14 +312,14 @@ export default function LeadForm() {
         {f.photos.map((p, i) => <div className="ph" key={i}><img src={p} alt="" /><button type="button" aria-label="remove" onClick={() => set({ photos: f.photos.filter((_, j) => j !== i) })}>×</button></div>)}
         {f.photos.length < MAX_PHOTOS && <label className="add"><input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { void addPhotos(e.target.files); e.target.value = ""; }} />{svg(ICO.cam, 24, 1.8)}{t("Add photo", "Agregar foto")}</label>}
       </div>
-        <div className="lf-tips">{[["One wide photo of the whole kitchen or room", "Una foto amplia de toda la cocina o el cuarto"], ["A close-up of a door or wall to see the current finish", "Una de cerca de una puerta o pared para ver el acabado actual"], ["Good light — open the blinds or turn on the lights", "Buena luz — abra las persianas o prenda las luces"]].map((x, i) => <div key={i}><i>●</i>{t(x[0], x[1])}</div>)}</div></div>
+        <div className="lf-tips">{(TL ? TL.photoTips.map((x) => [x.en, x.es]) : [["One wide photo of the whole kitchen or room", "Una foto amplia de toda la cocina o el cuarto"], ["A close-up of a door or wall to see the current finish", "Una de cerca de una puerta o pared para ver el acabado actual"], ["Good light — open the blinds or turn on the lights", "Buena luz — abra las persianas o prenda las luces"]]).map((x, i) => <div key={i}><i>●</i>{t(x[0], x[1])}</div>)}</div></div>
       <div className="lf-box"><label className="lf-f"><span>{t("Anything else we should know?", "¿Algo más que debamos saber?")} <i>{t("(optional)", "(opcional)")}</i></span>
-        <textarea maxLength={1500} value={f.message} onChange={(e) => set({ message: e.target.value })} placeholder={t("Colors you have in mind, questions, access details…", "Colores que tiene en mente, preguntas, acceso a la casa…")} /></label></div>
+        <textarea maxLength={1500} value={f.message} onChange={(e) => set({ message: e.target.value })} placeholder={TL ? t(TL.messagePlaceholder.en, TL.messagePlaceholder.es) : t("Colors you have in mind, questions, access details…", "Colores que tiene en mente, preguntas, acceso a la casa…")} /></label></div>
     </>,
     contact: () => {
-      const rows: Pair[] = [[t("Project", "Proyecto"), f.types.map((k) => t(...typeText[k])).join(", ") || "—"]];
-      if (isCab) rows.push([t("Cabinets", "Gabinetes"), f.cab.countMe ? t("we'll count them", "los contamos nosotros") : `${f.cab.doors} ${t("doors", "puertas")} · ${f.cab.drawers} ${t("drawers", "cajones")}`]);
-      const tiers = [f.tierCab && tierName(TIERS.cabinets, f.tierCab), f.tierWall && tierName(TIERS.walls, f.tierWall)].filter(Boolean);
+      const rows: Pair[] = [[t("Project", "Proyecto"), f.types.map((k) => (TL ? serviceLabel(tradeId, k, lang === "es") : t(...typeText[k]))).join(", ") || "—"]];
+      if (isCab && !TL) rows.push([t("Cabinets", "Gabinetes"), f.cab.countMe ? t("we'll count them", "los contamos nosotros") : `${f.cab.doors} ${t("doors", "puertas")} · ${f.cab.drawers} ${t("drawers", "cajones")}`]);
+      const tiers = TL ? [] : [f.tierCab && tierName(TIERS.cabinets, f.tierCab), f.tierWall && tierName(TIERS.walls, f.tierWall)].filter(Boolean);
       if (tiers.length) rows.push([t("Finish", "Acabado"), tiers.join(" / ")]);
       if (f.when) rows.push([t("When", "Cuándo"), whens[f.when] + (f.date ? " · " + f.date : "")]);
       rows.push([t("Photos", "Fotos"), String(f.photos.length)]);
@@ -307,7 +347,7 @@ export default function LeadForm() {
   };
 
   const wa = "https://wa.me/1" + digits(phone);
-  const stepLbl = [t("Project", "Proyecto"), t("Details", "Detalles"), t("Finish", "Acabado"), t("Timing", "Fecha"), t("Photos", "Fotos"), t("Contact", "Contacto")];
+  const stepLbl = [t("Project", "Proyecto"), t("Details", "Detalles"), ...(TL ? [] : [t("Finish", "Acabado")]), t("Timing", "Fecha"), t("Photos", "Fotos"), t("Contact", "Contacto")];
   const last = step === total;
   const parts = (pub.name || "").split(" ");
 

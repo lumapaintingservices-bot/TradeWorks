@@ -2,6 +2,7 @@
 import { num, r2, money } from "./money";
 import { SERVICES } from "./services.data";
 import { defaultSettings } from "./settings";
+import { catalogHrs, findTradeJobType, isPaintingTrade, leadServiceJob, jobTypePreset, tradeById, tradeDefaultPreset, tradeJobTypes, usesCabinetTools } from "./trades";
 import type { Client, Discount, Estimate, Item, JobType, Settings, TypePreset } from "./types";
 
 export const JOB_TYPES: { id: JobType; en: string; es: string; hint: [string, string] }[] = [
@@ -11,7 +12,16 @@ export const JOB_TYPES: { id: JobType; en: string; es: string; hint: [string, st
   { id: "other", en: "Other job", es: "Otro trabajo", hint: ["Drywall, repairs, anything else", "Drywall, reparaciones, lo que sea"] },
 ];
 export const jobTypeOf = (e?: Pick<Estimate, "jobType"> | null): JobType => (e && e.jobType) || "cabinets";
-export const jobTypeLabel = (id: JobType, es = false) => { const t = JOB_TYPES.find((x) => x.id === id) || JOB_TYPES[0]; return es ? t.es : t.en; };
+export const jobTypeLabel = (id: JobType, es = false) => {
+  const t = JOB_TYPES.find((x) => x.id === id);
+  if (t) return es ? t.es : t.en;
+  const f = findTradeJobType(id); // a job type of another trade (cleaning, electrical, ...)
+  if (f) return es ? f.job.es : f.job.en;
+  return es ? JOB_TYPES[0].es : JOB_TYPES[0].en;
+};
+/** The job types offered for a trade: painting's four (JOB_TYPES), otherwise the trade's own. */
+export const jobTypesOf = (trade?: string | null): { id: JobType; en: string; es: string; hint: [string, string] }[] =>
+  isPaintingTrade(trade) ? JOB_TYPES : tradeJobTypes(trade).map((j) => ({ id: j.id, en: j.en, es: j.es, hint: j.hint }));
 export const svcById = (id?: string) => SERVICES.find((s) => s.id === id) || null;
 /** Rate a NEW "other work" line starts with: the contractor's override from Settings (settings.serviceRates) or the catalog default. */
 export const serviceRate = (s: Pick<Settings, "serviceRates">, sv: { id: string; rate: number }): number => {
@@ -112,6 +122,13 @@ export function jobSqft(e: Estimate, s: Settings) {
 }
 
 export function calcMaterials(e: Estimate, s: Settings) {
+  if (!usesCabinetTools(s.trade)) { // the paint & supplies calculator is for painting only; other trades enter their real materials cost
+    return {
+      sqft: 0, primerGal: 0, paintGal: 0, buyPrimer: 0, buyPaint: 0, primerCost: 0, paintCost: 0,
+      wallSqft: 0, wallGal: 0, buyWall: 0, wallCost: 0, wallPrimerGal: 0, buyWallPrimer: 0, wallPrimerCost: 0,
+      sundries: 0, supplyLines: [] as { name: string; units: number; basis: string; amt: number }[], totalCost: 0,
+    };
+  }
   const m = s.materials;
   const doors = num(e.doors), drawers = num(e.drawers);
   const sqft = jobSqft(e, s);
@@ -178,7 +195,7 @@ export function jobHours(e: Estimate, s: Settings, lang: "en" | "es" = "en") {
   (e.items || []).forEach((it) => {
     const d = lang === "es" ? it.descEs || it.desc : it.desc || it.descEs;
     if (it.hrs !== undefined && it.hrs !== "" && it.hrs !== null) add(d || TT("Line", "Línea"), 1, num(it.hrs), TT("hours you typed", "horas que pusiste"));
-    else add(d || TT("Line", "Línea"), it.qty, num((p.svcHrs || {})[it.svc || ""]));
+    else add(d || TT("Line", "Línea"), it.qty, catalogHrs(s, it.svc) || num((p.svcHrs || {})[it.svc || ""]));
   });
   (e.changeOrders || []).forEach((co) => { if (co.status === "signed") add(TT("Change order #", "Cambio #") + co.n, 1, co.hours); });
   if (num(e.extraHrs)) { rows.push({ label: TT("Extra hours", "Horas extra"), qty: 1, per: num(e.extraHrs), h: num(e.extraHrs) }); tot += num(e.extraHrs); }
@@ -223,7 +240,13 @@ export function typePreset(s: Settings, type: JobType): TypePreset {
     return { days: num(s.processDays) || 5, spec: s.pricing.spec, specEs: s.pricing.specEs, scopeEn: s.scope.en.join("\n"), scopeEs: s.scope.es.join("\n"), termsEn: s.terms.en.join("\n"), termsEs: s.terms.es.join("\n") };
   }
   const d = defaultSettings().typePresets;
-  return s.typePresets[type] || d[type] || d.other!;
+  const own = s.typePresets[type];
+  if (own) return own;
+  if (!isPaintingTrade(s.trade) || !d[type]) { // a trade job type: the trade's standard texts (edits are saved in settings.typePresets[id])
+    const tp = jobTypePreset(type) || tradeDefaultPreset(s.trade);
+    if (tp) return tp;
+  }
+  return d[type] || d.other!;
 }
 export function applyTypePreset(e: Estimate, s: Settings, type: JobType): Estimate {
   const p = typePreset(s, type);
@@ -232,7 +255,7 @@ export function applyTypePreset(e: Estimate, s: Settings, type: JobType): Estima
 export function servicesLine(e: Estimate, s: Settings, lang: "en" | "es"): string {
   const es = lang === "es", type = jobTypeOf(e);
   if (type !== "cabinets") {
-    const p = s.typePresets[type];
+    const p = s.typePresets[type] || (!isPaintingTrade(s.trade) ? jobTypePreset(type) : null);
     const v = p && (es ? p.servicesEs || p.services : p.services || p.servicesEs);
     if (v) return v;
   }
@@ -251,8 +274,13 @@ export function jobWhat(e: Estimate, lang: "en" | "es" = "en") {
   const f = firstShort(e, lang === "es", 40);
   return jobTypeLabel(jobTypeOf(e), lang === "es") + (f ? " · " + f : "");
 }
-export function suggestTypeFor(c?: Client | null): JobType | "" {
+export function suggestTypeFor(c?: Client | null, trade?: string | null): JobType | "" {
   if (!c) return "";
+  if (!isPaintingTrade(trade)) { // request-form services of another trade map to that trade's job types
+    const det = c.web?.details, ty = det?.types || [];
+    for (const id of ty) { const j = leadServiceJob(trade, id); if (j) return j; }
+    return "";
+  }
   const s = String(c.web?.service || "").toLowerCase(), ty = c.web?.details?.types;
   if (ty && ty.length) {
     if (ty.includes("cabinets") || ty.includes("vanity")) return "cabinets";
@@ -274,7 +302,7 @@ export function blankEstimate(s: Settings, number: string, lang: "en" | "es" = "
   const p = s.pricing, t = s.tax;
   return {
     id: uid("e"), number, date: todayISO(), validDays: num(p.validDays) || 30, status: "Draft",
-    clientId: "", clientName: "", phone: "", email: "", address: "", docLang: lang, jobType: "cabinets",
+    clientId: "", clientName: "", phone: "", email: "", address: "", docLang: lang, jobType: isPaintingTrade(s.trade) ? "cabinets" : tradeById(s.trade).jobTypes[0]?.id || "cabinets",
     doors: 0, drawers: 0, frames: 0, boxes: 0, doorRate: num(p.doorRate), drawerRate: num(p.drawerRate), frameRate: num(p.frameRate), boxRate: num(p.boxRate),
     frameMode: p.frameMode || "included", boxMode: p.boxMode || "included", spec: p.spec, specEs: p.specEs, items: [], upgrades: [],
     discountMode: "", discountCode: "", manualType: "percent", manualValue: 0, manualLabel: "Discount", manualLabelEs: "Descuento",
