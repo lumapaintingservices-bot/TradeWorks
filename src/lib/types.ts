@@ -96,6 +96,10 @@ export type Settings = {
   payHandles?: { venmo?: string; cashapp?: string; paypal?: string; checkTo?: string };
   reviewUrl?: string; websiteUrl?: string; instagramUrl?: string;
   followUpDays?: number; messageTemplates?: MessageTemplates; leadSources?: string[];
+  /** An unpaid invoice shows up as "overdue" after this many days (default 7). */
+  invoiceDueDays?: number;
+  /** Reminders the daily worker e-mails by itself (workers/reminders), once per reminder. See src/lib/autoEmail.ts. */
+  autoEmail?: { on?: boolean; kinds?: string[] };
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];

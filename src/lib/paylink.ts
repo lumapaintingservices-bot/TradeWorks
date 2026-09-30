@@ -65,7 +65,16 @@ export function payHandleLines(s: Pick<Settings, "payHandles">, es: boolean): st
   return out;
 }
 
-export const payKindName = (k: PayKind, es: boolean): string =>
+/** The ways to pay as plain text, one per line ("Zelle: pay@x.com", "Venmo: @luma", "Cash"), for messages ({howtopay}). */
+export const payOptionsText = (s: Pick<Settings, "payZelle" | "payZelleName" | "payMethods" | "payHandles">, es: boolean): string =>
+  payOptionsOf(s).map((m) => {
+    const name = payKindName(m.kind, es);
+    if (m.kind === "card" || m.kind === "cash" || !m.to) return "- " + name;
+    if (m.kind === "check") return `- ${es ? "Cheque a nombre de" : "Check payable to"}: ${m.to}`;
+    return `- ${name}: ${payMethodDetail(m, es)}${m.name ? " (" + m.name + ")" : ""}`;
+  }).join("\n");
+
+export const payKindName =(k: PayKind, es: boolean): string =>
   k === "zelle" ? "Zelle" : k === "venmo" ? "Venmo" : k === "cashapp" ? "Cash App" : k === "paypal" ? "PayPal"
     : k === "check" ? (es ? "Cheque" : "Check") : k === "card" ? (es ? "Tarjeta de crédito" : "Credit card") : (es ? "Efectivo" : "Cash");
 
