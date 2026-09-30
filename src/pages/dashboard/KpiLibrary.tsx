@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useSettings } from "../../data/hooks";
 import { useT } from "../../i18n";
-import { KPI_DEFAULT, KPI_LIB, kpiFormat, kpiSeries, type Ctx, type Period, type SeriesPoint } from "../../lib/metrics";
+import { anyKpiDef, dashCardsFor, fmtKpi, isExtraKpi, kpiSeriesAny, libraryKpiIds, tradeKpiIds } from "../../lib/kpis";
+import type { Ctx, Period, SeriesPoint } from "../../lib/metrics";
 import { money } from "../../lib/money";
 import type { Settings } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -9,8 +10,8 @@ import { Modal } from "../../ui/Modal";
 import "./dashboard.css";
 
 export type DashCard = { id: string; p: Period };
-/** Prototype dashCards(): the contractor's own list, or the default four while it is empty. */
-export const dashCardsOf = (s: Settings): DashCard[] => (s.dashCards && s.dashCards.length ? s.dashCards : KPI_DEFAULT) as DashCard[];
+/** Prototype dashCards(): the contractor's own list, or the trade's default cards (painting: the default four) while it is empty. */
+export const dashCardsOf = (s: Settings): DashCard[] => dashCardsFor(s);
 
 /** Port of sparkSVG: 6 points, month labels underneath. */
 function Spark({ series }: { series: SeriesPoint[] }) {
@@ -31,7 +32,10 @@ export default function KpiLibrary({ ctx, onClose }: { ctx: Ctx; onClose(): void
   const es = useUi((s) => s.lang) === "es";
   const { settings, update } = useSettings();
   const cards = dashCardsOf(settings), on = new Set(cards.map((c) => c.id));
-  const series = useMemo(() => KPI_LIB.map((k) => kpiSeries(ctx, k.id)), [ctx]);
+  const ids = useMemo(() => libraryKpiIds(settings.trade), [settings.trade]);
+  const own = useMemo(() => new Set(tradeKpiIds(settings.trade)), [settings.trade]);
+  const defs = ids.map((id) => anyKpiDef(id)!);
+  const series = useMemo(() => ids.map((id) => kpiSeriesAny(ctx, id)), [ctx, ids]);
 
   const toggle = (id: string) => update({ dashCards: on.has(id) ? cards.filter((c) => c.id !== id) : [...cards, { id, p: "ytd" as Period }] });
   const reset = () => update({ dashCards: [] });
@@ -40,25 +44,29 @@ export default function KpiLibrary({ ctx, onClose }: { ctx: Ctx; onClose(): void
     <Modal title={t("KPI library", "Biblioteca de indicadores")} onClose={onClose} wide>
       <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>{t("Pick the cards for the top of your dashboard. Each chart shows the last 6 months.", "Escoge las tarjetas de arriba de tu panel. Cada gráfica muestra los últimos 6 meses.")}</div>
       <div className="db-klib">
-        {KPI_LIB.map((k, i) => {
+        {defs.map((k, i) => {
           const ser = series[i], last = ser[ser.length - 1].v, isOn = on.has(k.id);
           return (
-            <div key={k.id} className={"db-kl" + (isOn ? " on" : "")}>
+            <Fragment key={k.id}>
+              {own.size > 0 && i === 0 && <div className="db-kl-sec">{t("For your trade", "Para tu oficio")}</div>}
+              {own.size > 0 && i === own.size && <div className="db-kl-sec">{t("General", "Generales")}</div>}
+            <div className={"db-kl" + (isOn ? " on" : "")}>
               <div className="db-kl-h"><b>{es ? k.es : k.en}</b><span>{t("Last 6 months", "Últimos 6 meses")}</span></div>
               <div className="db-kl-s">{es ? k.subEs : k.subEn}</div>
               <Spark series={ser} />
               <div className="db-kl-f">
-                <b>{kpiFormat(k, last, money)}</b>
+                <b>{last === 0 && isExtraKpi(k.id) && k.format !== "money" && k.format !== "count" ? "—" : fmtKpi(k, last, money)}</b>
                 <button className={"btn sm" + (isOn ? "" : " pri")} onClick={() => toggle(k.id)}>
                   {isOn ? t("× Remove from dashboard", "× Quitar del panel") : t("+ Add to dashboard", "+ Agregar al panel")}
                 </button>
               </div>
             </div>
+            </Fragment>
           );
         })}
       </div>
       <div className="db-kl-foot">
-        <button className="btn sm" onClick={reset}>{t("Back to the default four", "Regresar a las cuatro de siempre")}</button>
+        <button className="btn sm" onClick={reset}>{t("Back to the default cards", "Regresar a las tarjetas de siempre")}</button>
         <button className="btn pri" onClick={onClose}>{t("Done", "Listo")}</button>
       </div>
     </Modal>

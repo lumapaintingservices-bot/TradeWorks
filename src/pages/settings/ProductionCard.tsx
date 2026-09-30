@@ -1,5 +1,6 @@
 import { useSettings } from "../../data/hooks";
 import { useT } from "../../i18n";
+import { usesCabinetTools } from "../../lib/trades";
 import { blankEstimate, jobHours } from "../../lib/estimate";
 import { firstBadNumber } from "../../lib/settingsForm";
 import { SERVICES } from "../../lib/services.data";
@@ -15,7 +16,8 @@ export default function ProductionCard() {
   const { settings, update } = useSettings();
   const { draft: p, setDraft, dirty } = useDraft<Prod>(settings.production);
   const set = (patch: Partial<Prod>) => setDraft({ ...p, ...patch });
-  const crew = p.laborMode === "crew", piece = p.payBy === "piece";
+  const cab = usesCabinetTools(settings.trade);
+  const crew = p.laborMode === "crew", piece = cab && p.payBy === "piece";
 
   async function save() {
     if (firstBadNumber(p)) return t("Numbers can't be negative. Please check the rates.", "Los números no pueden ser negativos. Revisa las tasas.");
@@ -43,11 +45,13 @@ export default function ProductionCard() {
 
       {crew ? <>
         <Sub>{t("How you pay them", "Cómo les pagas")}</Sub>
-        <Pills value={p.payBy} options={[["hour", t("By the hour", "Por hora")], ["piece", t("By the piece", "Por pieza")]]} onChange={(v) => set({ payBy: v })} />
+        {cab
+          ? <Pills value={p.payBy} options={[["hour", t("By the hour", "Por hora")], ["piece", t("By the piece", "Por pieza")]]} onChange={(v) => set({ payBy: v })} />
+          : <Help>{t("Workers are paid by the hour.", "A los trabajadores se les paga por hora.")}</Help>}
         <div style={{ height: 12 }} />
         <Grid>
           <Num label={piece ? t("Per hour, for work not paid by the piece ($)", "Por hora, para lo que no es por pieza ($)") : t("Pay per hour ($)", "Pago por hora ($)")} value={p.laborRate} onChange={(n) => set({ laborRate: n })} step="1" />
-          {piece && <>
+          {piece && cab && <>
             <Num label={t("Per door ($)", "Por puerta ($)")} value={p.doorPay} onChange={(n) => set({ doorPay: n })} step="1" />
             <Num label={t("Per drawer front ($)", "Por cajón ($)")} value={p.drawerPay} onChange={(n) => set({ drawerPay: n })} step="1" />
             <Num label={t("Per frame, if charged apart ($)", "Por marco, si se cobra aparte ($)")} value={p.framePay} onChange={(n) => set({ framePay: n })} step="1" />
@@ -64,6 +68,7 @@ export default function ProductionCard() {
         </Grid>
       )}
 
+      {cab && <>
       <Sub>{t("How long each piece takes", "Cuánto tarda cada pieza")}</Sub>
       <Grid>
         <Num label={t("Hours per cabinet door", "Horas por puerta")} value={p.doorHrs} onChange={(n) => set({ doorHrs: n })} step="0.05" />
@@ -76,7 +81,9 @@ export default function ProductionCard() {
       <div className="st-example">
         {t(`Example: a kitchen with 20 doors and 10 drawer fronts takes about ${Math.round(exH * 10) / 10} hours, around ${exDays} working days${crew ? " for your crew" : ""}.`, `Ejemplo: una cocina con 20 puertas y 10 cajones tarda unas ${Math.round(exH * 10) / 10} horas, cerca de ${exDays} días de trabajo${crew ? " para tu cuadrilla" : ""}.`)}
       </div>
+      </>}
 
+      {cab ? <>
       <Sub>{t("Hours per unit for your other services", "Horas por unidad de tus otros servicios")}</Sub>
       <div className="st-rows">
         {SERVICES.map((sv) => {
@@ -90,6 +97,7 @@ export default function ProductionCard() {
           );
         })}
       </div>
+      </> : <Help>{t("Hours per unit for each of your services are set in Services & prices (“Your hours per unit”).", "Las horas por unidad de cada servicio se ponen en Servicios y precios (“Tus horas por unidad”).")}</Help>}
     </SaveCard>
   );
 }

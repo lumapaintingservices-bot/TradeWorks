@@ -31,8 +31,10 @@ export type Trade = {
   jobTypes: TradeJobType[];
   /** null = painting's built-in request form. */
   lead: TradeLead | null;
-  /** Data only for now (stage 2 builds the per-trade dashboard from these metric ids). */
+  /** Dashboard KPI ids (src/lib/kpis.ts): the default cards while the company has not customized its dashboard. */
   kpis: string[];
+  /** Extra trade KPI ids offered first in the "add a card" library, before the general ones. */
+  kpiMore: string[];
   /** Cabinet controls (doors/drawers/frames/boxes, finish tiers) and the paint & supplies calculator. */
   cabinetTools: boolean;
 };
@@ -128,7 +130,8 @@ const cleaning: Trade = {
     ],
     photoTips: PHOTO_TIPS, messagePlaceholder: B("Access details, priorities, anything we should know…", "Acceso a la casa, prioridades, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "hoursBilled", "revenuePerHour", "recurringClients", "repeatRate", "profit"],
+  kpis: ["sales_won", "repeat_share", "revenue_per_hour", "jobs_per_week", "to_collect", "job_margin"],
+  kpiMore: ["avg_ticket", "close_rate", "earn_per_hour", "hours_logged", "top_source_rev", "net_profit"],
   cabinetTools: false,
 };
 
@@ -184,7 +187,8 @@ const electrical: Trade = {
     photoTips: [B("A photo of the panel, fixture or outlet", "Una foto del panel, la lámpara o el tomacorriente"), B("A wide photo of the area", "Una foto amplia del área"), B("Good light — turn on the lights", "Buena luz — prenda las luces")],
     messagePlaceholder: B("Access details, best time to call, anything we should know…", "Acceso, mejor hora para llamar, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "hoursBilled", "revenuePerHour", "materialsCost", "permitsPending", "profit"],
+  kpis: ["sales_won", "jobs_won", "avg_ticket", "mat_margin", "quote_to_win_days", "to_collect"],
+  kpiMore: ["close_rate", "job_margin", "profit_after_mat", "earn_per_hour", "top_source_rev", "net_profit"],
   cabinetTools: false,
 };
 
@@ -239,7 +243,8 @@ const plumbing: Trade = {
     photoTips: [B("A photo of the leak, fixture or heater", "Una foto de la fuga, el accesorio o el calentador"), B("A wide photo of the area", "Una foto amplia del área"), B("Good light — turn on the lights", "Buena luz — prenda las luces")],
     messagePlaceholder: B("Access details, best time to call, anything we should know…", "Acceso, mejor hora para llamar, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "hoursBilled", "revenuePerHour", "materialsCost", "callbacks", "profit"],
+  kpis: ["sales_won", "jobs_won", "avg_ticket", "mat_margin", "quote_to_win_days", "to_collect"],
+  kpiMore: ["close_rate", "job_margin", "profit_after_mat", "earn_per_hour", "top_source_rev", "net_profit"],
   cabinetTools: false,
 };
 
@@ -291,7 +296,8 @@ const handyman: Trade = {
     ],
     photoTips: PHOTO_TIPS, messagePlaceholder: B("Access details, best time to call, anything we should know…", "Acceso, mejor hora para llamar, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "hoursBilled", "revenuePerHour", "materialsCost", "repeatRate", "profit"],
+  kpis: ["sales_won", "jobs_won", "avg_ticket", "hours_logged", "earn_per_hour", "to_collect"],
+  kpiMore: ["close_rate", "job_margin", "revenue_per_hour", "mat_margin", "top_source_rev", "net_profit"],
   cabinetTools: false,
 };
 
@@ -356,7 +362,8 @@ const landscaping: Trade = {
     photoTips: [B("One wide photo of the whole yard", "Una foto amplia de todo el jardín"), B("A close-up of the area to work on", "Una de cerca del área a trabajar"), B("Daylight photos show the most", "Las fotos con luz de día muestran más")],
     messagePlaceholder: B("Access details, plants you have in mind, anything we should know…", "Acceso, plantas que tiene en mente, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "recurringRevenue", "activeRoutes", "hoursBilled", "revenuePerHour", "profit"],
+  kpis: ["sales_won", "repeat_share", "revenue_per_hour", "jobs_per_month", "to_collect", "job_margin"],
+  kpiMore: ["avg_ticket", "close_rate", "earn_per_hour", "hours_logged", "top_source_rev", "net_profit"],
   cabinetTools: false,
 };
 
@@ -385,7 +392,8 @@ const custom: Trade = {
     ],
     photoTips: PHOTO_TIPS, messagePlaceholder: B("Access details, best time to call, anything we should know…", "Acceso, mejor hora para llamar, lo que debamos saber…"),
   },
-  kpis: ["revenue", "jobs", "avgTicket", "hoursBilled", "profit"],
+  kpis: ["sales_won", "to_collect", "avg_ticket", "close_rate", "profit_after_mat", "earn_per_hour"],
+  kpiMore: ["job_margin", "revenue_per_hour", "top_source_rev", "net_profit", "jobs_won", "hours_logged"],
   cabinetTools: false,
 };
 
@@ -400,7 +408,8 @@ const painting: Trade = {
   depositPct: 50,
   scope: { en: [], es: [] }, terms: { en: [], es: [] }, // settings.scope / settings.terms and typePresets.data.ts
   jobTypes: [], lead: null,
-  kpis: ["revenue", "jobs", "avgTicket", "profit", "margin", "doors", "sqftPainted", "materialsCost"],
+  kpis: ["job_margin", "net_profit", "sales_won", "backlog"],
+  kpiMore: [],
   cabinetTools: true,
 };
 

@@ -9,13 +9,14 @@ import { jobTypeLabel, jobTypeOf } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { todayISO } from "../../lib/followups";
 import {
-  cashThisMonth, invoiceSummary, jobCosts, kpiDef, kpiFormat, kpiValue, KPI_PERIODS, moneySeries, nameOf, plCompare, stillToCollect, type Period,
+  cashThisMonth, invoiceSummary, jobCosts, KPI_PERIODS, moneySeries, nameOf, plCompare, stillToCollect, type Period,
 } from "../../lib/metrics";
 import { money } from "../../lib/money";
 import { useUi } from "../../store/ui";
 import { Icon } from "../../ui/Icon";
 import { FollowUpList } from "../FollowUps";
 import GoalCard from "./GoalCard";
+import { anyKpiDef, fmtKpi, kpiResult } from "../../lib/kpis";
 import KpiLibrary, { dashCardsOf } from "./KpiLibrary";
 import "./dashboard.css";
 
@@ -44,7 +45,7 @@ export default function OverviewTab() {
   const [plp, setPlp] = useState<Period>(pl0);
 
   const cards = dashCardsOf(settings);
-  const kpis = useMemo(() => cards.map((c) => ({ c, def: kpiDef(c.id), r: kpiValue(ctx, c.id, c.p) })).filter((x) => x.def), [ctx, cards]);
+  const kpis = useMemo(() => cards.map((c) => ({ c, def: anyKpiDef(c.id), r: kpiResult(ctx, c.id, c.p) })).filter((x) => x.def), [ctx, cards]);
   const money12 = useMemo(() => moneySeries(ctx, 12), [ctx]);
   const owe = useMemo(() => stillToCollect(ctx), [ctx]);
   const plc = useMemo(() => plCompare(ctx, plp), [ctx, plp]);
@@ -80,7 +81,7 @@ export default function OverviewTab() {
       </div>
       <div className="db-kgrid">
         {kpis.map(({ c, def, r }, i) => (
-          <KpiCard key={c.id + i} id={c.id} title={es ? def!.es : def!.en} value={kpiFormat(def!, r.value, money)}
+          <KpiCard key={c.id + i} id={def!.icon} title={es ? def!.es : def!.en} value={fmtKpi(def!, r.value, money)}
             delta={r.delta} deltaIsPoints={r.deltaIsPoints} lowerIsBetter={def!.lowerIsBetter} subtitle={es ? def!.subEs : def!.subEn}
             period={def!.asOfToday ? undefined : c.p} onPeriodChange={(p) => setPeriod(i, p)} t={t} />
         ))}
