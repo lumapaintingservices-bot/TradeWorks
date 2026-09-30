@@ -94,8 +94,10 @@ Pay page button "Pay by card or bank" -> `/api/pay/checkout` (public, token only
 on the contractor's account. Connect webhook `/api/pay/webhook` (STRIPE_CONNECT_WEBHOOK_SECRET) -> `functions/_lib/connect.js`
 marks the invoice Paid ("Card (Stripe)" / "Bank (Stripe)"), invoice.online + paylink.online, and the estimate stage
 (imports src/lib/invoices.ts statusAfterPayment; Pages bundles TS fine). Bank = "processing" first. Amount mismatch -> payClaim.
-`settings.cardPay.on` switch; `cardPayOn()` in src/lib/paylink.ts. Owner still has to: enable Connect, create the Connect webhook,
-set Pages secrets, publish rules (new: Stripe fields + paylink `online`).
+`settings.cardPay.on` switch; `cardPayOn()` in src/lib/paylink.ts. Merged (PR #14). TEST MODE set up 2026-09-30: rules published,
+Connect enabled in the Stripe sandbox (platform, merchants collect directly), Connect webhook `tradeworks-invoice-payments`
+(we_1ULUPCDcSz8Bge3yZjluWUVr, 5 events), Pages secrets STRIPE_SECRET_KEY / STRIPE_CONNECT_WEBHOOK_SECRET / FIREBASE_SERVICE_ACCOUNT.
+Still to do: first real test (connect + pay 4242), then live mode (docs/10 step 8).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
