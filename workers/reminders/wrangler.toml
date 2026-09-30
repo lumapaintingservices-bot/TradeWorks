@@ -9,8 +9,9 @@ crons = ["0 14 * * *"]
 
 [vars]
 APP_URL = "https://tradeworks-app.pages.dev"
-# An address on a domain verified in Resend, e.g. "avisos@lumapaintingservices.com". Set it here or in the dashboard.
-MAIL_FROM_ADDRESS = ""
+# An address on a domain verified in Resend (lumapaintingservices.com, DNS records added in Hover 2026-09-30). Keep it here: a
+# `wrangler deploy` replaces dashboard text variables with the values of this file.
+MAIL_FROM_ADDRESS = "reminders@lumapaintingservices.com"
 # "1" only once TradeWorks subscriptions (Stripe) are live.
 ENFORCE_BILLING = "0"
 
