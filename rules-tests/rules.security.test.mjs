@@ -273,7 +273,15 @@ await no("worker hours with a bad position", () => setDoc(doc(wrk1, "companies/c
 await ok("worker clock-out hours with in/out times", () => setDoc(doc(wrk1, "companies/c1/hours/nT"), { workerId: "w1", date: "2026-05-04", hours: 8, start: "2026-05-04T13:00:00.000Z", end: "2026-05-04T21:00:00.000Z" }));
 await no("worker hours with a time that is not text", () => setDoc(doc(wrk1, "companies/c1/hours/nT2"), { workerId: "w1", date: "2026-05-04", hours: 8, start: 5 }));
 await no("worker cannot touch c2 hours", () => setDoc(doc(wrk1, "companies/c2/hours/n1"), { workerId: "w2", hours: 1 }));
-await no("worker cannot read payouts", () => getDocs(collection(wrk1, "companies/c1/payouts")));
+await no("worker cannot list all payouts", () => getDocs(collection(wrk1, "companies/c1/payouts")));
+await env.withSecurityRulesDisabled(async (ctx) => {
+  await setDoc(doc(ctx.firestore(), "companies/c1/payouts/pw1"), { workerId: "w1", amount: 100, date: "2026-05-04" });
+  await setDoc(doc(ctx.firestore(), "companies/c1/payouts/pw2"), { workerId: "w2", amount: 200, date: "2026-05-04" });
+});
+await ok("worker reads their own payments (timesheet)", () => getDocs(query(collection(wrk1, "companies/c1/payouts"), where("workerId", "==", "w1"))));
+await no("worker cannot read another worker's payment", () => getDoc(doc(wrk1, "companies/c1/payouts/pw2")));
+await ok("worker clock with the job name", () => setDoc(doc(wrk1, "companies/c1/clock/w1"), { at: "2026-05-04T13:00:00Z", estId: "e1", jobLabel: "EST-1 · Ana" }));
+await no("worker job name too long", () => setDoc(doc(wrk1, "companies/c1/clock/w1"), { at: "2026-05-04T13:00:00Z", estId: "e1", jobLabel: "x".repeat(121) }));
 await no("worker cannot create payouts", () => setDoc(doc(wrk1, "companies/c1/payouts/p1"), { workerId: "w1", amount: 999 }));
 await ok("admin may still record any rate (owner decides pay)", () => setDoc(doc(adm1, "companies/c1/hours/n10"), { workerId: "w1", date: "2026-05-02", hours: 2, rate: 35 }));
 

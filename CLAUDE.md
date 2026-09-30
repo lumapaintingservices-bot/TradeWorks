@@ -104,6 +104,12 @@ PAUSED by the owner before finishing onboarding. Still to do: finish test onboar
 and on the hours entry (inLoc/outLoc). Map = Leaflet + OpenStreetMap tiles (lazy chunk); job sites = jobs within 3 days,
 geocoded once per address with Nominatim (1 req/s) into estimate.geo. On site = within 0.25 mi (+ GPS accuracy, capped).
 Web apps can't track in the background: last known position. _headers: geolocation=(self), OSM tiles/nominatim in CSP.
+After 8e (2026-09-30): work order uses the shared DocSheet sheet, checklist = estimate scope as written (PR #18); sign-in shows
+"Signing you in…" and gives up after 20 s with a reload button (PR #19); time clock keeps start/end times (hours.start/end).
+Timesheets: /timesheet (worker: "My pay" in the bottom bar) and /team/:workerId/timesheet (owner, "Timesheet" button in Team):
+pay by week/month chart, by job, hours by day, payments, earned/paid/owed (src/lib/timesheet.ts). Workers may now READ their own
+payouts (rules + workerScope). Worker picks the job at clock-in from today's tasks (clockJobOptions); tasks, hours and clock carry
+jobLabel ("EST-1001 · Ana Ruiz") because workers can't read estimates. Owner decision: workers see earned, paid and owed.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

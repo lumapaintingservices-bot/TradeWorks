@@ -7,7 +7,8 @@ import { fmtDate } from "../../lib/format";
 import { getLocation } from "../../lib/geo";
 import { num } from "../../lib/money";
 import { RANGE_KEYS, clockElapsed, clockTimes, rangeBounds, type RangeKey } from "../../lib/team";
-import { isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
+import { clockJobOptions, isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
+import { Link } from "react-router-dom";
 import type { HourEntry } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
@@ -32,7 +33,8 @@ export function WorkerTeam() {
   const { workerId } = useAuth();
   return (
     <div className="page">
-      <div className="page-h"><div><h1>{t("Team", "Equipo")}</h1><p>{t("Your hours and your tasks.", "Tus horas y tus tareas.")}</p></div></div>
+      <div className="page-h"><div><h1>{t("Team", "Equipo")}</h1><p>{t("Your hours and your tasks.", "Tus horas y tus tareas.")}</p></div>
+        {workerId && <Link className="btn" to="/timesheet">{t("My hours & pay", "Mis horas y pagos")} →</Link>}</div>
       {!workerId ? (
         <div className="card"><EmptyState icon="team" title={t("Ask your boss to link your worker record to your account", "Pídele a tu jefe que vincule tu registro de trabajador a tu cuenta")}
           text={t("Once it is linked you can clock in and out, log your hours and see the tasks assigned to you.", "Cuando esté vinculado podrás marcar entrada y salida, anotar tus horas y ver las tareas que te asignen.")} /></div>
@@ -55,6 +57,10 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const clock = clocks.find((c) => c.id === workerId);
 
   const [range, setRange] = useState<RangeKey>("week");
+  // the job for the next clock-in: from my tasks for today (one task: picked by itself)
+  const jobOpts = useMemo(() => clockJobOptions(tasks, todayISO()), [tasks]);
+  const [jobPick, setJobPick] = useState("");
+  const job = jobOpts.find((o) => o.estId === jobPick) || (jobPick === "none" ? undefined : jobOpts[0]);
   const [modal, setModal] = useState(false);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(Date.now());
@@ -79,7 +85,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const clockIn = () => guard("clk", async () => {
     if (clock) return;
     const loc = track ? await getLocation() : null;
-    await saveClock({ id: workerId, at: new Date().toISOString(), estId: "", ...(loc ? { loc, last: loc } : {}) });
+    await saveClock({ id: workerId, at: new Date().toISOString(), estId: job?.estId || "", ...(job ? { jobLabel: job.label } : {}), ...(loc ? { loc, last: loc } : {}) });
     if (track && !loc) noLoc(); else toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = () => guard("clk", async () => {
@@ -106,6 +112,13 @@ function WorkerBody({ workerId }: { workerId: string }) {
           <span className="wk-lbl">{t("Time clock", "Reloj de entrada")}</span>
           {el ? <b className="wk-run">● {el.h}h {String(el.m).padStart(2, "0")}m</b> : <b>{t("Not clocked in", "Sin entrada")}</b>}
           <small className="muted">{el ? t("Started at ", "Empezaste a las ") + new Date(clock!.at).toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }) : t("Tap when you start working.", "Toca cuando empieces a trabajar.")}</small>
+          {el && clock?.jobLabel && <small className="muted">{t("Job: ", "Trabajo: ")}{clock.jobLabel}</small>}
+          {!el && jobOpts.length > 1 && <label className="wk-job">{t("Job", "Trabajo")}
+            <select value={job?.estId || "none"} onChange={(e) => setJobPick(e.target.value)}>
+              {jobOpts.map((o) => <option key={o.estId} value={o.estId}>{o.label}</option>)}
+              <option value="none">{t("Other / no job", "Otro / sin trabajo")}</option>
+            </select></label>}
+          {!el && jobOpts.length === 1 && <small className="muted">{t("Job: ", "Trabajo: ")}{jobOpts[0].label}</small>}
         </div>
         {el
           ? <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockOut}><Icon name="clock" size={18} />{t("Clock out", "Salida")}</button>

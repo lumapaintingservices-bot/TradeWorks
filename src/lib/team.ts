@@ -109,11 +109,11 @@ export function clockElapsed(atISO: string, nowMs: number = Date.now()): { h: nu
 /** Local calendar day of the clock-in (the prototype used the UTC day, which is tomorrow for an evening shift in the US). */
 const localDay = (atISO: string) => { const d = new Date(atISO); return isNaN(d.getTime()) ? String(atISO).slice(0, 10) : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; };
 /** The hours entry a clock-out creates. The id is derived from worker + clock-in time, so two devices clocking out the same shift write the same record. */
-export function clockEntry(clock: { at: string; estId?: string }, worker: Worker, note: string, nowMs: number = Date.now()): HourEntry {
+export function clockEntry(clock: { at: string; estId?: string; jobLabel?: string }, worker: Worker, note: string, nowMs: number = Date.now()): HourEntry {
   return {
     id: `h-clk-${worker.id}-${Date.parse(clock.at) || 0}`, workerId: worker.id, date: localDay(clock.at),
     hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note, rate: num(worker.rate),
-    start: clock.at, end: new Date(nowMs).toISOString(),
+    start: clock.at, end: new Date(nowMs).toISOString(), ...(clock.jobLabel ? { jobLabel: clock.jobLabel } : {}),
   };
 }
 

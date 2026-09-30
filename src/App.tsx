@@ -24,6 +24,7 @@ import InvoiceDoc from "./pages/InvoiceDoc";
 import Invoices from "./pages/Invoices";
 import Pipeline from "./pages/Pipeline";
 import Team from "./pages/Team";
+import { OwnerWorkerTimesheet, WorkerTimesheet } from "./pages/team/Timesheet";
 import Expenses from "./pages/Expenses";
 import WorkOrder from "./pages/estimate/WorkOrder";
 import Reports from "./pages/Reports";
@@ -148,6 +149,8 @@ export default function App() {
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/team" element={<Team />} />
+        <Route path="/team/:workerId/timesheet" element={<OwnerWorkerTimesheet />} />
+        <Route path="/timesheet" element={<WorkerTimesheet />} />
         <Route path="/settings" element={<Settings />} />
       </Route></Route>
       <Route path="*" element={<Navigate to="/" replace />} />

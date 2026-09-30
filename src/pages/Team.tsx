@@ -92,7 +92,7 @@ function OwnerTeam() {
   const clockIn = (w: Worker) => guard("clk" + w.id, async () => {
     if (clocks.some((c) => c.id === w.id)) return;
     const job = jobOnSite(ests, todayISO(), invoices);
-    await saveClock({ id: w.id, at: new Date().toISOString(), estId: job ? job.id : "" });
+    await saveClock({ id: w.id, at: new Date().toISOString(), estId: job ? job.id : "", ...(job ? { jobLabel: jobLabel(job) } : {}) });
     toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = (w: Worker) => guard("clk" + w.id, async () => {
@@ -123,6 +123,7 @@ function OwnerTeam() {
       <div className="tm-act">
         {w.active !== false && clockBtn(w)}
         {st.owed > 0.005 && <button className="btn sm pri" onClick={() => setModal({ kind: "pay", workerId: w.id })}>{t("Pay", "Pagar")}</button>}
+        <button className="btn sm" onClick={() => nav(`/team/${w.id}/timesheet`)}>{t("Timesheet", "Hoja de horas")}</button>
         {w.phone && <a className="btn sm tm-wa" href={waLink(w.phone)} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
         <button className="btn sm" onClick={() => setModal({ kind: "worker", id: w.id })}>{t("Edit", "Editar")}</button>
       </div>
@@ -291,7 +292,7 @@ function OwnerTeam() {
         <HoursModal entry={hours.find((h) => h.id === modal.id)} workers={modal.id ? workers : activeWorkers} startWorker={modal.workerId}
           jobs={jobOptions(ests, invoices, hours.find((h) => h.id === modal.id)?.estId).map((e) => ({ id: e.id, label: jobLabel(e) }))}
           onSite={jobOnSite(ests, todayISO(), invoices)?.id || ""} onClose={() => setModal(null)}
-          onSave={async (h) => { await saveHours(h); setModal(null); toast(t("Hours saved.", "Horas guardadas.")); }}
+          onSave={async (h) => { await saveHours({ ...h, jobLabel: h.estId ? jobLabel(estById(h.estId)) : "" }); setModal(null); toast(t("Hours saved.", "Horas guardadas.")); }}
           onDelete={async (id) => { await removeHours(id); setModal(null); }} />
       )}
       {modal?.kind === "pay" && (
@@ -303,7 +304,7 @@ function OwnerTeam() {
         <TaskModal task={tasks.find((k) => k.id === modal.id)} workers={activeWorkers}
           jobs={jobOptions(ests, invoices, tasks.find((k) => k.id === modal.id)?.estId).map((e) => ({ id: e.id, label: jobLabel(e) }))}
           onClose={() => setModal(null)}
-          onSave={async (k) => { await saveTask(k); setModal(null); toast(t("Task saved.", "Tarea guardada.")); }}
+          onSave={async (k) => { await saveTask({ ...k, jobLabel: k.estId ? jobLabel(estById(k.estId)) : "" }); setModal(null); toast(t("Task saved.", "Tarea guardada.")); }}
           onDelete={async (id) => { await removeTask(id); setModal(null); toast(t("Task deleted.", "Tarea eliminada.")); }} />
       )}
     </div>

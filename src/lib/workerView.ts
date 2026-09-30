@@ -29,6 +29,16 @@ export const matchFilter = (row: Record<string, unknown>, f?: { field: string; v
 export const isMyTask = (task: Pick<Task, "workerId">, workerId: string | null | undefined): boolean => !!workerId && (task.workerId || "") === workerId;
 export const myTasks = <T extends Pick<Task, "workerId">>(tasks: T[], workerId: string | null | undefined): T[] => tasks.filter((k) => isMyTask(k, workerId));
 
+/** Jobs a worker can clock in to today: the jobs of their tasks for that day (one entry per job), named by the task's jobLabel. */
+export function clockJobOptions(tasks: Pick<Task, "date" | "estId" | "jobLabel" | "title">[], today: string): { estId: string; label: string }[] {
+  const out: { estId: string; label: string }[] = [];
+  for (const k of tasks) {
+    if (String(k.date || "").slice(0, 10) !== today || !k.estId || out.some((o) => o.estId === k.estId)) continue;
+    out.push({ estId: k.estId, label: String(k.jobLabel || k.title || "").slice(0, 120) || k.estId });
+  }
+  return out;
+}
+
 /** Task list order: date, then time, then title. */
 export const sortTasks = <T extends Pick<Task, "date" | "time" | "title">>(tasks: T[]): T[] =>
   tasks.slice().sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")) || String(a.time || "").localeCompare(String(b.time || "")) || String(a.title || "").localeCompare(String(b.title || "")));
@@ -38,13 +48,13 @@ export const sortTasks = <T extends Pick<Task, "date" | "time" | "title">>(tasks
  * The pay rate comes from the worker's own record (readable by them); when that record is not available yet the `rate` field
  * is OMITTED so the owner's screens fall back to the worker's current rate (team.hourAmount) instead of showing $0.
  */
-export function workerClockEntry(clock: { at: string; estId?: string }, workerId: string, worker: Pick<Worker, "rate"> | null | undefined, note: string, nowMs: number = Date.now()): Omit<HourEntry, "rate"> & { rate?: number } {
+export function workerClockEntry(clock: { at: string; estId?: string; jobLabel?: string }, workerId: string, worker: Pick<Worker, "rate"> | null | undefined, note: string, nowMs: number = Date.now()): Omit<HourEntry, "rate"> & { rate?: number } {
   const d = new Date(clock.at);
   const p2 = (n: number) => String(n).padStart(2, "0");
   const date = isNaN(d.getTime()) ? String(clock.at).slice(0, 10) : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
   const e: Omit<HourEntry, "rate"> & { rate?: number } = {
     id: `h-clk-${workerId}-${Date.parse(clock.at) || 0}`, workerId, date, hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note,
-    start: clock.at, end: new Date(nowMs).toISOString(),
+    start: clock.at, end: new Date(nowMs).toISOString(), ...(clock.jobLabel ? { jobLabel: clock.jobLabel } : {}),
   };
   if (worker && (worker.rate as unknown) !== undefined && (worker.rate as unknown) !== "") e.rate = num(worker.rate);
   return e;

@@ -43,10 +43,13 @@ export type Estimate = {
 };
 export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
 export type Invoice = { id: string; number: string; estId: string; kind: "deposit" | "balance" | "co"; amount: number; date: string; status: "Unpaid" | "Paid"; paidDate?: string; coId?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
-export type Task = { id: string; title: string; date: string; time?: string; note?: string; estId?: string; workerId?: string; done?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+/** jobLabel: "EST-1001 · Ana Ruiz", saved with the job so a worker (who cannot read estimates) can name it. */
+export type Task = { id: string; title: string; date: string; time?: string; note?: string; estId?: string; jobLabel?: string; workerId?: string; done?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type MessageTemplates = Partial<Record<string, { en: string; es: string }>>;
 export type Worker = { id: string; name: string; phone?: string; role?: string; rate: number; active?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type HourEntry = { id: string; workerId: string; date: string; hours: number; rate: number; estId?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+  /** The job name saved with the job (see Task.jobLabel), for the worker timesheet. */
+  jobLabel?: string;
   /** Clock-in / clock-out time (ISO) of an entry made by the time clock; manual entries have none. */
   start?: string; end?: string;
   /** Where the worker's phone was at clock-in / clock-out (src/lib/geo.ts). */
@@ -54,7 +57,7 @@ export type HourEntry = { id: string; workerId: string; date: string; hours: num
 export type Payout = { id: string; workerId: string; date: string; amount: number; method?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** A running clock. loc = where the worker clocked in; last = latest position while the app was open (src/lib/geo.ts). */
-export type ClockRec = { id: string; at: string; estId?: string; companyId?: string; loc?: Loc; last?: Loc };
+export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
 export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string };
 export type ColorRow = { area: string; brand: string; color: string; sheen: string; code: string };
 export type JobTask = { id: string; day: number | string; text: string };
