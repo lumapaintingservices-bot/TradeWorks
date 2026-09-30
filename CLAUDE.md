@@ -50,3 +50,33 @@ Rebuild it in React with the same look and behavior, as a multi-tenant product.
 6. Dashboard (Overview with KPI library + monthly goal, Today, Money, Charts), Reports (P&L, profit by job,
    marketing ROI), CSV exports, client profile with referral link.
 7. Multi-company switcher, roles (owner/admin/worker), Stripe subscription, security hardening, e2e tests.
+
+## Current status (update this at the end of each work session)
+**Owner:** non-technical, writes Spanish, Windows/PowerShell. Explain in plain Spanish, step by step. UI stays bilingual EN/ES.
+
+**Live:** https://tradeworks-app.pages.dev (Cloudflare Pages). Firebase project `tradeworks-99ba7`
+(the old prototype project `luma-painting-estimate` is separate). Always use the main URL, not
+per-deploy preview links (the Firebase key is restricted to 3 referrers, so preview links fail sign-in).
+All 7 build phases are done and deployed. Dev branch: `claude/new-session-tl0cfx`; if it was already
+merged, restart it from main: `git fetch origin main && git checkout -B claude/new-session-tl0cfx origin/main`.
+Merge PRs only when the owner asks ("unelo").
+
+**Built after phase 7:** legacy import from the old `luma-backup-*.json` (`src/lib/legacyImport.ts`, photos/receipts/logo/address/hours);
+client-facing pages styled like the prototype (`DocSheet`, portal, lead form); logo upload; earn-per-hour colors;
+worker invites + role limits (`roles.ts`); address/hours/payment-method chips; Google sign-in;
+delete-company button (creator only, typed name); trades (painting, cleaning, electrical, plumbing, handyman,
+landscaping, custom) with editable service catalog (`trades.data.ts`, `CatalogCard.tsx`); dashboard KPI cards per trade (`kpis.ts`).
+Docs: `docs/07-security-review.md`, `08-billing-setup.md`, `09-deploy-cloudflare.md`.
+
+**Not merged yet:** commit 80c4c77 (clearer sign-in error messages) on the dev branch.
+
+**Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
+(referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
+test a real estimate with photos.
+
+**Deferred (owner decided "later"):** Stripe billing (suggested $29/mo, test mode first; account created, rest not done — see docs/08);
+custom domain (`app.lumapaintingservices.com`; then add to Firebase Authorized domains + key referrers);
+calendar .ics worker; App Check and security to-dos (email-enumeration protection, 8+ char passwords, budget alert);
+fresh security review of Google/delete-company/trades changes; recurring services; more trades (HVAC, appliance,
+general contractor, window cleaning, pest control); automatic invite emails (e.g. Resend; today the Firebase
+verification email may land in spam); landing page + terms/privacy before selling; update docs for the trade model.
