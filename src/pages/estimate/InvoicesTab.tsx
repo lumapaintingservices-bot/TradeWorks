@@ -13,7 +13,7 @@ import { money, num } from "../../lib/money";
 import type { ChangeOrder, Estimate, Invoice } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
-import { PayClaimBar, PayLinkModal } from "../invoices/PayParts";
+import { InvBadge, PayClaimBar, PayLinkModal } from "../invoices/PayParts";
 import "../Invoices.css";
 import type { TabProps } from "./types";
 
@@ -146,7 +146,7 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
                 <span className="muted">{invKindText(v, es)} · {fmtDate(v.date, lang)}</span>
               </div>
               <b className="iv-amt">{money(v.amount)}</b>
-              <span className={"badge " + (isPaid(v) ? "b-green" : "b-gray")}><i />{isPaid(v) ? t("Paid", "Pagada") : t("Unpaid", "Sin pagar")}</span>
+              <InvBadge v={v} />
               <div className="iv-act">
                 <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
                 {!isPaid(v) && <button className="btn sm" onClick={() => setPayFor(v.id)}>{v.pay?.token ? t("Payment link ✓", "Enlace de pago ✓") : t("Payment link", "Enlace de pago")}</button>}

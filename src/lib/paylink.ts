@@ -16,6 +16,7 @@ export type PayKind = "zelle" | "venmo" | "cashapp" | "paypal" | "check" | "card
 export type PayMethod = { kind: PayKind; to: string; name?: string };
 
 export type PayModel = {
+  // keep in step with functions/_lib/connect.js, which reads business.name and inv.titleEn/titleEs for the Stripe page
   v: 1;
   inv: { number: string; kind: InvoiceRec["kind"]; date: string; amount: number; paid: boolean; paidDate: string; estNumber: string;
          clientName: string; address: string; titleEn: string; titleEs: string };
@@ -27,9 +28,20 @@ export type PayModel = {
   reviewUrl: string;
   /** Referral program on: the client's personal referral link and the reward, shown once the invoice is paid. */
   refer?: { url: string; rewardEn: string; rewardEs: string };
+  /** "Pay by card or bank" (Stripe Checkout on the company's own Stripe account, functions/api/pay/checkout.js). */
+  online?: true;
 };
 export type PayClient = { views?: string[]; paid?: { method: string; at: string; note?: string } | null };
-export type PayDoc = { id: string; owner: string; invId: string; data: string; client?: PayClient };
+/** Written only by the Stripe webhook: what happened with an online payment ("processing" = a bank transfer on its way). */
+export type PayOnline = { status: "paid" | "processing" | "failed"; at: string; amount: number; method?: string };
+export type PayDoc = { id: string; owner: string; invId: string; data: string; client?: PayClient; online?: PayOnline };
+
+/**
+ * The company takes cards on its invoice links: its Stripe account is connected, Stripe lets it take payments,
+ * and the owner did not switch it off. Also used by the server (functions/_lib/connect.js) before it opens a checkout.
+ */
+export const cardPayOn = (company: { stripeAccountId?: string; stripeReady?: boolean } | null | undefined, s: Pick<Settings, "cardPay"> | null | undefined): boolean =>
+  !!(company?.stripeAccountId && company.stripeReady) && s?.cardPay?.on !== false;
 
 /** Handles people type with or without the @ / $ in front; only letters, digits, - and _ survive. */
 export const cleanHandle = (v: unknown) => String(v ?? "").trim().replace(/^[@$]+/, "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
@@ -104,16 +116,19 @@ export function payMethodUrl(m: PayMethod, amount: number, note: string): string
 export const payMethodCopy = (m: PayMethod): string | null => (m.kind === "cash" || m.kind === "card" || !m.to ? null : m.kind === "venmo" ? "@" + m.to : m.kind === "cashapp" ? "$" + m.to : m.to);
 
 /** Public copy of one invoice. Only what the printed invoice already shows travels (no costs, no notes to the crew). */
-export function payModel(v: InvoiceRec, e: Estimate, s: Settings, b: Brand, extra: { refUrl?: string } = {}): PayModel {
+export function payModel(v: InvoiceRec, e: Estimate, s: Settings, b: Brand, extra: { refUrl?: string; online?: boolean } = {}): PayModel {
   const en = invoiceSheetData(v, e, s, "en"), es = invoiceSheetData(v, e, s, "es");
+  // with online payments on, the manual "ask us for a card link" option would only confuse
+  const methods = payOptionsOf(s).filter((m) => !(extra.online && m.kind === "card"));
   return {
     v: 1,
     inv: { number: v.number, kind: v.kind, date: v.date, amount: r2(num(v.amount)), paid: isPaid(v), paidDate: isPaid(v) ? v.paidDate || "" : "",
            estNumber: v.estNumber || e.number || "", clientName: e.clientName || v.clientName || "", address: e.address || v.address || "",
            titleEn: en.title || invKindLabel(v, false), titleEs: es.title || invKindLabel(v, true) },
     sheet: { en, es }, lang: e.docLang === "es" ? "es" : "en", business: b,
-    methods: payOptionsOf(s), note: String(s.payNote || "").slice(0, 500), reviewUrl: String(s.reviewUrl || "").slice(0, 500),
+    methods, note: String(s.payNote || "").slice(0, 500), reviewUrl: String(s.reviewUrl || "").slice(0, 500),
     ...(programOn(s) && extra.refUrl ? { refer: { url: extra.refUrl, rewardEn: rewardText(s, false), rewardEs: rewardText(s, true) } } : {}),
+    ...(extra.online ? { online: true as const } : {}),
   };
 }
 

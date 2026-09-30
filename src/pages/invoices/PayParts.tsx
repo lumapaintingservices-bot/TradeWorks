@@ -12,6 +12,19 @@ import type { Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
 
+/** Paid / Unpaid badge, plus what happened online: a bank payment on its way, or a second payment (to refund in Stripe). */
+export function InvBadge({ v }: { v: InvoiceRec }) {
+  const t = useT();
+  const paid = v.status === "Paid", o = v.online;
+  const amber = { background: "var(--tile-amber)", color: "var(--icon-amber)" };
+  return <>
+    {!paid && o?.status === "processing"
+      ? <span className="badge b-amber" style={amber} title={t("The client paid from their bank; it takes 3–5 business days to arrive.", "El cliente pagó desde su banco; tarda de 3 a 5 días hábiles en llegar.")}><i />{t("Bank payment on its way", "Pago bancario en camino")}</span>
+      : <span className={"badge " + (paid ? "b-green" : "b-gray")}><i />{paid ? t("Paid", "Pagada") : t("Unpaid", "Sin pagar")}</span>}
+    {paid && o?.dup && <span className="badge b-amber" style={{ ...amber, marginLeft: 6 }} title={t("It was already paid when the client also paid online. You can refund it in your Stripe account.", "Ya estaba pagada cuando el cliente también pagó en línea. Puedes devolverlo desde tu cuenta de Stripe.")}><i />{t("Paid twice", "Pagada dos veces")}</span>}
+  </>;
+}
+
 /** "Ana says she paid $500 by Venmo" + Confirm / Not received. */
 export function PayClaimBar({ v, busy, onConfirm, onDismiss }: { v: InvoiceRec; busy?: boolean; onConfirm(): void; onDismiss(): void }) {
   const t = useT();

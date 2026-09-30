@@ -33,6 +33,9 @@ service cloud.firestore {
 
     // invoice payment link (/pay/:token): get by token; owners/admins list theirs (where owner == cid);
     // a visitor may only add views and say "I paid" {method<=40, at<=40, note<=300} - never mark the invoice paid.
+    // "online" (paid by card / bank on Stripe) is written only by the webhook (service account) - a visitor cannot touch it.
+    // The company fields stripeAccountId / stripeReady / stripeDetails / stripeCheckedAt are in billingUntouched():
+    // nobody can point card payments at another Stripe account from the browser.
     // Full version with shape checks: firestore.rules (payClientOk). Tests: rules-tests/rules.security.test.mjs.
     match /paylink/{token} {
       allow get: if true;

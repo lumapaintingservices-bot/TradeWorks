@@ -19,6 +19,12 @@ export type Company = {
   currentPeriodEnd?: string;
   /** When the first failed payment happened (starts the 7-day grace). Set by the webhook, cleared when paid. */
   pastDueSince?: string | null;
+  /* --- Card payments on invoice links: the company's own Stripe account (Stripe Connect), written only by the server
+     (functions/api/connect, functions/_lib/connect.js). stripeReady = Stripe lets it take payments. --- */
+  stripeAccountId?: string;
+  stripeReady?: boolean;
+  stripeDetails?: boolean;
+  stripeCheckedAt?: string;
 };
 /** A company the signed-in user belongs to, with their role in it (companies/{cid}/members/{uid}). */
 export type Membership = { company: Company; role: Role; workerId?: string };

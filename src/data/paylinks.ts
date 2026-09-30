@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { useT } from "../i18n";
 import { asInv, type InvoiceRec } from "../lib/invoices";
-import { payApply, payModel, type PayDoc } from "../lib/paylink";
+import { cardPayOn, payApply, payModel, type PayDoc } from "../lib/paylink";
 import { brandOf, newToken, type Brand } from "../lib/portal";
 import { referralLink } from "../lib/clientProfile";
 import type { Estimate, Settings } from "../lib/types";
@@ -14,11 +14,13 @@ export const payLinkOf = (token: string) => `${location.origin}/pay/${token}`;
 /** The client's personal referral link, shown on the paid invoice when the referral program is on. */
 const refUrlOf = (cid: string, e: Estimate) => (e.clientId ? referralLink(location.origin, cid, e.clientId) : undefined);
 
-type Co = Brand & { id: string };
+type Co = Brand & { id: string; stripeAccountId?: string; stripeReady?: boolean };
+/** Everything besides the invoice that goes into the public copy. */
+const extraOf = (company: Co, e: Estimate, s: Settings) => ({ refUrl: refUrlOf(company.id, e), online: cardPayOn(company, s) });
 
 /** Writes the public copy of one invoice to paylink/{token}. */
 export function publishPayLink(v: InvoiceRec, token: string, e: Estimate, s: Settings, company: Co) {
-  return setTop("paylink", token, { owner: company.id, invId: v.id, data: JSON.stringify(payModel(v, e, s, brandOf(company), { refUrl: refUrlOf(company.id, e) })) }, true);
+  return setTop("paylink", token, { owner: company.id, invId: v.id, data: JSON.stringify(payModel(v, e, s, brandOf(company), extraOf(company, e, s))) }, true);
 }
 
 /** New payment link for an invoice: public copy first, then the token on the invoice. */
@@ -75,8 +77,17 @@ export function usePayLinkSync() {
       if (!token) continue;
       const d = byToken.get(token);
       const e = ests.find((x) => x.id === v.estId);
+      if (v.online && v.online.status !== "processing" && !v.online.seen) { // paid (or failed) online: tell the owner once
+        const o = v.online;
+        once("seen:" + v.id, async () => {
+          await patchRec(company.id, "invoices", v.id, { online: { ...o, seen: true } });
+          toast(o.status === "paid"
+            ? t(`${v.clientName || "The client"} paid ${v.number} online (${o.method || "Stripe"}) ✓`, `${v.clientName || "El cliente"} pagó ${v.number} en línea (${o.method || "Stripe"}) ✓`)
+            : t(`The bank payment for ${v.number} failed.`, `El pago bancario de ${v.number} falló.`));
+        });
+      }
       if (!d || !e) continue; // not written yet / estimate deleted: leave it alone
-      const data = JSON.stringify(payModel(v, e, settings, brandOf(company as Co), { refUrl: refUrlOf(company.id, e) }));
+      const data = JSON.stringify(payModel(v, e, settings, brandOf(company as Co), extraOf(company as Co, e, settings)));
       if (d.data !== data) once("pub:" + token, () => setTop("paylink", token, { data }, true));
       const patch = payApply(v, d.client);
       if (patch) {

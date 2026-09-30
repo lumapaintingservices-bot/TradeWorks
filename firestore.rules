@@ -32,17 +32,20 @@ service cloud.firestore {
     // users.companies is only a hint: a company counts only if its members/{uid} doc exists.
     match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
 
-    // billing fields are written only by the Stripe webhook (service account), never from the browser
+    // billing fields and the Stripe Connect account (card payments on invoice links) are written only by the server
+    // (Stripe webhooks / functions, with the service account), never from the browser
     function billingUntouched() {
       return !request.resource.data.diff(resource.data).affectedKeys()
         .hasAny(['plan', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
-                 'trialEndsAt', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt']);
+                 'trialEndsAt', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt',
+                 'stripeAccountId', 'stripeReady', 'stripeDetails', 'stripeCheckedAt']);
     }
 
     match /companies/{cid} {
       // a new company may only start as a trial that ends within 15 days
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
-        && !request.resource.data.keys().hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt'])
+        && !request.resource.data.keys().hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt',
+                                                  'stripeAccountId', 'stripeReady', 'stripeDetails', 'stripeCheckedAt'])
         && request.resource.data.get('plan', 'trial') == 'trial'
         && (!('trialEndsAt' in request.resource.data)
             || (request.resource.data.trialEndsAt is timestamp
@@ -177,7 +180,8 @@ service cloud.firestore {
       }
     }
 
-    // Invoice payment link: paylink/{token} = { owner, invId, data, client: { views, paid }, updatedAt }.
+    // Invoice payment link: paylink/{token} = { owner, invId, data, client: { views, paid }, online?, updatedAt }.
+    // 'online' (a card / bank payment on Stripe) is written by the webhook; the owner's app keeps it when it republishes.
     // Anyone with the secret token reads it; the company's owners/admins list theirs (query where owner == cid) to pick up claims.
     // A visitor may only add views and say "I paid" ({ method, at, note }) - the invoice is marked paid only by the owner.
     function payClientOk(c) {
@@ -192,11 +196,11 @@ service cloud.firestore {
       allow get: if true;
       allow list: if admin(resource.data.owner);
       allow create: if admin(request.resource.data.owner)
-        && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'online', 'updatedAt'])
         && request.resource.data.get('data', '') is string && request.resource.data.get('data', '').size() <= 200000;
       allow delete: if admin(resource.data.owner);
       allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner
-            && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'updatedAt'])
+            && request.resource.data.keys().hasOnly(['owner', 'invId', 'data', 'client', 'online', 'updatedAt'])
             && request.resource.data.get('data', '') is string && request.resource.data.get('data', '').size() <= 200000)
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client'])
             && payClientOk(request.resource.data.client));

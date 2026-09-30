@@ -87,7 +87,15 @@ send, rsend, _dmarc). Dry run OK. Owner still has to switch "Automatic reminders
 snooze on the referrer); client profile shows each friend's status + "Give reward" (friend.refReward, optional marketing expense
 category ads / source Referral, id x-ref-{friendId}); review message and paid invoice page invite to share the referral link.
 `jobStatus` moved to src/lib/jobStatus.ts (re-exported by followups).
-Next: 8d card payments with Stripe Connect (owner chose Stripe integrated: connect account, Checkout per invoice, webhook marks paid).
+8d card & bank payments - DONE in code (setup pending, see docs/10-card-payments.md): Stripe Connect Standard accounts,
+direct charges. Owner connects in Settings > Client link & payments > CardPayCard (`/api/connect/start|status`, owner only);
+company fields stripeAccountId/stripeReady/stripeDetails/stripeCheckedAt are server-only (billingUntouched in rules).
+Pay page button "Pay by card or bank" -> `/api/pay/checkout` (public, token only; amount read from the invoice) -> Stripe Checkout
+on the contractor's account. Connect webhook `/api/pay/webhook` (STRIPE_CONNECT_WEBHOOK_SECRET) -> `functions/_lib/connect.js`
+marks the invoice Paid ("Card (Stripe)" / "Bank (Stripe)"), invoice.online + paylink.online, and the estimate stage
+(imports src/lib/invoices.ts statusAfterPayment; Pages bundles TS fine). Bank = "processing" first. Amount mismatch -> payClaim.
+`settings.cardPay.on` switch; `cardPayOn()` in src/lib/paylink.ts. Owner still has to: enable Connect, create the Connect webhook,
+set Pages secrets, publish rules (new: Stripe fields + paylink `online`).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

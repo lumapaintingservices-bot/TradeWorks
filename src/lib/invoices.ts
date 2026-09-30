@@ -20,6 +20,11 @@ export type InvoiceRec = Omit<Invoice, "kind" | "status"> & {
   payClaim?: { method: string; at: string; note?: string }; payClaimSeen?: string;
   /** How it was paid (set when the owner confirms a payment). */
   paidMethod?: string;
+  /**
+   * Paid online on the payment link (Stripe card / bank), written by the webhook (functions/_lib/connect.js).
+   * "processing" = a bank transfer on its way; `dup` = paid again after it was already paid; `seen` = the owner got the toast.
+   */
+  online?: { status: "paid" | "processing" | "failed"; amount: number; at: string; session?: string; method?: string; dup?: boolean; seen?: boolean };
 };
 export const asInv = (v: Invoice): InvoiceRec => v as unknown as InvoiceRec;
 export const isPaid = (v: Pick<InvoiceRec, "status">) => v.status === "Paid";

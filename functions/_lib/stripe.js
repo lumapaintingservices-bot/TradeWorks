@@ -13,8 +13,10 @@ export function formEncode(obj, prefix = "", out = []) {
 }
 
 export function stripeClient(secretKey, fetchImpl = fetch) {
-  async function call(method, path, params, idempotencyKey) {
+  // `account`: a connected account id (acct_...) to act ON that account (Stripe Connect direct charges).
+  async function call(method, path, params, idempotencyKey, account) {
     const headers = { Authorization: "Bearer " + secretKey };
+    if (account) headers["Stripe-Account"] = account;
     let url = "https://api.stripe.com" + path;
     let body;
     if (method === "POST") {
@@ -32,6 +34,11 @@ export function stripeClient(secretKey, fetchImpl = fetch) {
     createCheckoutSession: (params) => call("POST", "/v1/checkout/sessions", params),
     createPortalSession: (params) => call("POST", "/v1/billing_portal/sessions", params),
     getSubscription: (id) => call("GET", "/v1/subscriptions/" + encodeURIComponent(id)),
+    // Stripe Connect: card payments on invoice payment links (see ./connect.js)
+    createAccount: (params, idem) => call("POST", "/v1/accounts", params, idem),
+    getAccount: (id) => call("GET", "/v1/accounts/" + encodeURIComponent(id)),
+    createAccountLink: (params) => call("POST", "/v1/account_links", params),
+    createAccountCheckoutSession: (account, params) => call("POST", "/v1/checkout/sessions", params, undefined, account),
   };
 }
 

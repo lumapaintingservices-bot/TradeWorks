@@ -8,7 +8,7 @@ import { money, num, r2 } from "../lib/money";
 import { useUi } from "../store/ui";
 import { EmptyState } from "../ui/EmptyState";
 import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
-import { PayClaimBar, PayLinkModal } from "./invoices/PayParts";
+import { InvBadge, PayClaimBar, PayLinkModal } from "./invoices/PayParts";
 import "./Invoices.css";
 
 type Filter = "all" | "unpaid" | "paid" | "claims";
@@ -68,7 +68,7 @@ export default function Invoices() {
   );
   const claimBar = (v: InvoiceRec) => <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />;
   const payInv = ops.invoices.find((v) => v.id === payFor);
-  const badge = (v: InvoiceRec) => <span className={"badge " + (isPaid(v) ? "b-green" : "b-gray")}><i />{isPaid(v) ? t("Paid", "Pagada") : t("Unpaid", "Sin pagar")}</span>;
+  const badge = (v: InvoiceRec) => <InvBadge v={v} />;
 
   return (
     <div className="page">

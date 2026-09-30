@@ -7,14 +7,15 @@ companies/{companyId}. Field names below come from the prototype so logic can be
 ```
 users/{uid}                          { name, email, lang, theme, companies:[companyId], activeCompanyId }
 companies/{companyId}                { name, legalName, phone, email, website, area, services, servicesEs,
-                                       logoUrl, brandColor, trade, plan, ownerUid, createdAt }
+                                       logoUrl, brandColor, trade, plan, ownerUid, createdAt,
+                                       stripeAccountId, stripeReady, stripeDetails, stripeCheckedAt }   Stripe Connect fields: server only (docs/10)
 companies/{cid}/members/{uid}        { role:'owner'|'admin'|'worker', workerId? }
 companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbering{nextEst,nextInv},
                                        processDays, scope{en[],es[]}, terms{en[],es[]}, typePresets{interior,exterior,other},
                                        templates[], jobTemplates[], leadSources[], production, services[],
                                        followUpDays, websiteUrl, instagramUrl, reviewUrl, portalUrl,
                                        payZelle, payZelleName, payNote, payMethods[] (chips), payHandles{venmo,cashapp,paypal,checkTo},
-                                       autoEmail{on,kinds[]}, invoiceDueDays, referral{on,amount,rewardEn,rewardEs},
+                                       autoEmail{on,kinds[]}, invoiceDueDays, referral{on,amount,rewardEn,rewardEs}, cardPay{on},
                                        goal{sales}, dashCards[],
                                        recurring[], bankRules[], expCats[], calOn, calToken, showcase[] }
 companies/{cid}/clients/{id}         { name, phone, email, address, source, lang, note, lead, archived, archivedAt,
@@ -31,7 +32,8 @@ companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId
                                        activity[], chat[], changeOrders[], check{key:iso}, jobTasks[{id,day,text}],
                                        colors[{area,brand,color,sheen,code}], payClaim, reviewAsked, warrantyChecked, snooze{} }
 companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'full'|'progress'|'co', amount, date, status, paidDate, paidMethod,
-                                       pay{token}, payViews, payClaim{method,at,note}, payClaimSeen }
+                                       pay{token}, payViews, payClaim{method,at,note}, payClaimSeen,
+                                       online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, workerId, done }
 companies/{cid}/workers/{id}         { name, phone, role, rate, active }
 companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, note }
@@ -44,7 +46,8 @@ companies/{cid}/autoemails/{itemId}  { item, kind, estId, invId, to, subject, st
 portal/{token}                       { owner(cid), estId, data (snapshot JSON), updatedAt, client:{ views[], picks{}, sign{}, chat[], paid{}, co{} } }
 portal/{token}/photos/{id}           { owner, data }
 paylink/{token}                      { owner(cid), invId, data (PayModel JSON: invoice lines/totals EN+ES, branding, ways to pay), updatedAt,
-                                       client:{ views[], paid{method,at,note}|null } }   invoice payment link /pay/:token (src/lib/paylink.ts)
+                                       client:{ views[], paid{method,at,note}|null }, online{status,at,amount,method} (Stripe webhook only) }
+                                                                            invoice payment link /pay/:token (src/lib/paylink.ts)
 leads/{id}                           { owner(cid), name, phone, email, city, address, service, message, heard, lang,
                                        photos[pid], details{v,types[],cab{},intr{},ext{},other,tierCab,tierWall,when,date,contact,src,ref}, at, page, imported }
 leads/{id}/photos/{pid}              { data, at }
