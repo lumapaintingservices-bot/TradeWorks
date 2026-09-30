@@ -80,7 +80,8 @@ export function docLines(e: Estimate, s: Settings, lang: Lang): DocLine[] {
   return out;
 }
 
-const Head = ({ biz, docType, docNo, meta }: { biz: SheetBiz; docType: string; docNo: string; meta: ReactNode }) => {
+/** Letterhead of every document (estimate, invoice, work order). */
+export const SheetHead = ({ biz, docType, docNo, meta }: { biz: SheetBiz; docType: string; docNo: string; meta: ReactNode }) => {
   const logo = safeImgSrc(biz.logoUrl);
   return (
     <div className="sheet-h">
@@ -181,7 +182,7 @@ export function EstimateSheet({ e, s, biz, lang, compact, pay, services, sigImg 
   const planRows = e.payPlanOn && e.payPlan && e.payPlan.length >= 2 ? planAmounts(e, t.total).map((a, i) => ({ label: `${es ? e.payPlan[i].labelEs || e.payPlan[i].label : e.payPlan[i].label} (${num(e.payPlan[i].pct)}%)`, amount: a })) : null;
   return (
     <div className={"sheet" + (compact ? " compact" : "")} id="sheet" style={sheetStyle(biz.brandColor)}>
-      <Head biz={biz} docType={T.estimate} docNo={e.number} meta={<>
+      <SheetHead biz={biz} docType={T.estimate} docNo={e.number} meta={<>
         <div style={{ marginTop: 6 }}>{T.date}: <b>{fmtDate(e.date, lang)}</b></div>
         <div>{T.validUntil}: <b>{fmtDate(addDays(e.date, e.validDays), lang)}</b></div></>} />
       <Party T={T} e={e} project={<>
@@ -219,7 +220,7 @@ export function InvoiceSheet({ v, e, s, biz, lang, compact, pay, services }: Bas
     const desc = co ? (es ? co.descEs || co.desc : co.desc || co.descEs) : title;
     return (
       <div className={"sheet" + (compact ? " compact" : "")} id="sheet" style={sheetStyle(biz.brandColor)}>
-        <Head biz={biz} docType={T.invoice} docNo={v.number} meta={meta} />
+        <SheetHead biz={biz} docType={T.invoice} docNo={v.number} meta={meta} />
         <div className="sheet-grid"><div><div className="sheet-lbl">{T.preparedFor}</div><div className="sheet-strong">{e.clientName || "—"}</div>{e.address && <>{e.address}<br /></>}{e.phone}</div>
           <div><div className="sheet-lbl">{T.project}</div><div className="sheet-strong">{es ? e.specEs || e.spec : e.spec}</div>{biz.area}</div></div>
         <table className="doct"><thead><tr><th>{T.desc}</th><th className="r">{T.amount}</th></tr></thead>
@@ -234,7 +235,7 @@ export function InvoiceSheet({ v, e, s, biz, lang, compact, pay, services }: Bas
   const t = calcEstimate(e, s), lines = docLines(e, s, lang), scope = scopeFor(e, lang, t), terms = nl2list(es ? e.termsEs : e.termsEn), notes = es ? e.notes : e.notes;
   return (
     <div className={"sheet" + (compact ? " compact" : "")} id="sheet" style={sheetStyle(biz.brandColor)}>
-      <Head biz={biz} docType={T.invoice} docNo={v.number} meta={meta} />
+      <SheetHead biz={biz} docType={T.invoice} docNo={v.number} meta={meta} />
       <Party T={T} e={e} project={<>
         <div className="sheet-strong">{es ? e.specEs || e.spec : e.spec}</div>
         {e.matBuyer === "client" ? T.clientAll : e.matBuyer === "paint" ? T.clientPaint : e.showMaterials && e.materialsMode === "added" ? services : T.allIncluded}<br />{biz.area}</>} />
