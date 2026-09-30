@@ -8,7 +8,7 @@ import { autoEmailOn, planEmails, withPayLink, type PlanInput, type PlannedEmail
 import { billingState } from "../../../src/lib/billing";
 import { referralLink } from "../../../src/lib/clientProfile";
 import { asInv } from "../../../src/lib/invoices";
-import { payModel } from "../../../src/lib/paylink";
+import { cardPayOn, payModel } from "../../../src/lib/paylink";
 import { brandOf, newToken, type Brand } from "../../../src/lib/portal";
 import { defaultSettings } from "../../../src/lib/settings";
 import type { Client, Estimate, Invoice, Settings } from "../../../src/lib/types";
@@ -76,7 +76,7 @@ async function ensurePayLink(db: Db, cid: string, company: Record<string, any>, 
   const v = asInv(inv0);
   const token = newToken();
   const brand = brandOf({ name: "", phone: "", email: "", website: "", area: "", logoUrl: "", brandColor: "", ...company } as Brand);
-  await db.create(`paylink/${token}`, { owner: cid, invId: v.id, data: JSON.stringify(payModel(v, e, inp.settings, brand, { refUrl: e.clientId ? referralLink(inp.origin, cid, e.clientId) : undefined })), client: {}, updatedAt: new Date() });
+  await db.create(`paylink/${token}`, { owner: cid, invId: v.id, data: JSON.stringify(payModel(v, e, inp.settings, brand, { refUrl: e.clientId ? referralLink(inp.origin, cid, e.clientId) : undefined, online: cardPayOn(company, inp.settings) })), client: {}, updatedAt: new Date() });
   await db.patch(`companies/${cid}/invoices/${v.id}`, { pay: { token } });
   v.pay = { token }; // later reminders in this run reuse it
   return withPayLink(p, inp, token);

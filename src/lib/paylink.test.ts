@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { blankEstimate } from "./estimate";
 import { createInvoices, type InvoiceRec } from "./invoices";
-import { cleanHandle, cleanPaypal, payApply, payHandleLines, payLinkMessage, payMethodCopy, payMethodUrl, payModel, payOptionsOf } from "./paylink";
+import { cardPayOn, cleanHandle, cleanPaypal, payApply, payHandleLines, payLinkMessage, payMethodCopy, payMethodUrl, payModel, payOptionsOf } from "./paylink";
 import { defaultSettings } from "./settings";
 
 const brand = { name: "Luma", phone: "555", email: "a@b.co", website: "", area: "", logoUrl: "", brandColor: "#EF6A2C" };
@@ -69,6 +69,19 @@ describe("payModel", () => {
     const m = payModel({ ...invs[0], status: "Paid", paidDate: "2026-09-30" }, e, s, brand);
     expect(m.inv.paid).toBe(true);
     expect(m.inv.paidDate).toBe("2026-09-30");
+  });
+  it("card payments: the Stripe button replaces the manual \"ask us for a card link\" option", () => {
+    const { s, e, invs } = job();
+    const s2 = { ...s, payMethods: ["zelle", "card"] };
+    expect(payModel(invs[0], e, s2, brand).methods.map((x) => x.kind)).toEqual(["zelle", "card"]);
+    const m = payModel(invs[0], e, s2, brand, { online: true });
+    expect(m.online).toBe(true);
+    expect(m.methods.map((x) => x.kind)).toEqual(["zelle"]);
+    expect(payModel(invs[0], e, s2, brand, { online: false }).online).toBeUndefined();
+    expect(cardPayOn({ stripeAccountId: "acct_1", stripeReady: true }, {})).toBe(true);
+    expect(cardPayOn({ stripeAccountId: "acct_1", stripeReady: true }, { cardPay: { on: false } })).toBe(false);
+    expect(cardPayOn({ stripeAccountId: "acct_1" }, {})).toBe(false);
+    expect(cardPayOn(null, {})).toBe(false);
   });
 });
 

@@ -92,6 +92,21 @@ export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {
       const res = await fetchImpl(`${base}/${segs(path)}?${mask}`, { method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(data) }) });
       if (!res.ok) throw new Error(`Firestore set ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
     },
+    /** Documents of a (sub)collection path where `field == value`, e.g. ("companies/x/invoices", "estId", "e1") -> [{ id, data }]. */
+    async where(path, field, value, { limit = 500 } = {}) {
+      const parts = path.split("/"), collectionId = parts.pop(), parent = parts.length ? `${base}/${segs(parts.join("/"))}` : base;
+      const res = await fetchImpl(`${parent}:runQuery`, {
+        method: "POST", headers: await auth(),
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId }],
+          where: { fieldFilter: { field: { fieldPath: field }, op: "EQUAL", value: toFsValue(value) } },
+          limit,
+        } }),
+      });
+      if (!res.ok) throw new Error(`Firestore query ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+      const rows = await res.json();
+      return rows.filter((r) => r.document).map((r) => ({ id: r.document.name.split("/").pop(), data: fromFsFields(r.document.fields) }));
+    },
     /** First document of `collection` where `field == value` -> { id, data } or null. */
     async findOne(collection, field, value) {
       const res = await fetchImpl(`${base}:runQuery`, {

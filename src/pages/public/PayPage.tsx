@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { patchTop, subscribeTop } from "../../data/repo";
 import { fmtDate } from "../../lib/format";
 import { money } from "../../lib/money";
 import type { PayDoc, PayModel } from "../../lib/paylink";
-import { mailtoHref, safeImgSrc, safeUrl } from "../../lib/safeUrl";
+import { isTrustedRedirect, mailtoHref, safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import { PayMethods } from "./PayMethods";
 import { TwMark } from "./PortalPage";
 import "./portal.css";
@@ -12,13 +12,19 @@ import "./portal.css";
 const now = () => new Date().toISOString();
 const initialsOf = (s: string) => { const w = String(s || "").trim().split(/\s+/).filter(Boolean); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); };
 
-/** Public invoice payment page: /pay/:token. Same look as the client link (portal.css), contractor's branding, EN/ES. The client may only say "I paid". */
+/**
+ * Public invoice payment page: /pay/:token. Same look as the client link (portal.css), contractor's branding, EN/ES.
+ * The client may say "I paid", or pay by card / bank on Stripe when the company connected its Stripe account (m.online).
+ */
 export default function PayPage() {
   const { token = "" } = useParams();
   const [doc, setDoc] = useState<PayDoc | null | undefined>(undefined);
   const [lang, setLang] = useState<"en" | "es" | "">("");
   const [toast, setToast] = useState("");
   const [ctaHide, setCtaHide] = useState(true);
+  const [paying, setPaying] = useState(false);
+  const [params] = useSearchParams();
+  const back0 = params.get("paid") === "1"; // just came back from the Stripe page
   const viewed = useRef(false);
 
   useEffect(() => { document.documentElement.classList.remove("tw-dark"); }, []);
@@ -29,7 +35,11 @@ export default function PayPage() {
 
   const m = useMemo<PayModel | null>(() => { try { return doc?.data ? (JSON.parse(doc.data) as PayModel) : null; } catch { return null; } }, [doc?.data]);
   const claim = doc?.client?.paid;
-  const open = !!m && !m.inv.paid && !claim && m.methods.length > 0;
+  const online = doc?.online;
+  const paidNow = !!m && (m.inv.paid || online?.status === "paid");
+  const onItsWay = !paidNow && online?.status === "processing";
+  const back = back0 && online?.status !== "failed";
+  const open = !!m && !back && !paidNow && !onItsWay && !claim && (m.methods.length > 0 || !!m.online);
   useEffect(() => { if (m) document.title = `${m.business.name} — ${m.inv.number}`; }, [m]);
   // the bottom "Pay now" bar shows until the payment part is on screen
   useEffect(() => {
@@ -55,6 +65,18 @@ export default function PayPage() {
   const style = (brand && brand.toLowerCase() !== "#ef6a2c" ? { "--acc": brand, "--acc-soft": `color-mix(in srgb, ${brand} 12%, #fff)`, "--acc-ink": `color-mix(in srgb, ${brand} 78%, #000)` } : {}) as React.CSSProperties;
   const reviews = safeUrl(m.reviewUrl);
   const go = () => document.getElementById("ptPaySec")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const payOnline = async () => {
+    setPaying(true);
+    try {
+      const res = await fetch("/api/pay/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, lang: L }) });
+      const j = (await res.json().catch(() => ({}))) as { url?: string };
+      if (!res.ok || !j.url || !isTrustedRedirect(j.url, location.origin)) throw new Error(String(res.status));
+      location.assign(j.url); // Stripe's own secure page
+    } catch {
+      setPaying(false);
+      say(T("We couldn't open the card payment. Please try again, or use another way to pay.", "No pudimos abrir el pago con tarjeta. Intente otra vez o use otra forma de pago."));
+    }
+  };
 
   return (
     <div className="pt" style={style}>
@@ -71,11 +93,14 @@ export default function PayPage() {
               {v.address && <div className="pt-addr">{v.address}</div>}
               <div className="pt-meta">{v.number} · {fmtDate(v.date, L)}{v.estNumber ? ` · ${T("Ref", "Ref")} ${v.estNumber}` : ""}</div></div></div>
           <div className="pt-kpis">
-            <div><span>{v.paid ? T("Paid", "Pagado") : T("Amount due", "Monto a pagar")}</span><b>{money(v.amount)}</b></div>
+            <div><span>{paidNow ? T("Paid", "Pagado") : T("Amount due", "Monto a pagar")}</span><b>{money(v.amount)}</b></div>
             <div><span>{T("Invoice", "Factura")}</span><b className="pt-kd">{es ? v.titleEs : v.titleEn}</b></div>
           </div>
-          {v.paid ? <div className="pt-status ok">✓ {T("Paid", "Pagada")}{v.paidDate ? ` · ${fmtDate(v.paidDate, L)}` : ""} — {T("thank you!", "¡gracias!")}</div>
+          {paidNow ? <div className="pt-status ok">✓ {T("Paid", "Pagada")}{v.paidDate ? ` · ${fmtDate(v.paidDate, L)}` : ""} — {T("thank you!", "¡gracias!")}</div>
+            : onItsWay ? <div className="pt-status ok">✓ {T("Your bank payment is on its way. It usually takes 3–5 business days.", "Su pago bancario está en camino. Normalmente tarda de 3 a 5 días hábiles.")}</div>
+            : back && !claim ? <div className="pt-status">{T("Thank you! We're confirming your payment…", "¡Gracias! Estamos confirmando su pago…")}</div>
             : claim ? <div className="pt-status ok">✓ {T(`You told us you paid by ${claim.method}.`, `Nos dijo que pagó por ${claim.method}.`)}</div> : null}
+          {online?.status === "failed" && !paidNow && <div className="pt-status">{T("Your last bank payment didn't go through. Please try again or choose another way to pay.", "Su último pago bancario no se completó. Intente otra vez o escoja otra forma de pago.")}</div>}
         </section>
 
         <section className="pt-sec"><h2>{T("Details", "Detalle")}</h2>
@@ -88,8 +113,13 @@ export default function PayPage() {
               <span>{r.label}</span><span className="num">{r.amount === undefined ? "" : r.amount < 0 ? "−" + money(-r.amount) : money(r.amount)}</span></div>))}</div>
         </section>
 
-        {!v.paid && <section className="pt-sec" id="ptPaySec"><h2>{T("How to pay", "Cómo pagar")}</h2>
-          {m.methods.length === 0 ? <p className="pt-hint">{T("We'll send you the payment details.", "Le enviaremos los datos de pago.")}</p> : <>
+        {!paidNow && !onItsWay && !back && <section className="pt-sec" id="ptPaySec"><h2>{T("How to pay", "Cómo pagar")}</h2>
+          {m.online && !claim && <div className="pt-card">
+            <button className="btn pri" disabled={paying} onClick={payOnline}>{paying ? T("Opening…", "Abriendo…") : T(`Pay ${money(v.amount)} by card or bank`, `Pagar ${money(v.amount)} con tarjeta o banco`)}</button>
+            <small>🔒 {T("Secure payment on Stripe. The money goes straight to ", "Pago seguro con Stripe. El dinero va directo a ")}{b.name}.</small>
+            {m.methods.length > 0 && <div className="pt-or"><span>{T("or pay another way", "o pague de otra forma")}</span></div>}
+          </div>}
+          {m.methods.length === 0 ? (!m.online && <p className="pt-hint">{T("We'll send you the payment details.", "Le enviaremos los datos de pago.")}</p>) : <>
             <p className="pt-hint">{T(`Choose any option. Please add “${memo}” as the memo.`, `Escoja cualquier opción. Ponga “${memo}” como nota, por favor.`)}</p>
             <div className="pt-amt"><span>{T("Amount due", "Monto a pagar")}</span><b className="num">{money(v.amount)}</b></div>
             <PayMethods methods={m.methods} amount={v.amount} memo={memo} es={es} claimed={claim?.method} say={say}
@@ -98,7 +128,7 @@ export default function PayPage() {
           </>}
         </section>}
 
-        {v.paid && m.refer && safeUrl(m.refer.url) && <section className="pt-sec" id="ptRefer"><h2>{T("Know someone who needs work done?", "¿Conoce a alguien que necesite un trabajo?")}</h2>
+        {paidNow && m.refer && safeUrl(m.refer.url) && <section className="pt-sec" id="ptRefer"><h2>{T("Know someone who needs work done?", "¿Conoce a alguien que necesite un trabajo?")}</h2>
           <p className="pt-hint">{T(`Share your personal link. When your friend's project is done, you get ${m.refer.rewardEn}.`, `Comparta su link personal. Cuando el proyecto de su amigo termine, usted recibe ${m.refer.rewardEs}.`)}</p>
           <div className="pt-links">
             <a className="btn wa" href={`https://wa.me/?text=${encodeURIComponent(T(`I recommend ${b.name}: `, `Te recomiendo a ${b.name}: `) + m.refer.url)}`} target="_blank" rel="noopener noreferrer">{T("Share by WhatsApp", "Compartir por WhatsApp")}</a>
@@ -110,7 +140,7 @@ export default function PayPage() {
         <footer className="pt-foot">
           {b.phone && <><a className="btn" href={`tel:${wa}`}>{T("Call", "Llamar")}</a><a className="btn wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}
           {mailtoHref(b.email) && <a className="btn" href={mailtoHref(b.email)}>{b.email}</a>}
-          {v.paid && reviews && <a className="btn" href={reviews} target="_blank" rel="noopener noreferrer">★ {T("Leave us a review", "Déjenos una reseña")} ↗</a>}
+          {paidNow && reviews && <a className="btn" href={reviews} target="_blank" rel="noopener noreferrer">★ {T("Leave us a review", "Déjenos una reseña")} ↗</a>}
           <div className="pt-fine">{b.name || ""}{b.area ? ` · ${b.area}` : ""}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div>
         </footer>
       </div>

@@ -104,6 +104,8 @@ export type Settings = {
   autoEmail?: { on?: boolean; kinds?: string[] };
   /** Referral program: a client whose referred friend pays a job in full earns this reward (src/lib/referrals.ts). */
   referral?: { on?: boolean; amount?: number; rewardEn?: string; rewardEs?: string };
+  /** "Pay by card or bank" on invoice payment links, once the company's Stripe account is connected (on unless switched off). */
+  cardPay?: { on?: boolean };
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];
