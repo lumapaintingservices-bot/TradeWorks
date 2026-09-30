@@ -6,6 +6,7 @@ import {
   arrayRemove, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, setDoc, updateDoc, where, writeBatch,
 } from "firebase/firestore";
 import { auth, db, hasFirebase } from "../lib/firebase";
+import { deleteFolder } from "../lib/storage";
 import { isRole, normEmail } from "../lib/roles";
 import type { Company, Invite, Member, Membership, Role, User } from "./types";
 
@@ -40,6 +41,8 @@ export interface Backend {
   listMembers(companyId: string): Promise<Member[]>;
   updateMember(companyId: string, uid: string, patch: { role?: Role; workerId?: string | null }): Promise<void>;
   removeMember(companyId: string, uid: string, self?: boolean): Promise<void>;
+  /** Deletes ONE company and only its own data (records, photos, client links / requests, members). Only the person who created it. */
+  deleteCompany(uid: string, companyId: string): Promise<void>;
 
   getInvite(email: string): Promise<Invite | null>;
   listInvites(companyId: string): Promise<Invite[]>;
@@ -140,6 +143,30 @@ const fbBackend: Backend = {
     if (self) await updateDoc(doc(db, "users", uid), { companies: arrayRemove(cid) }).catch(() => {});
   },
 
+  async deleteCompany(uid, cid) {
+    if (!cid) throw new Error("no company");
+    await deleteFolder(`companies/${cid}`);
+    // client links and requests of THIS company only (owner == cid); they need the company doc + membership, so they go first
+    for (const col of ["portal", "leads"]) {
+      const s = await getDocs(query(collection(db, col), where("owner", "==", cid))).catch(() => null);
+      if (!s) continue;
+      for (const d of s.docs) {
+        const ph = await getDocs(collection(db, col, d.id, "photos")).catch(() => null);
+        if (ph) for (const p of ph.docs) await deleteDoc(p.ref).catch(() => {});
+        await deleteDoc(d.ref).catch(() => {});
+      }
+    }
+    await deleteDoc(doc(db, "public", cid)).catch(() => {});
+    for (const col of ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "clock"]) {
+      const s = await getDocs(collection(db, "companies", cid, col));
+      for (let i = 0; i < s.docs.length; i += 400) { const b = writeBatch(db); s.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref)); await b.commit(); }
+    }
+    const ms = await getDocs(collection(db, "companies", cid, "members"));
+    for (const m of ms.docs) if (m.id !== uid) await deleteDoc(m.ref).catch(() => {});
+    await deleteDoc(doc(db, "companies", cid)); // rules: only the creator; a leftover own member doc is pruned on the next load
+    await setDoc(doc(db, "users", uid), { companies: arrayRemove(cid), activeCompanyId: null }, { merge: true });
+  },
+
   async getInvite(email) {
     const e = normEmail(email);
     if (!e) return null;
@@ -227,6 +254,14 @@ const demoBackend: Backend = {
     write(K.session, { uid: u.uid, name: u.name, email: u.email, emailVerified: true }); emit();
   },
   async signInWithGoogle() { throw new Error("auth/google-unavailable"); },
+  async deleteCompany(uid, cid) {
+    if (!cid) throw new Error("no company");
+    Object.keys(localStorage).filter((k) => k.startsWith(`tw.demo.${cid}.`)).forEach((k) => localStorage.removeItem(k));
+    const cs = demoCompanies(); Object.keys(cs).forEach((k) => { if (cs[k].id === cid) delete cs[k]; }); write(K.companies, cs);
+    const ms = read<Record<string, Record<string, DemoMember>>>(K.members, {}); delete ms[cid]; write(K.members, ms);
+    const inv = read<Record<string, Invite>>(K.invites, {}); Object.keys(inv).forEach((k) => { if (inv[k].companyId === cid) delete inv[k]; }); write(K.invites, inv);
+    const pr = read<Record<string, { activeCompanyId?: string }>>(K.profiles, {}); if (pr[uid]?.activeCompanyId === cid) { pr[uid] = { ...pr[uid], activeCompanyId: undefined }; write(K.profiles, pr); }
+  },
   async signOut() { localStorage.removeItem(K.session); emit(); },
   async reset() { /* demo: nothing to send */ },
   async refreshUser() { return read<User | null>(K.session, null); },

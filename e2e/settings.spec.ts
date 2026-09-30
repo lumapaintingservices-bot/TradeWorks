@@ -92,3 +92,17 @@ test("logo upload shows in Settings and the sidebar", async ({ page }) => {
   expect(src).toMatch(/^data:image\/png/);
   await expect(page.locator(".ws-logo img").first()).toBeVisible();
 });
+
+test("owner can delete only the chosen company, after typing its name", async ({ page }) => {
+  await signUpAndSkip(page);
+  const cid = await demoCompanyId(page);
+  await page.goto("/settings?section=general");
+  const card = page.locator(".card", { hasText: "Delete this company" });
+  const name = (await page.locator(".ws-name").first().innerText()).trim();
+  const btn = card.getByRole("button", { name: "Delete company" });
+  await expect(btn).toBeDisabled();
+  await card.getByRole("textbox").fill(name);
+  page.once("dialog", (d) => d.accept());
+  await btn.click();
+  await expect.poll(async () => page.evaluate((id) => Object.keys(localStorage).some((k) => k.startsWith(`tw.demo.${id}.`)) || JSON.stringify(localStorage.getItem("tw.demo.companies")).includes(id), cid)).toBe(false);
+});

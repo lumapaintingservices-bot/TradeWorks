@@ -3,6 +3,7 @@ import { addDaysISO } from "./calendar";
 import { calcMaterials, jobTypeOf } from "./estimate";
 import { num } from "./money";
 import { nl2list, scopeGroups } from "./scope";
+import { catalogHrs } from "./trades";
 import type { Estimate, JobTask, PhotoRef, Settings } from "./types";
 
 type Lang = "en" | "es";
@@ -134,7 +135,7 @@ export function workOrderRows(e: Estimate, s: Settings, lang: Lang = "en"): { ro
   (e.items || []).forEach((it) => {
     const d = es ? it.descEs || it.desc : it.desc || it.descEs;
     if (!d && !num(it.qty)) return;
-    const lh = it.hrs !== undefined && it.hrs !== "" && it.hrs !== null ? num(it.hrs) : num(it.qty) * num((p.svcHrs || {})[it.svc || ""]);
+    const lh = it.hrs !== undefined && it.hrs !== "" && it.hrs !== null ? num(it.hrs) : num(it.qty) * (catalogHrs(s, it.svc) || num((p.svcHrs || {})[it.svc || ""]));
     row(d || "—", (num(it.qty) + " " + (it.unit || "")).trim(), lh);
   });
   (e.upgrades || []).forEach((u) => {

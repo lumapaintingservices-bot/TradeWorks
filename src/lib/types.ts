@@ -1,4 +1,5 @@
-export type JobType = "cabinets" | "interior" | "exterior" | "other";
+/** The four painting job types, plus the job-type ids of the other trades (see lib/trades.ts). Stored as a plain string on the estimate. */
+export type JobType = "cabinets" | "interior" | "exterior" | "other" | (string & {});
 export type EstStatus = "Draft" | "Sent" | "Viewed" | "Accepted" | "Deposit Paid" | "Paid in Full" | "Declined";
 export const STATUSES: EstStatus[] = ["Draft", "Sent", "Viewed", "Accepted", "Deposit Paid", "Paid in Full", "Declined"];
 
@@ -86,7 +87,7 @@ export type Settings = {
   discounts: Discount[];
   processDays: number;
   scope: { en: string[]; es: string[] }; terms: { en: string[]; es: string[] };
-  typePresets: Partial<Record<Exclude<JobType, "cabinets">, TypePreset>>;
+  typePresets: Partial<Record<string, TypePreset>>;
   services: string; servicesEs: string;
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
   numbering: { nextEst: number; nextInv?: number };
@@ -101,4 +102,10 @@ export type Settings = {
   showcase?: { id: string; url: string; caption: string }[];
   /** Overrides of the default service-catalog rates (service id -> $ per unit), edited in Settings. */
   serviceRates?: Record<string, number>;
+  /** The company's own priced services (any trade). Missing = the trade's starter list (lib/trades.ts catalogOf). */
+  catalog?: CatalogItem[];
+  /** Always the company's trade (filled from company.trade when settings are read, see useSettings). Missing = painting. */
+  trade?: string;
 };
+/** One priced service the contractor can add to an estimate. `hrs` = your hours per unit (drives hours and "you earn per hour"). */
+export type CatalogItem = { id: string; en: string; es: string; unit: string; unitEs: string; rate: number; hrs?: number };

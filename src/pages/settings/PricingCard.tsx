@@ -2,6 +2,7 @@ import { nextEstimateNumber, useEstimates, useInvoices, useSettings } from "../.
 import { useT } from "../../i18n";
 import { invNumberText, nextInvNumber, asInv } from "../../lib/invoices";
 import { counter, firstBadNumber } from "../../lib/settingsForm";
+import { usesCabinetTools } from "../../lib/trades";
 import type { Settings } from "../../lib/types";
 import { Check, Fold, Grid, Help, Num, Pills, SaveCard, Sub, Txt, useDraft } from "./parts";
 
@@ -18,6 +19,7 @@ export default function PricingCard() {
   const { rows: invs } = useInvoices();
   const { draft: d, setDraft, dirty } = useDraft(pick(settings));
   const p = d.pricing;
+  const painting = usesCabinetTools(settings.trade); // door / drawer / frame / box prices are for painting & cabinets only
   const setP = (patch: Partial<Settings["pricing"]>) => setDraft({ ...d, pricing: { ...p, ...patch } });
   const modeOpts = (none: string): [string, string][] => [["included", t("Included in the door price", "Incluido en el precio de la puerta")], ["separate", t("Charged separately", "Cobrado aparte")], ["none", none]];
 
@@ -42,6 +44,7 @@ export default function PricingCard() {
     <SaveCard title={t("Prices & estimate defaults", "Precios y valores de los presupuestos")} hint={t("what every NEW estimate starts with", "con lo que empieza cada presupuesto NUEVO")} dirty={dirty} save={save} id="pricing">
       <Help>{t("These are your starting prices. You can still change them on each estimate; estimates you already wrote keep their own numbers.", "Estos son tus precios de partida. Los puedes cambiar en cada presupuesto; los que ya escribiste conservan sus números.")}</Help>
 
+      {painting && <>
       <Sub>{t("Cabinets", "Gabinetes")}</Sub>
       <Grid>
         <Num label={t("Price per door ($)", "Precio por puerta ($)")} value={p.doorRate} onChange={(n) => setP({ doorRate: n })} step="1" />
@@ -60,12 +63,13 @@ export default function PricingCard() {
         </div>
       </div>
       <Help>{t("“Included” means the door price already covers painting it. Choose “Charged separately” to add a line with its own price.", "“Incluido” significa que el precio de la puerta ya cubre pintarlo. Elige “Cobrado aparte” para agregar una línea con su propio precio.")}</Help>
+      </>}
 
       <Sub>{t("Deposit, validity and schedule", "Depósito, vigencia y calendario")}</Sub>
       <Grid>
         <Num label={t("Deposit (%)", "Depósito (%)")} value={p.depositPct} onChange={(n) => setP({ depositPct: n })} step="5" help={t("Asked when the client signs", "Se pide cuando el cliente firma")} />
         <Num label={t("Estimate valid for (days)", "Presupuesto válido por (días)")} value={p.validDays} onChange={(n) => setP({ validDays: n })} step="1" />
-        <Num label={t("Days on site (cabinets)", "Días en sitio (gabinetes)")} value={d.processDays} onChange={(n) => setDraft({ ...d, processDays: n })} step="1" help={t("Each other job type has its own in Job types", "Cada otro tipo de trabajo tiene el suyo en Tipos de trabajo")} />
+        {painting && <Num label={t("Days on site (cabinets)", "Días en sitio (gabinetes)")} value={d.processDays} onChange={(n) => setDraft({ ...d, processDays: n })} step="1" help={t("Each other job type has its own in Job types", "Cada otro tipo de trabajo tiene el suyo en Tipos de trabajo")} />}
       </Grid>
 
       <Sub>{t("What the client reads", "Lo que lee el cliente")}</Sub>
@@ -76,7 +80,7 @@ export default function PricingCard() {
         <Txt label={t("Services line — Español", "Línea de servicios — español")} value={d.servicesEs} onChange={(v) => setDraft({ ...d, servicesEs: v })} />
       </Grid>
 
-      <Fold title={t("Wording of the price lines on the document", "Texto de las líneas de precio en el documento")}>
+      {painting && <Fold title={t("Wording of the price lines on the document", "Texto de las líneas de precio en el documento")}>
         <Help>{t("What the client sees next to each price. Change only if you want different words.", "Lo que ve el cliente junto a cada precio. Cámbialo solo si quieres otras palabras.")}</Help>
         <Grid wide>
           <Txt label={t("Door line, frame included — English", "Línea de puertas, con marco — inglés")} value={p.doorLabel} onChange={(v) => setP({ doorLabel: v })} />
@@ -90,7 +94,7 @@ export default function PricingCard() {
           <Txt label={t("Box line — English", "Línea de cajas — inglés")} value={p.boxLabel} onChange={(v) => setP({ boxLabel: v })} />
           <Txt label={t("Box line — Español", "Línea de cajas — español")} value={p.boxLabelEs} onChange={(v) => setP({ boxLabelEs: v })} />
         </Grid>
-      </Fold>
+      </Fold>}
 
       <Fold title={t("Sales tax", "Impuesto sobre ventas")} open={d.tax.enabled}>
         <Check label={t("Charge tax on new estimates by default", "Cobrar impuesto por defecto en presupuestos nuevos")} checked={d.tax.enabled} onChange={(v) => setDraft({ ...d, tax: { ...d.tax, enabled: v } })} />

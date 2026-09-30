@@ -14,10 +14,13 @@
 .onb-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px}
 .onb-foot .link{border:0;background:none;color:var(--acc);font-size:13.5px;padding:0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.onb-own{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:0 10px;align-items:end}
+.onb-own .btn{margin-bottom:14px}
+.onb .onb-later{display:block;border:0;background:none;color:var(--acc);font-size:13.5px;padding:0;margin:4px 0 14px}
 .choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
 .choice button{padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-weight:600;font-size:15px}
 .choice button.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
-@media(max-width:640px){.onb{padding:24px 18px}.grid2{grid-template-columns:1fr}}
+@media(max-width:640px){.onb{padding:24px 18px}.grid2{grid-template-columns:1fr}.onb-own{grid-template-columns:1fr 1fr}.onb-own>label:first-child{grid-column:1/-1}}
 .auth-or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--ink-3);font-size:12.5px}
 .auth-or:before,.auth-or:after{content:"";flex:1;height:1px;background:var(--line)}
 .auth-google{display:flex;align-items:center;justify-content:center;gap:10px}

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useClients, useEstimates, useSettings, nextEstimateNumber } from "../data/hooks";
 import { useT } from "../i18n";
-import { applyTypePreset, blankEstimate, calcEstimate, jobDetail, jobTypeLabel, JOB_TYPES, suggestTypeFor, uid } from "../lib/estimate";
+import { applyTypePreset, blankEstimate, calcEstimate, jobDetail, jobTypeLabel, jobTypesOf, JOB_TYPES, suggestTypeFor, uid } from "../lib/estimate";
 import { fmtDate } from "../lib/format";
 import { money, num } from "../lib/money";
 import { STATUSES, type Estimate, type JobType } from "../lib/types";
@@ -33,6 +33,14 @@ export default function Estimates() {
       (!s || [e.number, e.clientName, e.address].some((x) => (x || "").toLowerCase().includes(s))))
       .sort((a, b) => (b.date || "").localeCompare(a.date || "") || b.number.localeCompare(a.number));
   }, [rows, q, st, jt]);
+  // job types of the company's trade, plus any older estimate's type (e.g. after switching trade)
+  const typeOptions = useMemo(() => {
+    const base = jobTypesOf(settings.trade).map((j) => ({ id: j.id, en: j.en, es: j.es }));
+    for (const r of rows) { const id = r.jobType || "cabinets"; if (!base.some((b) => b.id === id)) base.push({ id, en: jobTypeLabel(id), es: jobTypeLabel(id, true) }); }
+    return base;
+  }, [rows, settings.trade]);
+  // the starter cabinet templates only make sense for painting; a trade shows just the templates of its own job types
+  const templates = settings.jobTemplates.filter((tp) => jobTypesOf(settings.trade) === JOB_TYPES || jobTypesOf(settings.trade).some((j) => j.id === tp.data.jobType));
   const totalOf = (e: Estimate) => calcEstimate(e, settings).total;
   const sum = list.reduce((a, e) => a + totalOf(e), 0);
 
@@ -49,7 +57,7 @@ export default function Estimates() {
     await update({ numbering: { ...settings.numbering, nextEst: n + 1 } });
     nav(`/estimates/${e.id}`);
   }
-  const sug = suggestTypeFor(client);
+  const sug = suggestTypeFor(client, settings.trade);
 
   return (
     <div className="page">
@@ -65,7 +73,7 @@ export default function Estimates() {
           <div className="toolbar">
             <input placeholder={t("Search number, client, address…", "Buscar número, cliente, dirección…")} value={q} onChange={(e) => setQ(e.target.value)} />
             <select value={st} onChange={(e) => setSt(e.target.value)}><option value="all">{t("All statuses", "Todos los estados")}</option>{STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang === "es")}</option>)}</select>
-            <select value={jt} onChange={(e) => setJt(e.target.value)}><option value="all">{t("All job types", "Todos los tipos")}</option>{JOB_TYPES.map((j) => <option key={j.id} value={j.id}>{lang === "es" ? j.es : j.en}</option>)}</select>
+            <select value={jt} onChange={(e) => setJt(e.target.value)}><option value="all">{t("All job types", "Todos los tipos")}</option>{typeOptions.map((j) => <option key={j.id} value={j.id}>{lang === "es" ? j.es : j.en}</option>)}</select>
           </div>
           <div className="card only-desk tbl-wrap">
             <table className="tbl">
@@ -90,14 +98,14 @@ export default function Estimates() {
       {picking && (
         <Modal title={t("New estimate", "Nuevo presupuesto")} onClose={closePicker}>
           <p className="muted" style={{ fontSize: 13, marginBottom: 12 }}>{client ? `${client.name} · ` : ""}{t("What kind of job is it? Each one starts with its own spec, days, scope of work and terms.", "¿Qué tipo de trabajo es? Cada uno empieza con su propia especificación, días, alcance y términos.")}</p>
-          <div className="jt-grid">{JOB_TYPES.map((j) => (
+          <div className="jt-grid">{jobTypesOf(settings.trade).map((j) => (
             <button key={j.id} className={"jt-card" + (sug === j.id ? " sug" : "")} onClick={() => create(j.id)}>
               <b>{lang === "es" ? j.es : j.en}</b><span className="muted">{lang === "es" ? j.hint[1] : j.hint[0]}</span>
               {sug === j.id && <em>{t("From the request", "Según la solicitud")}</em>}
             </button>))}</div>
-          {settings.jobTemplates.length > 0 && <>
+          {templates.length > 0 && <>
             <div style={{ margin: "16px 0 8px", fontWeight: 600, fontSize: 13 }}>{t("Or start from one of your templates", "O empieza desde una de tus plantillas")}</div>
-            <div className="cards">{settings.jobTemplates.map((tp) => (
+            <div className="cards">{templates.map((tp) => (
               <button key={tp.id} className="btn" style={{ height: "auto", padding: "10px 14px", justifyContent: "space-between" }} onClick={() => create((tp.data.jobType as JobType) || "cabinets", tp.id)}>
                 <b>{tp.name}</b><span className="muted" style={{ fontWeight: 400, fontSize: 12.5 }}>{jobTypeLabel((tp.data.jobType as JobType) || "cabinets", lang === "es")}{num(tp.data.doors) ? ` · ${num(tp.data.doors)} ${t("doors", "puertas")}` : ""}</span>
               </button>))}</div></>}

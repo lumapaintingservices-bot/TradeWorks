@@ -6,6 +6,7 @@ import { PAY_METHODS, PAY_METHOD_KEYS, payMethodsOf } from "../lib/payMethods";
 import { deleteImage, putImage } from "../lib/storage";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import { backend } from "../auth/backend";
 import { useSettings } from "../data/hooks";
 import { useT } from "../i18n";
 import { Icon } from "../ui/Icon";
@@ -21,7 +22,7 @@ import MaterialsCard from "./settings/MaterialsCard";
 import MessageTemplatesCard from "./settings/MessageTemplatesCard";
 import PricingCard from "./settings/PricingCard";
 import ProductionCard from "./settings/ProductionCard";
-import ServicesCard from "./settings/ServicesCard";
+import CatalogCard, { TradeCard } from "./settings/CatalogCard";
 import ShowcaseCard from "./settings/ShowcaseCard";
 import "./Settings.css";
 
@@ -104,6 +105,35 @@ function LogoBox() {
           {company.logoUrl && <button type="button" className="btn danger" disabled={busy} onClick={remove}>{t("Remove", "Quitar")}</button>}
         </div>
         <input ref={file} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
+      </div>
+    </div>
+  );
+}
+
+/** Danger zone: the person who created the company can delete it (and only it), after typing its name. */
+function DeleteCompanyCard() {
+  const t = useT();
+  const { user, company } = useAuth();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  if (!company || !user || company.ownerUid !== user.uid) return null;
+  const ok = text.trim() === company.name.trim();
+  const run = async () => {
+    if (!ok) return;
+    if (!confirm(t(`Delete "${company.name}" and everything in it? This cannot be undone.`, `¿Borrar "${company.name}" y todo lo que tiene? No se puede deshacer.`))) return;
+    setBusy(true); setErr("");
+    try { await backend.deleteCompany(user.uid, company.id); window.location.assign("/"); }
+    catch { setErr(t("Could not delete it. Try again.", "No se pudo borrar. Inténtalo de nuevo.")); setBusy(false); }
+  };
+  return (
+    <div className="card" style={{ borderColor: "var(--bad)" }}>
+      <div className="card-h"><h2 style={{ color: "var(--bad)" }}>{t("Delete this company", "Borrar esta empresa")}</h2></div>
+      <div className="card-b">
+        <p className="muted" style={{ marginTop: 0 }}>{t("This deletes ONLY this company: its clients, estimates, invoices, expenses, team, photos, client links and requests. Your other companies and your account are not touched. It cannot be undone — download a backup first.", "Esto borra SOLO esta empresa: sus clientes, presupuestos, facturas, gastos, equipo, fotos, enlaces y solicitudes. Tus otras empresas y tu cuenta no se tocan. No se puede deshacer — descarga una copia primero.")}</p>
+        <label className="f">{t(`Type the company name (${company.name}) to confirm`, `Escribe el nombre de la empresa (${company.name}) para confirmar`)}<input value={text} onChange={(e) => setText(e.target.value)} /></label>
+        {err && <p className="st-err" role="alert">{err}</p>}
+        <button className="btn danger" disabled={!ok || busy} onClick={run}>{busy ? t("Deleting…", "Borrando…") : t("Delete company", "Borrar empresa")}</button>
       </div>
     </div>
   );
@@ -197,9 +227,11 @@ function OwnerOnly({ children }: { children: ReactNode }) { return can(useRole()
 type Section = { id: string; icon: string; en: string; es: string; descEn: string; descEs: string; body: () => ReactNode };
 const SECTIONS: Section[] = [
   { id: "general", icon: "settings", en: "General", es: "General", descEn: "How the app looks and your business details.", descEs: "Cómo se ve la app y los datos de tu negocio.",
-    body: () => <><AppearanceCard /><BusinessGate /></> },
+    body: () => <><AppearanceCard /><BusinessGate /><OwnerOnly><DeleteCompanyCard /></OwnerOnly></> },
   { id: "pricing", icon: "dollar", en: "Prices", es: "Precios", descEn: "What a new estimate starts with: your rates, deposit, tax, discounts and numbering.", descEs: "Con qué empieza un presupuesto nuevo: tus precios, depósito, impuesto, descuentos y numeración.",
-    body: () => <><PricingCard /><DiscountsCard /><ServicesCard /></> },
+    body: () => <><PricingCard /><DiscountsCard /></> },
+  { id: "services", icon: "tag", en: "Services & prices", es: "Servicios y precios", descEn: "Your trade and your own priced services, picked on every estimate.", descEs: "Tu oficio y tus servicios con precio, que eliges en cada presupuesto.",
+    body: () => <><TradeCard /><CatalogCard /></> },
   { id: "profit", icon: "percent", en: "Costs & profit", es: "Costos y ganancia", descEn: "The numbers behind your profit: how long the work takes, what labor costs, and paint and supplies.", descEs: "Los números detrás de tu ganancia: cuánto tarda el trabajo, cuánto cuesta la mano de obra, y la pintura y suministros.",
     body: () => <><ProductionCard /><MaterialsCard /></> },
   { id: "jobtypes", icon: "estimates", en: "Job types", es: "Tipos de trabajo", descEn: "The texts each kind of job starts with.", descEs: "Los textos con que empieza cada tipo de trabajo.",

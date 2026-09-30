@@ -1,3 +1,4 @@
+import { tradeById } from "./trades";
 import type { Client } from "./types";
 
 /** Answers of the public questionnaire (lead form), see docs/04-data-model.md leads/{id}. */
@@ -7,6 +8,8 @@ export type LeadDetails = {
   intr?: { rooms?: string[]; bedrooms?: number; bathrooms?: number; surfaces?: string[]; size?: string } | null;
   ext?: { stories?: string; surfaces?: string[] } | null;
   other?: string; tierCab?: string; tierWall?: string; when?: string; date?: string; contact?: string; src?: string; ref?: string;
+  /** Request form of another trade (cleaning, electrical, ...): the trade id and the answers (question id -> value); see lib/trades.data.ts. */
+  trade?: string; answers?: Record<string, string | string[] | number>;
 };
 export type Lead = {
   id: string; owner?: string; name?: string; phone?: string; email?: string; city?: string; address?: string; service?: string;
@@ -47,6 +50,19 @@ export function leadSummary(d: LeadDetails | null | undefined, lang: "en" | "es"
     const m: Record<string, string> = { stucco: L("stucco", "estuco"), trim: L("trim & fascia", "molduras y fascia"), soffit: L("soffits", "sofitos"), door: L("front door", "puerta principal"), garage: L("garage door", "garaje"), fence: L("fence", "cerca"), wash: L("pressure wash", "lavado a presión") };
     const xs = (x.surfaces || []).map((k) => m[k]).filter(Boolean);
     out.push("exterior" + (st ? " " + st : "") + (xs.length ? ": " + xs.join(", ") : ""));
+  }
+  if (d.trade && d.answers) {
+    const tr = tradeById(d.trade);
+    const svc = (d.types || []).map((id) => tr.lead?.services.find((x) => x.id === id)).filter(Boolean).map((x) => (es ? x!.es : x!.en));
+    if (svc.length) out.push(svc.join(", "));
+    for (const q of tr.lead?.questions || []) {
+      const v = d.answers[q.id];
+      if (v === undefined || v === "" || (Array.isArray(v) && !v.length)) continue;
+      const label = (id: string) => { const o = q.options?.find((x) => x.id === id); return o ? (es ? o.es : o.en) : id; };
+      if (q.kind === "text") out.push(String(v).slice(0, 80));
+      else if (q.kind === "count") out.push(`${es ? q.es : q.en}: ${v}`);
+      else out.push(Array.isArray(v) ? v.map(label).join(", ") : label(String(v)));
+    }
   }
   if (d.other) out.push(String(d.other).slice(0, 80));
   const tier: Record<string, string> = { premium: "Premium", pro: L("Professional", "Profesional"), top: L("Top of the line", "Lo mejor"), standard: L("Standard", "Estándar"), recommend: L("wants a recommendation", "quiere recomendación") };

@@ -1,6 +1,6 @@
 import { useT } from "../../i18n";
-import { SERVICE_CATALOG } from "../../lib/settings";
-import { applyTypePreset, defaultPlan, JOB_TYPES, serviceRate, uid } from "../../lib/estimate";
+import { applyTypePreset, defaultPlan, jobTypesOf, uid } from "../../lib/estimate";
+import { catalogLine, catalogOf, usesCabinetTools } from "../../lib/trades";
 import { money, num } from "../../lib/money";
 import type { Estimate, Item, JobType, PayStep, Upgrade } from "../../lib/types";
 import { NumInput } from "../../ui/NumInput";
@@ -11,14 +11,16 @@ const MODES = [["included", "Included in door price", "Incluido en el precio de 
 export default function PricingTab({ e, set, s, lang }: TabProps) {
   const t = useT();
   const es = lang === "es";
-  const cab = (e.jobType || "cabinets") === "cabinets";
-  const showCabBlock = cab || num(e.doors) > 0 || num(e.drawers) > 0;
+  const jobTypes = jobTypesOf(s.trade), painting = usesCabinetTools(s.trade), catalog = catalogOf(s);
+  const curType = e.jobType || jobTypes[0]?.id || "cabinets";
+  // cabinet controls (doors, drawers, frames, boxes) belong to painting; other trades only see them if an old estimate has cabinet counts
+  const showCabBlock = (painting && curType === "cabinets") || num(e.doors) > 0 || num(e.drawers) > 0;
   const setItem = (id: string, p: Partial<Item>) => set({ items: e.items.map((x) => (x.id === id ? { ...x, ...p } : x)) });
   const setUp = (id: string, p: Partial<Upgrade>) => set({ upgrades: e.upgrades.map((x) => (x.id === id ? { ...x, ...p } : x)) });
   const addSvc = (id: string) => {
-    const sv = SERVICE_CATALOG.find((x) => x.id === id);
+    const sv = catalog.find((x) => x.id === id);
     if (!sv) return;
-    set({ items: [...e.items, { id: uid("it"), desc: sv.en, descEs: sv.es, qty: 0, unit: sv.unit, rate: serviceRate(s, sv), svc: sv.id }] });
+    set({ items: [...e.items, catalogLine(sv, uid("it"))] });
   };
   const plan = e.payPlan || [];
   const planSum = plan.reduce((a, p) => a + num(p.pct), 0);
@@ -27,9 +29,9 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
   return (
     <div className="stack">
       <div className="card"><div className="card-h"><h2>{t("Job type", "Tipo de trabajo")}</h2></div><div className="card-b">
-        <div className="pills">{JOB_TYPES.map((j) => (
-          <button key={j.id} className={"pill" + ((e.jobType || "cabinets") === j.id ? " on" : "")} onClick={() => {
-            if (j.id === e.jobType) return;
+        <div className="pills">{jobTypes.map((j) => (
+          <button key={j.id} className={"pill" + (curType === j.id ? " on" : "")} onClick={() => {
+            if (j.id === curType) return;
             if (confirm(t("Switch job type? Spec, days, scope and terms will be replaced with this type's standard texts.", "¿Cambiar el tipo? La especificación, días, alcance y términos se reemplazan con los textos estándar de este tipo."))) set(applyTypePreset(e, s, j.id as JobType));
           }}>{es ? j.es : j.en}</button>))}</div>
       </div></div>
@@ -64,12 +66,12 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
         </div>
       </div></div>
 
-      <div className="card"><div className="card-h"><h2>{t("Other work", "Otros trabajos")}</h2>
+      <div className="card"><div className="card-h"><h2>{painting ? t("Other work", "Otros trabajos") : t("Services", "Servicios")}</h2>
         <select style={{ width: "auto" }} value="" onChange={(ev) => { if (ev.target.value === "_") set({ items: [...e.items, { id: uid("it"), desc: "", descEs: "", qty: 1, unit: "", rate: 0 }] }); else if (ev.target.value) addSvc(ev.target.value); }}>
           <option value="">{t("+ Add line", "+ Agregar línea")}</option><option value="_">{t("Custom line", "Línea personalizada")}</option>
-          {SERVICE_CATALOG.map((sv) => <option key={sv.id} value={sv.id}>{es ? sv.es : sv.en}</option>)}</select></div>
+          {catalog.map((sv) => <option key={sv.id} value={sv.id}>{es ? sv.es : sv.en}</option>)}</select></div>
         <div className="card-b">
-          {e.items.length === 0 && <p className="muted">{t("No lines yet.", "Aún no hay líneas.")}</p>}
+          {e.items.length === 0 && <p className="muted">{t("No lines yet.", "Aún no hay líneas.")}{!painting && catalog.length === 0 && " " + t("Add your services once in Settings → Services & prices, then pick them here.", "Agrega tus servicios una vez en Ajustes → Servicios y precios, y elígelos aquí.")}</p>}
           {e.items.map((it) => (
             <div className="line" key={it.id}>
               <input placeholder={t("Description", "Descripción")} value={es ? it.descEs || it.desc : it.desc} onChange={(ev) => setItem(it.id, es ? { descEs: ev.target.value } : { desc: ev.target.value })} />
