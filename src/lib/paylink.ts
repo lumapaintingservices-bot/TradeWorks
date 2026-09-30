@@ -8,6 +8,7 @@
 import { invKindLabel, invoiceSheetData, isPaid, type InvoiceRec, type InvoiceSheet } from "./invoices";
 import { money, num, r2 } from "./money";
 import { payMethodsOf } from "./payMethods";
+import { programOn, rewardText } from "./referrals";
 import type { Brand } from "./portal";
 import type { Estimate, Settings } from "./types";
 
@@ -24,6 +25,8 @@ export type PayModel = {
   methods: PayMethod[];
   note: string;
   reviewUrl: string;
+  /** Referral program on: the client's personal referral link and the reward, shown once the invoice is paid. */
+  refer?: { url: string; rewardEn: string; rewardEs: string };
 };
 export type PayClient = { views?: string[]; paid?: { method: string; at: string; note?: string } | null };
 export type PayDoc = { id: string; owner: string; invId: string; data: string; client?: PayClient };
@@ -101,7 +104,7 @@ export function payMethodUrl(m: PayMethod, amount: number, note: string): string
 export const payMethodCopy = (m: PayMethod): string | null => (m.kind === "cash" || m.kind === "card" || !m.to ? null : m.kind === "venmo" ? "@" + m.to : m.kind === "cashapp" ? "$" + m.to : m.to);
 
 /** Public copy of one invoice. Only what the printed invoice already shows travels (no costs, no notes to the crew). */
-export function payModel(v: InvoiceRec, e: Estimate, s: Settings, b: Brand): PayModel {
+export function payModel(v: InvoiceRec, e: Estimate, s: Settings, b: Brand, extra: { refUrl?: string } = {}): PayModel {
   const en = invoiceSheetData(v, e, s, "en"), es = invoiceSheetData(v, e, s, "es");
   return {
     v: 1,
@@ -110,6 +113,7 @@ export function payModel(v: InvoiceRec, e: Estimate, s: Settings, b: Brand): Pay
            titleEn: en.title || invKindLabel(v, false), titleEs: es.title || invKindLabel(v, true) },
     sheet: { en, es }, lang: e.docLang === "es" ? "es" : "en", business: b,
     methods: payOptionsOf(s), note: String(s.payNote || "").slice(0, 500), reviewUrl: String(s.reviewUrl || "").slice(0, 500),
+    ...(programOn(s) && extra.refUrl ? { refer: { url: extra.refUrl, rewardEn: rewardText(s, false), rewardEs: rewardText(s, true) } } : {}),
   };
 }
 

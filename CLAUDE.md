@@ -79,8 +79,15 @@ Merged (PR #10) and rules published 2026-09-30. Rules tests added but NOT run on
 "confirm payment INV-x"; money reminders carry {invoice} {amount} {paylink} {howtopay} (prototype template text kept verbatim,
 pay link appended). Automatic e-mails: `src/lib/autoEmail.ts` (what to send) + `workers/reminders` (Cloudflare cron + Resend,
 log in companies/{cid}/autoemails, once per reminder, creates missing pay links). Settings > Leads & messages > AutoEmailCard.
-Worker NOT deployed yet: owner needs Resend account + verified domain + service-account key (steps: workers/reminders/README.md).
-Next: 8c reviews & referrals (ask for a review when paid; referral rewards pending/paid), 8d card payments with Stripe Connect.
+Merged (PR #11). Worker DEPLOYED 2026-09-30 at https://tradeworks-reminders.lumapaintingservices.workers.dev with secrets
+set; sends from reminders@lumapaintingservices.com (Resend domain lumapaintingservices.com, DNS in Hover: resend._domainkey,
+send, rsend, _dmarc). Dry run OK. Owner still has to switch "Automatic reminders" on in Settings. On Windows use `npx.cmd`.
+8c reviews & referrals - DONE in code: settings.referral (on, amount, reward text EN/ES, ReferralCard); `src/lib/referrals.ts`
+(referralRows, reward earned when the referred friend has a job Paid in Full); follow-up "Referral reward to give" (tpl refthanks,
+snooze on the referrer); client profile shows each friend's status + "Give reward" (friend.refReward, optional marketing expense
+category ads / source Referral, id x-ref-{friendId}); review message and paid invoice page invite to share the referral link.
+`jobStatus` moved to src/lib/jobStatus.ts (re-exported by followups).
+Next: 8d card payments with Stripe Connect (owner chose Stripe integrated: connect account, Checkout per invoice, webhook marks paid).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

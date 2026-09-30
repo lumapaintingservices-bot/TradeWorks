@@ -57,6 +57,8 @@ export type Client = {
   note: string; lead?: boolean; archived?: boolean; archivedAt?: string; snooze?: Record<string, string>; createdAt?: unknown; updatedAt?: unknown; companyId?: string;
   web?: { id?: string; service?: string; city?: string; message?: string; heard?: string; at?: string; details?: { types?: string[] } & Record<string, unknown> };
   referredBy?: string;
+  /** On a referred client: the reward their referrer got for them (see src/lib/referrals.ts). */
+  refReward?: { amount: number; paidAt: string; method?: string; expenseId?: string };
   photos?: { id: string; kind: string; caption: string }[];
 };
 export type Discount = { code: string; type: "percent" | "fixed"; value: number; label: string; labelEs: string; active?: boolean };
@@ -100,6 +102,8 @@ export type Settings = {
   invoiceDueDays?: number;
   /** Reminders the daily worker e-mails by itself (workers/reminders), once per reminder. See src/lib/autoEmail.ts. */
   autoEmail?: { on?: boolean; kinds?: string[] };
+  /** Referral program: a client whose referred friend pays a job in full earns this reward (src/lib/referrals.ts). */
+  referral?: { on?: boolean; amount?: number; rewardEn?: string; rewardEs?: string };
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { useClients, useEstimates, useInvoices, useSettings } from "../data/hooks";
+import { useClients, useEstimates, useExpenses, useInvoices, useSettings } from "../data/hooks";
 import { useT } from "../i18n";
 import { calcEstimate, jobTypeLabel, jobTypeOf } from "../lib/estimate";
 import { clientJobs, clientPhotos, clientTiles, colorsUsed, contactLine, referralLink, referralMessage, referredClients } from "../lib/clientProfile";
-import { jobStatus } from "../lib/followups";
+import { jobStatus, todayISO } from "../lib/followups";
+import { EXP_METHODS, METHOD_ES } from "../lib/expenses";
+import { markRewardPaid, programOn, referralRows, rewardAmount, rewardExpense } from "../lib/referrals";
+import type { Client } from "../lib/types";
 import { fmtDate, initials } from "../lib/format";
 import { digitsOnly, waUrl } from "../lib/messages";
 import { money } from "../lib/money";
@@ -34,6 +37,17 @@ export default function ClientProfile() {
   const jobs = useMemo(() => clientJobs(ests, id), [ests, id]);
   const tiles = useMemo(() => clientTiles(jobs, invoices, settings), [jobs, invoices, settings]);
   const refs = useMemo(() => referredClients(clients, id), [clients, id]);
+  const refRows = useMemo(() => referralRows(clients, ests, invoices, settings).filter((r) => r.referrer.id === id), [clients, ests, invoices, settings, id]);
+  const refOn = programOn(settings);
+  const { save: saveExpense, remove: removeExpense } = useExpenses();
+  const [reward, setReward] = useState("");
+  const rewardFriend = clients.find((c) => c.id === reward);
+  /** Takes a given reward back (and the marketing expense it logged). */
+  const undoReward = async (friend: Client) => {
+    if (!confirm(t("Mark this reward as not given?", "¿Marcar esta recompensa como no entregada?"))) return;
+    if (friend.refReward?.expenseId) await removeExpense(friend.refReward.expenseId).catch(() => {});
+    await save({ ...friend, refReward: undefined });
+  };
   const colors = useMemo(() => colorsUsed(jobs), [jobs]);
   const photos = useMemo(() => clientPhotos(jobs), [jobs]);
   const referrer = client?.referredBy ? clients.find((c) => c.id === client.referredBy) : undefined;
@@ -137,11 +151,22 @@ export default function ClientProfile() {
             </div>
             <div className="cp-refs">
               <div className="cp-refs-h">{t("Referred by this client", "Referidos por este cliente")} · {refs.length}</div>
-              {refs.length === 0 ? <p className="muted">{t("Nobody yet.", "Nadie todavía.")}</p> : refs.map((r) => (
-                <div key={r.id} className="cp-refrow">
-                  <Link to={`/clients/${r.id}`}>{r.name}</Link>
-                  <span className="muted">{fmtDate(dayOf(r.createdAt), lang)}</span>
-                </div>))}
+              {refs.length === 0 ? <p className="muted">{t("Nobody yet.", "Nadie todavía.")}</p> : refs.map((r) => {
+                const row = refRows.find((x) => x.friend.id === r.id), rw = r.refReward;
+                return (
+                  <div key={r.id} className="cp-refrow">
+                    <span className="cp-ref-who"><Link to={`/clients/${r.id}`}>{r.name}</Link>
+                      <span className="muted">{fmtDate(dayOf(r.createdAt), lang)}</span>
+                      {row && <span className={"badge " + (row.status === "paid" ? "b-green" : row.status === "won" ? "b-blue" : "b-gray")}><i />
+                        {row.status === "paid" ? t("Job paid", "Trabajo pagado") : row.status === "won" ? t("Job won", "Trabajo ganado") : t("Lead", "Lead")}</span>}</span>
+                    <span className="cp-ref-rw">
+                      {rw ? <><span className="muted">✓ {t("Reward given", "Recompensa entregada")} · {money(rw.amount)} · {fmtDate(rw.paidAt, lang)}</span>
+                          <button className="link-btn" onClick={() => undoReward(r)}>{t("Undo", "Deshacer")}</button></>
+                        : row?.reward === "earned" && refOn ? <button className="btn sm pri" onClick={() => setReward(r.id)}>{t("Give reward", "Entregar recompensa")}</button>
+                        : refOn ? <span className="muted">{t("Reward when their job is paid", "Recompensa cuando paguen su trabajo")}</span> : null}
+                    </span>
+                  </div>);
+              })}
             </div>
           </div>
         </section>
@@ -166,6 +191,13 @@ export default function ClientProfile() {
         </section>
       )}
 
+      {rewardFriend && <RewardModal referrer={client} friend={rewardFriend} amount={rewardAmount(settings)} onClose={() => setReward("")}
+        onSave={async (amount, method, date, asExpense) => {
+          let expenseId: string | undefined;
+          if (asExpense && amount > 0) { expenseId = "x-ref-" + rewardFriend.id; await saveExpense(rewardExpense(expenseId, client, rewardFriend, amount, date, method) as never); }
+          await save(markRewardPaid(rewardFriend, amount, date, method, expenseId) as never);
+          setReward(""); toast(t("Reward saved", "Recompensa guardada"));
+        }} />}
       {editing && <ClientForm client={client} exists onClose={() => setEditing(false)} onDeleted={() => nav("/clients")} />}
       {zoom && <Modal title={t("Photo", "Foto")} onClose={() => setZoom(null)} wide><img className="cp-zoom" src={zoom} alt="" /></Modal>}
     </div>
@@ -180,4 +212,36 @@ function dayOf(v: unknown): string {
   const d = o.toDate ? o.toDate() : o.seconds ? new Date(o.seconds * 1000) : v instanceof Date ? v : null;
   if (!d || isNaN(d.getTime())) return "";
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** "Give reward": what was given, how, when — and whether to log it as a marketing expense (source Referral). */
+function RewardModal({ referrer, friend, amount, onClose, onSave }: {
+  referrer: Client; friend: Client; amount: number; onClose(): void;
+  onSave(amount: number, method: string, date: string, asExpense: boolean): Promise<void>;
+}) {
+  const t = useT();
+  const lang = useUi((s) => s.lang);
+  const [amt, setAmt] = useState(String(amount));
+  const [method, setMethod] = useState("");
+  const [date, setDate] = useState(todayISO());
+  const [asExpense, setAsExpense] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const go = async () => { if (busy) return; setBusy(true); try { await onSave(Math.max(0, Number(amt) || 0), method, date || todayISO(), asExpense); } finally { setBusy(false); } };
+  return (
+    <Modal title={t("Give referral reward", "Entregar recompensa por referido")} onClose={onClose}>
+      <p className="muted" style={{ marginTop: 0 }}>{t(`${referrer.name} referred ${friend.name}, whose job is paid in full.`, `${referrer.name} recomendó a ${friend.name}, cuyo trabajo ya está pagado.`)}</p>
+      <div className="grid2">
+        <label className="f">{t("Value ($)", "Valor ($)")}<input type="number" min={0} step={5} inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)} /></label>
+        <label className="f">{t("Date", "Fecha")}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+      </div>
+      <label className="f">{t("How it was given", "Cómo se entregó")}
+        <select value={method} onChange={(e) => setMethod(e.target.value)}>
+          <option value="">{t("Discount on their next job", "Descuento en su próximo trabajo")}</option>
+          {EXP_METHODS.map((m) => <option key={m} value={m}>{lang === "es" ? METHOD_ES[m] || m : m}</option>)}
+        </select></label>
+      <label className="chk" style={{ marginBottom: 14 }}><input type="checkbox" checked={asExpense} onChange={(e) => setAsExpense(e.target.checked)} />
+        {t("Also log it as a marketing expense (source: Referral)", "Anotarlo también como gasto de marketing (fuente: Referral)")}</label>
+      <button className="btn pri" disabled={busy} onClick={go}>{t("Save", "Guardar")}</button>
+    </Modal>
+  );
 }

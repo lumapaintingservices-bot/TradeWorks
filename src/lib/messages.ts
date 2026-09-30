@@ -4,18 +4,19 @@ import { fmtDate } from "./format";
 import { addDaysISO, todayISO as todayOf } from "./followups";
 import { money } from "./money";
 import { payOptionsText } from "./paylink";
+import { programOn, rewardText } from "./referrals";
 import type { Estimate, MessageTemplates, Settings } from "./types";
 
 export type Lang = "en" | "es";
-export type TplKey = "lead" | "send" | "follow" | "noview" | "viewed" | "deposit" | "balance" | "review" | "warranty" | "tomorrow" | "overdue";
-export const TPL_KEYS: TplKey[] = ["lead", "send", "follow", "noview", "viewed", "deposit", "balance", "overdue", "tomorrow", "review", "warranty"];
+export type TplKey = "lead" | "send" | "follow" | "noview" | "viewed" | "deposit" | "balance" | "review" | "warranty" | "tomorrow" | "overdue" | "refthanks";
+export const TPL_KEYS: TplKey[] = ["lead", "send", "follow", "noview", "viewed", "deposit", "balance", "overdue", "tomorrow", "review", "refthanks", "warranty"];
 
 /**
  * Placeholders every template understands ({first} is new: first name, used by the lead greeting).
  * {invoice} {amount} {paylink}: the invoice a reminder is about and its payment link; {howtopay}: the ways to pay, one per line.
  */
 export const PLACEHOLDERS = ["{client}", "{first}", "{number}", "{total}", "{deposit}", "{balance}", "{valid}", "{start}", "{business}", "{phone}", "{email}", "{website}", "{date}",
-  "{invoice}", "{amount}", "{paylink}", "{howtopay}"];
+  "{invoice}", "{amount}", "{paylink}", "{howtopay}", "{friend}", "{reward}", "{reflink}"];
 /** Reminders about money: the invoice's payment link is added at the end when the text does not already carry it. */
 export const PAY_KEYS: TplKey[] = ["deposit", "balance", "overdue"];
 
@@ -31,6 +32,7 @@ export const TPL_LABELS: Record<TplKey, { en: string; es: string }> = {
   warranty: { en: "Warranty check-in", es: "Revisión de garantía" },
   tomorrow: { en: "Job starts tomorrow", es: "El trabajo empieza mañana" },
   overdue: { en: "Invoice overdue", es: "Factura vencida" },
+  refthanks: { en: "Thank a client for a referral", es: "Agradecer un referido" },
 };
 
 export const DEFAULT_TEMPLATES: Record<TplKey, { en: string; es: string }> = {
@@ -74,6 +76,10 @@ export const DEFAULT_TEMPLATES: Record<TplKey, { en: string; es: string }> = {
     en: "Hi {client},\n\nA quick reminder: we start your project tomorrow, {start}. Please make sure we can get in and that the work area is clear.\n\nIf anything changed, just reply to this message.\n\nSee you tomorrow!\n{business}\n{phone}",
     es: "Hola {client},\n\nUn recordatorio: mañana, {start}, comenzamos su proyecto. Por favor asegúrese de que podamos entrar y de que el área de trabajo esté despejada.\n\nSi algo cambió, respóndame este mensaje.\n\n¡Nos vemos mañana!\n{business}\n{phone}",
   },
+  refthanks: {
+    en: "Hi {client},\n\nYour friend {friend} just finished their project with us — thank you for recommending us! As a thank-you: {reward}.\n\nWe really appreciate it.\n{business}\n{phone}",
+    es: "Hola {client},\n\nSu amigo(a) {friend} acaba de terminar su proyecto con nosotros — ¡gracias por recomendarnos! Como agradecimiento: {reward}.\n\nLo apreciamos mucho.\n{business}\n{phone}",
+  },
   overdue: {
     en: "Hi {client},\n\nA friendly reminder that invoice {invoice} for {amount} is still open.\n\nYou can pay by:\n{howtopay}\n\nIf you already sent it, thank you — just let me know so I can mark it paid.\n\n{business}\n{phone}",
     es: "Hola {client},\n\nUn recordatorio amable: la factura {invoice} por {amount} sigue pendiente.\n\nPuede pagar por:\n{howtopay}\n\nSi ya la pagó, muchas gracias — avíseme para marcarla como pagada.\n\n{business}\n{phone}",
@@ -92,13 +98,14 @@ export const DEFAULT_SUBJECTS: Record<TplKey, { en: string; es: string }> = {
   review: { en: "Thank you — {client}", es: "Gracias — {client}" },
   warranty: { en: "How are your cabinets holding up?", es: "¿Cómo siguen sus gabinetes?" },
   tomorrow: { en: "We start tomorrow — {number}", es: "Mañana comenzamos — {number}" },
+  refthanks: { en: "Thank you for sending {friend} our way", es: "Gracias por recomendarnos a {friend}" },
   overdue: { en: "Invoice {invoice} — {amount} open", es: "Factura {invoice} — {amount} pendiente" },
 };
 
 export type Business = { name: string; phone: string; email?: string; website?: string };
 export type MsgCtx = {
   settings: Pick<Settings, "pricing" | "tax" | "discounts">
-    & Partial<Pick<Settings, "messageTemplates" | "reviewUrl" | "payZelle" | "payZelleName" | "payMethods" | "payHandles">>;
+    & Partial<Pick<Settings, "messageTemplates" | "reviewUrl" | "payZelle" | "payZelleName" | "payMethods" | "payHandles" | "referral">>;
   business: Business;
   /** App origin for the client link; defaults to location.origin. */
   origin?: string;
@@ -107,6 +114,8 @@ export type MsgCtx = {
   /** The invoice a money reminder is about ({invoice} {amount}) and its payment link ({paylink}). */
   invoice?: { number: string; amount: number };
   payUrl?: string;
+  /** Referral program: the client's personal referral link ({reflink}) and, for a thank-you, the friend's name ({friend}). */
+  refUrl?: string; friend?: string;
 };
 
 /** Template text: the contractor's override for this language, else the default. */
@@ -137,6 +146,9 @@ export function fillTemplate(txt: string, e: Estimate | null | undefined, lang: 
     "{amount}": ctx.invoice ? money(ctx.invoice.amount) : "",
     "{paylink}": ctx.payUrl || "",
     "{howtopay}": payOptionsText(ctx.settings as Settings, lang === "es"),
+    "{friend}": ctx.friend || "",
+    "{reward}": rewardText(ctx.settings as Settings, lang === "es"),
+    "{reflink}": ctx.refUrl || "",
   };
   let out = String(txt || "");
   for (const k in map) out = out.split(k).join(map[k]);
@@ -152,6 +164,11 @@ export function buildMessage(key: TplKey, e: Estimate | null | undefined, lang: 
   let body = body0;
   const reviewUrl = ctx.settings.reviewUrl;
   if (key === "review" && reviewUrl && body.indexOf(reviewUrl) < 0) body += "\n\n" + reviewUrl;
+  // referral program on: the review request also invites to refer friends, with the client's own link
+  if (key === "review" && ctx.refUrl && programOn(ctx.settings as Settings) && body.indexOf(ctx.refUrl) < 0)
+    body += "\n\n" + (lang === "es"
+      ? `P.D. ¿Conoce a alguien que necesite un trabajo? Compártale su link personal: ${ctx.refUrl} — cuando su amigo termine su proyecto, usted recibe ${rewardText(ctx.settings as Settings, true)}.`
+      : `P.S. Know someone who needs work done? Share your personal link: ${ctx.refUrl} — when your friend's project is done, you get ${rewardText(ctx.settings as Settings, false)}.`);
   if ((key === "noview" || key === "viewed") && e && e.portal && e.portal.token) body += "\n\n" + clientLink(e.portal.token, ctx.origin);
   if (PAY_KEYS.includes(key) && ctx.payUrl && body.indexOf(ctx.payUrl) < 0) body += "\n\n" + (lang === "es" ? "Puede pagar aquí: " : "You can pay here: ") + ctx.payUrl;
   return { subject, body };

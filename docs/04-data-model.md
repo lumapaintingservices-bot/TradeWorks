@@ -14,11 +14,11 @@ companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbe
                                        templates[], jobTemplates[], leadSources[], production, services[],
                                        followUpDays, websiteUrl, instagramUrl, reviewUrl, portalUrl,
                                        payZelle, payZelleName, payNote, payMethods[] (chips), payHandles{venmo,cashapp,paypal,checkTo},
-                                       autoEmail{on,kinds[]}, invoiceDueDays,
+                                       autoEmail{on,kinds[]}, invoiceDueDays, referral{on,amount,rewardEn,rewardEs},
                                        goal{sales}, dashCards[],
                                        recurring[], bankRules[], expCats[], calOn, calToken, showcase[] }
 companies/{cid}/clients/{id}         { name, phone, email, address, source, lang, note, lead, archived, archivedAt,
-                                       createdAt, photos[], referredBy, web{service,city,message,heard,details} }
+                                       createdAt, photos[], referredBy, refReward{amount,paidAt,method,expenseId}, web{service,city,message,heard,details} }
 companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId, clientName, phone, email, address,
                                        docLang, jobType, doors, drawers, frames, boxes, frameMode, boxMode, spec, specEs,
                                        items[{id,desc,descEs,qty,unit,rate,hidden,svc}], upgrades[{id,desc,descEs,price|qty,rate,included,byClient}],

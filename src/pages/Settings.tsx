@@ -21,6 +21,7 @@ import LeadSourcesCard from "./settings/LeadSourcesCard";
 import MaterialsCard from "./settings/MaterialsCard";
 import MessageTemplatesCard from "./settings/MessageTemplatesCard";
 import AutoEmailCard from "./settings/AutoEmailCard";
+import ReferralCard from "./settings/ReferralCard";
 import PricingCard from "./settings/PricingCard";
 import ProductionCard from "./settings/ProductionCard";
 import CatalogCard, { TradeCard } from "./settings/CatalogCard";
@@ -256,7 +257,7 @@ const SECTIONS: Section[] = [
   { id: "jobtypes", icon: "estimates", en: "Job types", es: "Tipos de trabajo", descEn: "The texts each kind of job starts with.", descEs: "Los textos con que empieza cada tipo de trabajo.",
     body: () => <JobTypesCard /> },
   { id: "leads", icon: "tag", en: "Leads & messages", es: "Clientes y mensajes", descEn: "Where your clients come from and the messages you send them.", descEs: "De dónde vienen tus clientes y los mensajes que les mandas.",
-    body: () => <><LeadSourcesCard /><AutoEmailCard /><MessageTemplatesCard /></> },
+    body: () => <><LeadSourcesCard /><ReferralCard /><AutoEmailCard /><MessageTemplatesCard /></> },
   { id: "client", icon: "send", en: "Client link & payments", es: "Enlace del cliente y pagos", descEn: "What your client sees: how to pay you, request form and your recent work.", descEs: "Lo que ve tu cliente: cómo pagarte, formulario de solicitud y tus trabajos recientes.",
     body: () => <><ClientLinkCard /><RequestLinkCard /><ShowcaseCard /></> },
   { id: "calendar", icon: "calendar", en: "Calendar", es: "Calendario", descEn: "Your jobs and tasks in Google, Outlook or Apple calendar.", descEs: "Tus trabajos y tareas en el calendario de Google, Outlook o Apple.",

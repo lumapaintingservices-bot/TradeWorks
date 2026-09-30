@@ -2,6 +2,8 @@
 import { calcEstimate } from "./estimate";
 import { fmtDate } from "./format";
 import { asInv } from "./invoices";
+import { invoicesOf, jobStatus, mainInvoicesOf } from "./jobStatus";
+import { referralRows, rewardText } from "./referrals";
 import { money, num } from "./money";
 import type { TplKey } from "./messages";
 import type { Client, EstStatus, Estimate, Invoice, Settings } from "./types";
@@ -37,17 +39,8 @@ export function fmtWhen(iso?: string, lang: "en" | "es" = "en"): string {
   return d.toLocaleString(lang === "es" ? "es-US" : "en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-/* ---------------- job status (port of jobStatus: invoices override the estimate's own status) ---------------- */
-export const invoicesOf = (invoices: Invoice[], estId: string) => invoices.filter((v) => v.estId === estId);
-export const mainInvoicesOf = (invoices: Invoice[], estId: string) => invoicesOf(invoices, estId).filter((v) => v.kind !== "co");
-export function jobStatus(e: Estimate, invoices: Invoice[] = []): EstStatus {
-  const invs = invoicesOf(invoices, e.id);
-  if (invs.length) {
-    if (invs.every((v) => v.status === "Paid")) return "Paid in Full";
-    if (invs.some((v) => v.status === "Paid")) return "Deposit Paid";
-  }
-  return e.status || "Draft";
-}
+/* ---------------- job status (moved to ./jobStatus; re-exported here for the existing imports) ---------------- */
+export { invoicesOf, jobStatus, mainInvoicesOf };
 
 /* ---------------- leads ---------------- */
 /** Clients with no estimate that were not taken off the pipeline (port of leadClients). */
@@ -75,7 +68,7 @@ export function openedText(n: number, when?: string, lang: "en" | "es" = "en", c
 }
 
 /* ---------------- follow-ups ---------------- */
-export type FollowKind = "lead" | "chat" | "noview" | "viewed" | "follow" | "deposit" | "co" | "payclaim" | "balance" | "review" | "warranty" | "tomorrow" | "overdue";
+export type FollowKind = "lead" | "chat" | "noview" | "viewed" | "follow" | "deposit" | "co" | "payclaim" | "balance" | "review" | "warranty" | "tomorrow" | "overdue" | "reward";
 export type FollowUp = {
   /** Unique per item: "{estId|clientId}:{key}". */
   id: string;
@@ -87,6 +80,8 @@ export type FollowUp = {
   invId?: string;
   /** Day the daily worker e-mailed this reminder (then it stays out of the list for SNOOZE_DAYS). */
   emailed?: string;
+  /** Referral reward: the referred friend's client id and name ({friend} in the message). */
+  friendId?: string; friend?: string;
   /** CSS colour token for the little bar on the left. */
   color: string;
   /** Urgency, biggest first. */
@@ -129,6 +124,17 @@ export function followUps({ estimates, clients, settings, invoices = [], now = n
         title: L("New lead waiting", "Lead nuevo esperando"), detail: L(`${d} days, no estimate yet`, `${d} días, sin estimado`),
         who: c.name || "", phone: c.phone || "", email: c.email || "", lang: c.lang === "es" ? "es" : "en" });
   });
+
+  // referral program: the friend's job is paid in full -> thank the referrer and give the reward
+  if (settings.referral?.on)
+    referralRows(clients, estimates, invoices, settings).forEach((r) => {
+      const key = "reward" + r.friend.id, c = r.referrer;
+      if (r.reward !== "earned" || isSnoozed(c as Snoozable, key, today)) return;
+      const cl: "en" | "es" = c.lang === "es" ? "es" : "en";
+      out.push({ id: `${c.id}:${key}`, key, kind: "reward", clientId: c.id, friendId: r.friend.id, friend: r.friend.name || "", color: "var(--icon-purple)", sort: 40, tpl: "refthanks",
+        title: L("Referral reward to give", "Recompensa por referido"), detail: `${r.friend.name || "—"} · ${rewardText(settings, es)}`,
+        who: c.name || "", phone: c.phone || "", email: c.email || "", lang: cl });
+    });
 
   estimates.forEach((e) => {
     const cl = byId.get(e.clientId);

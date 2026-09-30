@@ -4,13 +4,14 @@
  * so the same reminder is never e-mailed twice. The app reads that log (followUps autoSent) to show "e-mailed" and to
  * keep the item out of "Who to write to today" for a few days, then it comes back for a personal WhatsApp nudge.
  */
+import { referralLink } from "./clientProfile";
 import { followUps, todayISO, type FollowUp } from "./followups";
 import { asInv, type InvoiceRec } from "./invoices";
 import { buildMessage, type Business, type TplKey } from "./messages";
 import type { Client, Estimate, Invoice, Settings } from "./types";
 
 /** Reminders that may go out automatically (the owner picks which in Settings). Leads, chats and change orders stay manual. */
-export const AUTO_KINDS: TplKey[] = ["deposit", "balance", "overdue", "tomorrow", "noview", "viewed", "follow", "review"];
+export const AUTO_KINDS: TplKey[] = ["deposit", "balance", "overdue", "tomorrow", "noview", "viewed", "follow", "review", "refthanks"];
 /** Money and schedule reminders: safe to automate. The sales follow-ups (noview / viewed / follow) and review stay opt-in. */
 export const DEFAULT_AUTO_KINDS: TplKey[] = ["deposit", "balance", "overdue", "tomorrow"];
 /** At most this many e-mails per company per day (a safety net against a data mistake sending dozens). */
@@ -39,6 +40,8 @@ export type PlannedEmail = {
 export type PlanInput = {
   estimates: Estimate[]; clients: Client[]; invoices: Invoice[]; settings: Settings;
   business: Business;
+  /** Company id: builds each client's referral link ({reflink}, review requests). */
+  companyId?: string;
   /** App address for links (client link, payment link), e.g. https://tradeworks-app.pages.dev */
   origin: string;
   /** Log ids already e-mailed (any status): never again. */
@@ -52,9 +55,11 @@ const footer = (b: Business, es: boolean) => "\n\n—\n" + (es
 
 function messageOf(f: FollowUp, inp: PlanInput, inv: InvoiceRec | undefined, payUrl: string) {
   const e = inp.estimates.find((x) => x.id === f.estId) || null;
+  const clientId = e?.clientId || f.clientId;
   return buildMessage(f.tpl as TplKey, e, f.lang, {
     settings: inp.settings, business: inp.business, origin: inp.origin, clientName: f.who,
     invoice: inv ? { number: inv.number, amount: inv.amount } : undefined, payUrl,
+    friend: f.friend, refUrl: inp.companyId && clientId ? referralLink(inp.origin, inp.companyId, clientId) : undefined,
   }, todayISO(inp.now));
 }
 
