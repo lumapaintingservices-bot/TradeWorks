@@ -1,4 +1,4 @@
-import { getDownloadURL, ref, uploadString, deleteObject } from "firebase/storage";
+import { getDownloadURL, ref, uploadString, deleteObject, listAll, type StorageReference } from "firebase/storage";
 import { hasFirebase, storage } from "./firebase";
 
 /**
@@ -15,4 +15,15 @@ export async function putImage(path: string, dataUrl: string): Promise<{ url: st
 export async function deleteImage(path?: string): Promise<void> {
   if (!hasFirebase || !path) return;
   try { await deleteObject(ref(storage, path)); } catch { /* already gone */ }
+}
+
+/** Deletes every file under one folder (e.g. companies/{cid}). Best effort: missing files or folders are ignored. */
+export async function deleteFolder(path: string): Promise<void> {
+  if (!hasFirebase) return;
+  const walk = async (r: StorageReference): Promise<void> => {
+    const l = await listAll(r);
+    await Promise.all(l.items.map((i) => deleteObject(i).catch(() => {})));
+    for (const p of l.prefixes) await walk(p);
+  };
+  try { await walk(ref(storage, path)); } catch { /* nothing there */ }
 }
