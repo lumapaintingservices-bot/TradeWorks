@@ -179,3 +179,13 @@ html.tw-dark .thsw button.on{background:var(--surface-2)}
 .avp-btns{display:flex;flex-wrap:wrap;gap:8px}
 .avp-btns .btn{gap:6px}
 .avp-hint{margin:0;font-size:12.5px;color:var(--ink-3)}
+/* Input group (idea from shadcn's Input Group): a box with text addons ($, units) inside the border */
+.ig{display:flex;align-items:center;min-width:0;height:40px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--shadow-xs);overflow:hidden}
+.ig:focus-within{border-color:#9DBBFF;box-shadow:var(--focus-ring)}
+.ig input{flex:1;min-width:0;height:100%;border:0 !important;box-shadow:none !important;background:transparent;border-radius:0;padding:0 10px;font-variant-numeric:tabular-nums}
+.ig input:focus{outline:0}
+.ig-a{flex:none;padding:0 10px;font-size:13px;color:var(--ink-3);white-space:nowrap}
+.ig-a:first-child{padding-right:0}
+.ig input+.ig-a{padding-left:0}
+.ig.off{background:var(--surface-2);box-shadow:none}
+.ig.off input{color:var(--ink-3)}

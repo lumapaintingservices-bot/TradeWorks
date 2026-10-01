@@ -7,6 +7,8 @@ import type { Estimate, Item, JobType, PayStep, Upgrade } from "../../lib/types"
 import { NumInput } from "../../ui/NumInput";
 import type { TabProps } from "./types";
 import { ask } from "../../ui/confirm";
+import { measureLines, measureIds } from "../../lib/measures";
+import MeasuresCard from "./MeasuresCard";
 
 const MODES = [["included", "Included in door price", "Incluido en el precio de la puerta"], ["separate", "Charged separately", "Cobrado aparte"], ["none", "Not painted", "No se pinta"]] as const;
 
@@ -17,6 +19,10 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
   const curType = e.jobType || jobTypes[0]?.id || "cabinets";
   // cabinet controls (doors, drawers, frames, boxes) belong to painting; other trades only see them if an old estimate has cabinet counts
   const showCabBlock = (painting && curType === "cabinets") || num(e.doors) > 0 || num(e.drawers) > 0;
+  const curJob = jobTypes.find((j) => j.id === curType);
+  // lines held by the Measurements card are not listed again below
+  const measured = new Set([...measureLines(e.items || [], measureIds(s, curType)).values()].map((it) => it.id));
+  const otherItems = e.items.filter((it) => !measured.has(it.id));
   const setItem = (id: string, p: Partial<Item>) => set({ items: e.items.map((x) => (x.id === id ? { ...x, ...p } : x)) });
   const setUp = (id: string, p: Partial<Upgrade>) => set({ upgrades: e.upgrades.map((x) => (x.id === id ? { ...x, ...p } : x)) });
   const addSvc = (id: string) => {
@@ -61,6 +67,8 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
         </div></div>
       )}
 
+      <MeasuresCard e={e} set={set} s={s} lang={lang} jobType={curType} jobName={curJob ? (es ? curJob.es : curJob.en) : curType} />
+
       <div className="card"><div className="card-h"><h2>{t("Project spec", "Especificación")}</h2></div><div className="card-b">
         <div className="grid2">
           <label className="f">English<textarea rows={2} value={e.spec} onChange={(ev) => set({ spec: ev.target.value })} /></label>
@@ -73,8 +81,8 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
           <option value="">{t("+ Add line", "+ Agregar línea")}</option><option value="_">{t("Custom line", "Línea personalizada")}</option>
           {catalog.map((sv) => <option key={sv.id} value={sv.id}>{es ? sv.es : sv.en}</option>)}</select></div>
         <div className="card-b">
-          {e.items.length === 0 && <p className="muted">{t("No lines yet.", "Aún no hay líneas.")}{!painting && catalog.length === 0 && " " + t("Add your services once in Settings → Services & prices, then pick them here.", "Agrega tus servicios una vez en Ajustes → Servicios y precios, y elígelos aquí.")}</p>}
-          {e.items.map((it) => (
+          {otherItems.length === 0 && <p className="muted">{t("No lines yet.", "Aún no hay líneas.")}{!painting && catalog.length === 0 && " " + t("Add your services once in Settings → Services & prices, then pick them here.", "Agrega tus servicios una vez en Ajustes → Servicios y precios, y elígelos aquí.")}</p>}
+          {otherItems.map((it) => (
             <div className="line" key={it.id}>
               <input placeholder={t("Description", "Descripción")} value={es ? it.descEs || it.desc : it.desc} onChange={(ev) => setItem(it.id, es ? { descEs: ev.target.value } : { desc: ev.target.value })} />
               <NumInput value={it.qty} onChange={(n) => setItem(it.id, { qty: n })} placeholder={t("Qty", "Cant.")} />

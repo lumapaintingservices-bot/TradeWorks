@@ -110,3 +110,23 @@ html.tw-dark .st-nav-i.on{background:var(--surface-2);box-shadow:none}
 .st-body .card-b>p.muted:first-child{margin-bottom:14px}
 .st-theme{display:flex;align-items:center;gap:12px;margin-bottom:18px;font-size:14px;color:var(--ink-2)}
 .st-layout.only{grid-template-columns:minmax(0,640px)}
+/* Job types > measurements (JobTypesCard.tsx MeasuresEditor), shadcn-style list with input groups */
+.msx-empty{font-size:13px;margin:0 0 10px}
+.msx-list{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:10px;container-type:inline-size}
+.msx-row{display:grid;grid-template-columns:minmax(0,1fr) 190px auto;gap:12px;align-items:center;padding:10px 12px;background:var(--surface)}
+.msx-row+.msx-row{border-top:1px solid var(--line-2)}
+.msx-name{min-width:0;display:flex;flex-direction:column;gap:1px}
+.msx-name b{font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.msx-name span{font-size:12.5px;color:var(--ink-3)}
+.msx-price{height:36px}
+.msx-act{display:flex;gap:4px}
+.msx-act .btn.icon-only{width:32px;height:32px;padding:0}
+.msx-add{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.msx-pick{flex:1 1 240px;min-width:0;max-width:420px}
+.msx-new{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;border:1px dashed var(--line);border-radius:12px;padding:12px 12px 4px;margin-bottom:14px;background:var(--surface-2)}
+.msx-new-b{grid-column:1/-1;display:flex;gap:8px;margin-bottom:10px}
+@container (max-width:520px){
+  .msx-row{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .msx-price{grid-column:1/-1;grid-row:2}
+}
+@media(max-width:640px){.msx-new{grid-template-columns:1fr}}

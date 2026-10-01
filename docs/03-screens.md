@@ -42,7 +42,9 @@ lead's requested type is highlighted.
 Header: number, status, saved time, actions (All estimates, Work order, Save as template, Duplicate, Delete).
 Top tiles: client price, your hours, materials, what you keep, earn per hour.
 Left column: Client, Schedule & source, Totals. Right tabs:
-- **Pricing**: job type pills, cabinet block (doors, drawers, frames/boxes modes, spec EN/ES) or
+- **Pricing**: job type pills, cabinet block (doors, drawers, frames/boxes modes, spec EN/ES), then **Measurements** of the job
+  type (MeasuresCard.tsx: how many × price per unit, e.g. walls sq ft, ceilings, doors; each one is an estimate line; set the list
+  and prices in Settings > Job types) or
   "Project spec" + "+ Add cabinet work" for other types; other work lines (room calculator, service
   catalog, hide-from-client lines); upgrades/options; discount (codes, Cash/Zelle 3%) & tax; payment plan.
 - **Scope & notes**: scope EN/ES (Day 1–5 headings), terms EN/ES, notes, "Make standard", reset.

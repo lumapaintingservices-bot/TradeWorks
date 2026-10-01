@@ -48,6 +48,10 @@ Big avatar (click = pick a photo, camera badge) + "Upload photo" / "Change photo
 320px square JPEG (squareImage in src/lib/image.ts). Settings > General > Your profile (everyone; workers change the photo on their worker
 record, src/data/avatar.ts useMyPhoto) and Team > Edit worker (saved with Save). User menu: "Profile & photo".
 
+## Input group [.ig] (idea from shadcn Input Group)
+A box with text addons inside the border: `<div className="ig"><span className="ig-a">$</span><NumInput/><span className="ig-a ig-u">/sq ft</span></div>`.
+Focus ring on the whole box; `.off` = disabled look. Used by the Measurements card and Settings > Job types.
+
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 
