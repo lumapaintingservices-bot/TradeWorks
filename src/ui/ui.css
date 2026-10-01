@@ -71,3 +71,29 @@ a.badge:focus-visible,button.badge:focus-visible{outline:0;box-shadow:var(--focu
 @keyframes drawer-in{from{transform:translateX(28px);opacity:0}}
 @media(prefers-reduced-motion:reduce){.drawer{animation:none}}
 @media(max-width:640px){.drawer-h{padding:10px 12px 10px 16px}}
+/* Confirm window (confirm.tsx), idea from shadcn's Alert Dialog */
+.ask-back{position:fixed;inset:0;z-index:90;background:rgba(11,13,18,.45);display:grid;place-items:center;padding:16px;animation:ask-fade .12s ease-out}
+.ask{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-modal);box-shadow:var(--shadow-modal);padding:22px 22px 18px;animation:ask-in .14s ease-out}
+.ask-ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:18px;background:var(--acc-soft);color:var(--acc-ink);margin-bottom:12px}
+.ask-ic.bad{background:var(--tile-red);color:var(--bad)}
+.ask h2{font-size:17px;font-weight:600;line-height:1.35;margin:0;overflow-wrap:anywhere}
+.ask p{margin:6px 0 0;font-size:14px;color:var(--ink-2);line-height:1.5;overflow-wrap:anywhere}
+.ask-act{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.btn.ask-danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.ask-danger:hover{filter:brightness(.95)}
+@keyframes ask-fade{from{opacity:0}}
+@keyframes ask-in{from{transform:scale(.97);opacity:0}}
+@media(prefers-reduced-motion:reduce){.ask-back,.ask{animation:none}}
+@media(max-width:640px){.ask-back{place-items:end center;padding:12px}.ask-act .btn{flex:1;justify-content:center}}
+/* Toast (Toaster.tsx), idea from shadcn's Sonner */
+.toast.tw-toast{display:flex;align-items:center;gap:10px;left:auto;right:24px;bottom:24px;transform:none;min-width:260px;max-width:min(440px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow-pop);border-radius:12px;padding:10px 10px 10px 12px;font-size:14px;font-weight:500;animation:tt-in .18s ease-out}
+.tt-ic{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;background:var(--tile-green);color:var(--ok);font-weight:800;font-size:13px}
+.tw-toast.err .tt-ic{background:var(--tile-red);color:var(--bad)}
+.tt-msg{flex:1;min-width:0;line-height:1.4}
+.tt-undo{flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;cursor:pointer}
+.tt-undo:hover{background:var(--acc-soft)}
+.tt-x{flex:none;width:26px;height:26px;border:0;border-radius:7px;background:none;color:var(--ink-3);display:grid;place-items:center;cursor:pointer;padding:0}
+.tt-x:hover{background:var(--surface-2);color:var(--ink)}
+@keyframes tt-in{from{transform:translateY(8px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.toast.tw-toast{animation:none}}
+@media(max-width:899px){.toast.tw-toast{left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:none;min-width:0}}

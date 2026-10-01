@@ -17,6 +17,7 @@ import { useUi } from "../../store/ui";
 import { Icon } from "../../ui/Icon";
 import "./worker.css";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 type Meta = { estId: string; jobLabel: string; kind: PhotoKind };
 
@@ -68,7 +69,7 @@ export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { 
     q.add(files, { estId: job.estId, jobLabel: job.label, kind });
   };
   const del = async (p: JobPhoto) => {
-    if (!confirm(t("Delete this photo?", "¿Borrar esta foto?"))) return;
+    if (!await ask(t("Delete this photo?", "¿Borrar esta foto?"))) return;
     setZoom(-1);
     try { await remove(p.id); toast(t("Photo deleted.", "Foto borrada.")); } catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
   };

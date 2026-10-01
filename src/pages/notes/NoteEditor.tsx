@@ -5,6 +5,7 @@ import { colName, MAX_NOTE_COLS, newColId, PRIOS } from "../../lib/notes";
 import type { Client, Estimate, Note, NoteCol } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
+import { ask } from "../../ui/confirm";
 
 /** Write or edit one note: title, text, column, priority, due date, linked job, person in charge. */
 export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onSave, onDelete, onClose }: {
@@ -49,7 +50,7 @@ export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onS
             </select></label>
         </div>
         <div className="nb-ed-act">
-          {!isNew && <button className="btn danger" onClick={() => { if (confirm(t("Delete this note?", "¿Borrar esta nota?"))) onDelete(); }}>{t("Delete", "Borrar")}</button>}
+          {!isNew && <button className="btn danger" onClick={async () => { if (await ask(t("Delete this note?", "¿Borrar esta nota?"))) onDelete(); }}>{t("Delete", "Borrar")}</button>}
           <span className="sp" />
           <button className="btn" onClick={onClose}>{t("Cancel", "Cancelar")}</button>
           <button className="btn pri" disabled={empty} onClick={save}>{t("Save", "Guardar")}</button>
@@ -65,9 +66,9 @@ export function ColumnsEditor({ cols, counts, onSave, onClose }: { cols: NoteCol
   const es = useUi((s) => s.lang) === "es";
   const [list, setList] = useState<NoteCol[]>(cols);
   const move = (i: number, dir: -1 | 1) => setList((l) => { const n = [...l]; const j = i + dir; if (j < 0 || j >= n.length) return l; [n[i], n[j]] = [n[j], n[i]]; return n; });
-  const remove = (i: number) => {
+  const remove = async (i: number) => {
     const c = list[i], k = counts[c.id] || 0;
-    if (k && !confirm(t(`“${colName(c, es)}” has ${k} note(s). They will move to the first column.`, `“${colName(c, es)}” tiene ${k} nota(s). Se pasarán a la primera columna.`))) return;
+    if (k && !await ask(t(`“${colName(c, es)}” has ${k} note(s). They will move to the first column.`, `“${colName(c, es)}” tiene ${k} nota(s). Se pasarán a la primera columna.`))) return;
     setList((l) => l.filter((_, x) => x !== i));
   };
   return (

@@ -24,6 +24,7 @@ import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
 import LocationPing from "../pages/team/LocationPing";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { Toaster } from "../ui/Toaster";
 import { modKey, QuickMenu, SearchPalette } from "./QuickActions";
 
 function LangSwitch() {
@@ -134,7 +135,6 @@ function ShellBody() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, company, role } = useAuth();
-  const toast = useUi((s) => s.toastMsg);
   const [more, setMore] = useState(false);
   const [ws, setWs] = useState(false);       // desktop popover
   const [wsMore, setWsMore] = useState(false); // list inside the mobile More sheet
@@ -254,7 +254,7 @@ function ShellBody() {
         ))}
         <button className={more ? "on" : ""} onClick={() => setMore((m) => !m)}><Icon name="more" /><span>{t("More", "Más")}</span></button>
       </nav>
-      {toast && <div className="toast" role="status">{toast}</div>}
+      <Toaster />
     </div>
   );
 }

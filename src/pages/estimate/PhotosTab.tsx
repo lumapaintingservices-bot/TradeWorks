@@ -14,6 +14,7 @@ import { useUi } from "../../store/ui";
 import type { TabProps } from "./types";
 import "./jobday.css";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 const KINDS = ["", "before", "after", "detail"] as const;
 
@@ -52,7 +53,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
 
   const remove = async (ph: PhotoRef) => {
     const extra = ph.inWork ? " " + t("It stays in “Our recent work”.", "Se queda en “Trabajos recientes”.") : "";
-    if (!confirm(t("Remove this photo?", "¿Quitar esta foto?") + extra)) return;
+    if (!await ask(t("Remove this photo?", "¿Quitar esta foto?") + extra)) return;
     write(latest.current.filter((x) => x.id !== ph.id));
     setZoom(-1);
     if (ph.teamId) removeTeamPhoto(ph.teamId).catch(() => {}); // a worker's photo: gone from their phone list too

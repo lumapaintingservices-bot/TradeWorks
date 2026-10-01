@@ -12,6 +12,7 @@ import type { Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Icon } from "../../ui/Icon";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 /** Paid / Unpaid badge, plus what happened online: a bank payment on its way, or a second payment (to refund in Stripe). */
 export function InvBadge({ v }: { v: InvoiceRec }) {
@@ -74,7 +75,7 @@ export function PaySend({ v, e, lang }: { v: InvoiceRec; e: Estimate | undefined
     finally { setBusy(false); }
   };
   const turnOff = async () => {
-    if (!company || busy || !confirm(t("Turn off this link? The client will see that it is no longer active.", "¿Desactivar este enlace? El cliente verá que ya no está activo."))) return;
+    if (!company || busy || !await ask(t("Turn off this link? The client will see that it is no longer active.", "¿Desactivar este enlace? El cliente verá que ya no está activo."))) return;
     setBusy(true);
     try { await removePayLink(v, company.id); toast(t("Link turned off", "Enlace desactivado")); }
     finally { setBusy(false); }

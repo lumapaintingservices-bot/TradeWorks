@@ -27,6 +27,8 @@ import ProductionCard from "./settings/ProductionCard";
 import CatalogCard, { TradeCard } from "./settings/CatalogCard";
 import ShowcaseCard from "./settings/ShowcaseCard";
 import CardPayCard from "./settings/CardPayCard";
+import { ask } from "../ui/confirm";
+import { PhoneInput } from "../ui/PhoneInput";
 import "./Settings.css";
 
 function LinkRow({ label, url }: { label: string; url: string }) {
@@ -89,7 +91,7 @@ function LogoBox() {
     if (file.current) file.current.value = "";
   }
   async function remove() {
-    if (!confirm(t("Remove your logo?", "¿Quitar tu logo?"))) return;
+    if (!await ask(t("Remove your logo?", "¿Quitar tu logo?"))) return;
     setBusy(true);
     try { await saveCompany({ name: company!.name, logoUrl: "" }); await deleteImage(path); toast(t("Logo removed", "Logo quitado")); } catch { toast(t("Couldn't remove it. Try again.", "No se pudo quitar. Inténtalo de nuevo.")); }
     setBusy(false);
@@ -124,7 +126,7 @@ function DeleteCompanyCard() {
   const ok = text.trim() === company.name.trim();
   const run = async () => {
     if (!ok) return;
-    if (!confirm(t(`Delete "${company.name}" and everything in it? This cannot be undone.`, `¿Borrar "${company.name}" y todo lo que tiene? No se puede deshacer.`))) return;
+    if (!await ask(t(`Delete "${company.name}" and everything in it? This cannot be undone.`, `¿Borrar "${company.name}" y todo lo que tiene? No se puede deshacer.`))) return;
     setBusy(true); setErr("");
     try { await backend.deleteCompany(user.uid, company.id); window.location.assign("/"); }
     catch { setErr(t("Could not delete it. Try again.", "No se pudo borrar. Inténtalo de nuevo.")); setBusy(false); }
@@ -156,7 +158,7 @@ function BusinessCard() {
         <LogoBox />
         <label className="f">{t("Business name", "Nombre del negocio")}<input value={f.name} onChange={set("name")} /></label>
         <div className="grid2">
-          <label className="f">{t("Phone", "Teléfono")}<input value={f.phone} inputMode="tel" onChange={set("phone")} /></label>
+          <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={f.phone} onChange={(v) => set("phone")({ target: { value: v } })} /></label>
           <label className="f">{t("Email", "Correo")}<input type="email" value={f.email} onChange={set("email")} /></label>
           <label className="f">{t("Website", "Sitio web")}<input value={f.website} onChange={set("website")} /></label>
           <label className="f">{t("Area served", "Zona de servicio")}<input value={f.area} onChange={set("area")} /></label>
@@ -183,7 +185,7 @@ function DepositCard() {
   return (
     <div className="card">
       <div className="card-h"><h2>{t("Deposit when the client signs", "Depósito al firmar")}</h2>
-        <label className="chk"><input type="checkbox" checked={on} onChange={async (ev) => { await update({ depositAtSign: ev.target.checked, ...(ev.target.checked ? { depositAtSignSince: new Date().toISOString() } : {}) }); toast(t("Saved", "Guardado")); }} />{on ? t("On", "Activo") : t("Off", "Apagado")}</label></div>
+        <label className="chk"><input type="checkbox" role="switch" className="sw" checked={on} onChange={async (ev) => { await update({ depositAtSign: ev.target.checked, ...(ev.target.checked ? { depositAtSignSince: new Date().toISOString() } : {}) }); toast(t("Saved", "Guardado")); }} />{on ? t("On", "Activo") : t("Off", "Apagado")}</label></div>
       <div className="card-b"><p className="muted" style={{ margin: 0 }}>
         {on ? t("Right after signing, the client is asked to pay the first payment: TradeWorks creates the job's invoices and the client gets a “Pay the deposit” button with all your ways to pay (and card, if it's on).",
               "Justo al firmar se le pide al cliente el primer pago: TradeWorks crea las facturas del trabajo y el cliente ve un botón “Pagar depósito” con todas tus formas de pago (y tarjeta, si está activa).")

@@ -12,6 +12,7 @@ import type { ColorRow } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import type { TabProps } from "./types";
 import { CrewCard } from "./CrewCard";
+import { ask } from "../../ui/confirm";
 import "./jobday.css";
 
 const COLOR_FIELDS = ["area", "brand", "color", "sheen", "code"] as const;
@@ -43,8 +44,8 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
     setDrafts((d) => ({ ...d, [day]: "" }));
   };
   const delTask = (id: string) => set({ jobTasks: (e.jobTasks || []).filter((x) => x.id !== id) });
-  const resetChecks = () => {
-    if (!confirm(t("Clear all the ticks on this checklist?", "¿Quitar todas las marcas de esta lista?"))) return;
+  const resetChecks = async () => {
+    if (!await ask(t("Clear all the ticks on this checklist?", "¿Quitar todas las marcas de esta lista?"))) return;
     if (company && crewDoc) patchRec(company.id, "crewjobs", crewDoc.id, { done: {}, doneBy: {} }).catch(() => {});
     set({ check: {} });
   };

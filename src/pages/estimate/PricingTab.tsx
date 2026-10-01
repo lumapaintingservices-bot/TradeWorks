@@ -6,6 +6,7 @@ import { money, num } from "../../lib/money";
 import type { Estimate, Item, JobType, PayStep, Upgrade } from "../../lib/types";
 import { NumInput } from "../../ui/NumInput";
 import type { TabProps } from "./types";
+import { ask } from "../../ui/confirm";
 
 const MODES = [["included", "Included in door price", "Incluido en el precio de la puerta"], ["separate", "Charged separately", "Cobrado aparte"], ["none", "Not painted", "No se pinta"]] as const;
 
@@ -31,9 +32,9 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
     <div className="stack">
       <div className="card"><div className="card-h"><h2>{t("Job type", "Tipo de trabajo")}</h2></div><div className="card-b">
         <div className="pills">{jobTypes.map((j) => (
-          <button key={j.id} className={"pill" + (curType === j.id ? " on" : "")} onClick={() => {
+          <button key={j.id} className={"pill" + (curType === j.id ? " on" : "")} onClick={async () => {
             if (j.id === curType) return;
-            if (confirm(t("Switch job type? Spec, days, scope and terms will be replaced with this type's standard texts.", "¿Cambiar el tipo? La especificación, días, alcance y términos se reemplazan con los textos estándar de este tipo."))) set(applyTypePreset(e, s, j.id as JobType));
+            if (await ask(t("Switch job type? Spec, days, scope and terms will be replaced with this type's standard texts.", "¿Cambiar el tipo? La especificación, días, alcance y términos se reemplazan con los textos estándar de este tipo."))) set(applyTypePreset(e, s, j.id as JobType));
           }}>{es ? j.es : j.en}</button>))}</div>
       </div></div>
 

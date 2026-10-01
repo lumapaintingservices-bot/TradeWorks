@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { demoCompanyId, demoRows, demoStore, dollars, expect, signUp, signUpAndSkip, test } from "./helpers";
+import { demoCompanyId, demoRows, demoStore, dollars, expect, signUp, signUpAndSkip, test, acceptConfirms } from "./helpers";
 
 type CatalogRow = { id: string; en: string; unit: string; rate: number; hrs?: number };
 type SettingsDoc = { id: string; trade?: string; catalog?: CatalogRow[]; pricing: { depositPct: number; doorRate: number } };
@@ -140,7 +140,7 @@ test("\"I'll set my prices later\" keeps the trade's starter list, editable in S
 });
 
 test("Settings: edit the catalog and switch trade without losing your own services", async ({ page }) => {
-  page.on("dialog", (d) => d.accept());
+  await acceptConfirms(page);
   await signUpAndSkip(page);                                                       // a painting company
   const cid = await demoCompanyId(page);
   await page.goto("/settings?section=services");
@@ -194,7 +194,7 @@ test("Settings: edit the catalog and switch trade without losing your own servic
 });
 
 test("request form for an electrician: its own services and questions, no cabinet steps", async ({ page, context }) => {
-  page.on("dialog", (d) => d.accept());
+  await acceptConfirms(page);
   await signUpAndSkip(page, "Volt Electric");
   const cid = await demoCompanyId(page);
   await page.goto("/settings?section=services");

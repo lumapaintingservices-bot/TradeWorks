@@ -2,6 +2,7 @@ import { useLeadInbox } from "../data/leads";
 import { useT } from "../i18n";
 import { leadSummary } from "../lib/leads";
 import { useUi } from "../store/ui";
+import { ask } from "../ui/confirm";
 import "./LeadInbox.css";
 
 const ago = (iso: string | undefined, es: boolean) => {
@@ -35,7 +36,7 @@ export function LeadInbox() {
             </div>
             <div className="li-act">
               <button className="btn pri sm" disabled={busy} onClick={() => importLead(l)}>{t("Import", "Importar")}</button>
-              <button className="btn danger sm" disabled={busy} onClick={() => { if (confirm(t("Delete this request?", "¿Eliminar esta solicitud?"))) dismiss(l); }}>{t("Dismiss", "Descartar")}</button>
+              <button className="btn danger sm" disabled={busy} onClick={async () => { if (await ask(t("Delete this request?", "¿Eliminar esta solicitud?"))) dismiss(l); }}>{t("Dismiss", "Descartar")}</button>
             </div>
           </div>
         ))}

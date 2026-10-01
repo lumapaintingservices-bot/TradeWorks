@@ -11,6 +11,7 @@ import {
 import { useUi } from "../../store/ui";
 import { RoleBadge } from "../../auth/RoleBadge";
 import { mailtoHref } from "../../lib/safeUrl";
+import { ask } from "../../ui/confirm";
 
 const ORDER: Record<Role, number> = { owner: 0, admin: 1, worker: 2 };
 
@@ -85,7 +86,7 @@ export default function MembersCard() {
     finally { setBusy(false); }
   };
   const revoke = async (inv: Invite) => {
-    if (!confirm(t(`Cancel the invite for ${inv.email}?`, `¿Cancelar la invitación de ${inv.email}?`))) return;
+    if (!await ask(t(`Cancel the invite for ${inv.email}?`, `¿Cancelar la invitación de ${inv.email}?`))) return;
     try { await backend.deleteInvite(inv.email); if (share?.email === inv.email) setShare(null); await load(); toast(t("Invite cancelled", "Invitación cancelada")); }
     catch { toast(t("Could not cancel the invite.", "No se pudo cancelar la invitación.")); }
   };
@@ -103,7 +104,7 @@ export default function MembersCard() {
   const remove = async (m: Member) => {
     const v = canRemoveMember({ actor: me, members: lite, targetUid: m.uid, primaryOwnerUid: company.ownerUid });
     if (!v.ok) return tellDenied(v.reason);
-    if (!confirm(t(`Remove ${m.name || m.email} from ${company.name}? They lose access right away.`, `¿Quitar a ${m.name || m.email} de ${company.name}? Pierde el acceso de inmediato.`))) return;
+    if (!await ask(t(`Remove ${m.name || m.email} from ${company.name}? They lose access right away.`, `¿Quitar a ${m.name || m.email} de ${company.name}? Pierde el acceso de inmediato.`))) return;
     try { await backend.removeMember(company.id, m.uid); await load(); toast(t("Removed", "Quitado")); }
     catch { toast(t("Could not remove.", "No se pudo quitar.")); }
   };

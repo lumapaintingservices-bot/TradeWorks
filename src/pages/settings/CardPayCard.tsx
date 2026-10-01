@@ -113,7 +113,7 @@ export default function CardPayCard() {
             </div>
           </> : <>
             <label className="chk" style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>
-              <input type="checkbox" checked={showOn} onChange={(e) => toggle(e.target.checked)} />{t("Show “Pay by card or bank” on invoice payment links", "Mostrar “Pagar con tarjeta o banco” en los enlaces de pago")}</label>
+              <input type="checkbox" role="switch" className="sw" checked={showOn} onChange={(e) => toggle(e.target.checked)} />{t("Show “Pay by card or bank” on invoice payment links", "Mostrar “Pagar con tarjeta o banco” en los enlaces de pago")}</label>
             {!showOn && <p className="muted" style={{ fontSize: 12.5, marginTop: 0 }}>{t("Off: clients only see your other ways to pay.", "Apagado: los clientes solo ven tus otras formas de pago.")}</p>}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <a className="btn" href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer">{t("Open my Stripe", "Abrir mi Stripe")} ↗</a>

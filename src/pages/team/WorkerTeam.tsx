@@ -17,6 +17,7 @@ import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
 import { NumInput } from "../../ui/NumInput";
+import { ask } from "../../ui/confirm";
 import "../Team.css";
 import "./worker.css";
 
@@ -106,7 +107,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
     if (!k || !isMyTask(k, workerId)) return;
     return guard("task" + id, async () => { await patchTask(id, { done: !isDone }); });
   };
-  const delHours = (id: string) => { if (confirm(t("Delete these hours?", "¿Borrar estas horas?"))) guard("h" + id, () => removeHours(id)); };
+  const delHours = async (id: string) => { if (await ask(t("Delete these hours?", "¿Borrar estas horas?"))) guard("h" + id, () => removeHours(id)); };
 
   const el = clock ? clockElapsed(clock.at, now) : null;
   return (

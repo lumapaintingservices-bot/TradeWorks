@@ -97,8 +97,8 @@ test("invoice payment link: client claims, owner confirms, link shows paid", asy
 
   // turning the link off shows "not active"
   await page.locator("tbody tr", { hasText: "Balance" }).getByRole("button", { name: "Send ✓" }).click();
-  page.once("dialog", (d) => d.accept());
   await page.locator(".drawer").getByRole("button", { name: "Turn off link" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Turn off" }).click();
   await expect(page.getByText("Link turned off")).toBeVisible();
   await client.goto(link2);
   await expect(client.getByText("This link isn't active")).toBeVisible();

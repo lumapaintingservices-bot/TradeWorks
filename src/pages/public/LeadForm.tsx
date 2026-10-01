@@ -3,6 +3,7 @@ import { getTop, setTop } from "../../data/repo";
 import type { LeadDetails } from "../../lib/leads";
 import { leadFormFor, normalizeTrade, questionsFor, serviceLabel } from "../../lib/trades";
 import { safeImgSrc, safeUrl } from "../../lib/safeUrl";
+import { PhoneInput } from "../../ui/PhoneInput";
 import "./LeadForm.css";
 
 /** Public lead questionnaire: /request?c={companyId}&src=thumbtack&ref={clientId}. Always light, contractor-branded. */
@@ -328,7 +329,7 @@ export default function LeadForm() {
         <div className="lf-box fields">
           <div className="f2">
             <label className="lf-f"><span>{t("Full name", "Nombre completo")}</span><input type="text" autoComplete="name" maxLength={100} value={f.name} onChange={(e) => set({ name: e.target.value })} /></label>
-            <label className="lf-f"><span>{t("Phone", "Teléfono")}</span><input type="tel" autoComplete="tel" maxLength={30} value={f.phone} onChange={(e) => set({ phone: e.target.value })} /></label>
+            <label className="lf-f"><span>{t("Phone", "Teléfono")}</span><PhoneInput maxLength={30} value={f.phone} onChange={(v) => set({ phone: v })} /></label>
           </div>
           <label className="lf-f"><span>{t("Email", "Correo")} <i>{t("(optional)", "(opcional)")}</i></span><input type="email" autoComplete="email" maxLength={120} value={f.email} onChange={(e) => set({ email: e.target.value })} /></label>
           <label className="lf-f"><span>{t("Project address", "Dirección del proyecto")}</span><input type="text" autoComplete="street-address" maxLength={160} placeholder={t("Street, city, ZIP", "Calle, ciudad, código postal")} value={f.address} onChange={(e) => set({ address: e.target.value })} /></label>

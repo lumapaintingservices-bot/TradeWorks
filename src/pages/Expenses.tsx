@@ -20,6 +20,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { ask } from "../ui/confirm";
 import "./Expenses.css";
 
 const FALLBACK_SOURCES = ["Thumbtack", "Google", "Referral", "Instagram", "Nextdoor", "Facebook", "Repeat client", "Walk-by / sign", "Other"];
@@ -257,7 +258,7 @@ function ExpenseModal({ exp, onClose }: { exp: Expense | null; onClose(): void }
   };
 
   const del = async () => {
-    if (!exp || busy || !confirm(t("Delete this expense?", "¿Borrar este gasto?"))) return;
+    if (!exp || busy || !await ask(t("Delete this expense?", "¿Borrar este gasto?"))) return;
     setBusy(true);
     try {
       /* a month made by a recurring entry stays deleted (otherwise it would be created again) */
@@ -332,7 +333,7 @@ function RecurringModal({ onClose }: { onClose(): void }) {
               <span className="muted">{expCatLabel(r.category, es, settings.expCats)}{r.source ? " · " + r.source : ""} · {t("day", "día")} {r.day}</span></div>
             <b className="ex-rec-amt">{money(r.amount)}</b>
             <label className="ex-check"><input type="checkbox" checked={r.active !== false} onChange={(e) => write(list.map((x) => x.id === r.id ? { ...x, active: e.target.checked } : x))} /> {t("On", "Activo")}</label>
-            <button className="btn sm danger" aria-label={t("Delete", "Borrar")} onClick={() => { if (confirm(t("Stop and delete this recurring expense? Past months stay.", "¿Parar y borrar este gasto recurrente? Los meses pasados se quedan."))) write(list.filter((x) => x.id !== r.id)); }}>×</button>
+            <button className="btn sm danger" aria-label={t("Delete", "Borrar")} onClick={async () => { if (await ask(t("Stop and delete this recurring expense? Past months stay.", "¿Parar y borrar este gasto recurrente? Los meses pasados se quedan."))) write(list.filter((x) => x.id !== r.id)); }}>×</button>
           </div>))}</div>)}
     </Modal>
   );

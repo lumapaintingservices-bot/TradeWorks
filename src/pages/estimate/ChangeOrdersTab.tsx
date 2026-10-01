@@ -14,6 +14,7 @@ import "../Invoices.css";
 import { useInvoiceOps } from "./InvoicesTab";
 import type { TabProps } from "./types";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 type CO = ChangeOrder & { via?: string };
 const logLine = (e: Estimate, text: string) => [...(e.activity || []), { at: new Date().toISOString(), text }].slice(-100);
@@ -42,7 +43,7 @@ export default function ChangeOrdersTab({ e, set, s }: TabProps) {
 
   const patch = (id: string | undefined, p: Partial<CO>) => set({ changeOrders: list.map((c) => (c.id === id ? { ...c, ...p } : c)) });
   const add = () => set({ changeOrders: [...list, { id: uid("co"), n: nextChangeNumber(e), desc: "", descEs: "", amount: 0, hours: 0, status: "draft" }] });
-  const remove = (co: CO) => { if (confirm(t(`Delete change order #${co.n}?`, `¿Borrar la orden de cambio #${co.n}?`))) set({ changeOrders: list.filter((c) => c.id !== co.id) }); };
+  const remove = async (co: CO) => { if (await ask(t(`Delete change order #${co.n}?`, `¿Borrar la orden de cambio #${co.n}?`))) set({ changeOrders: list.filter((c) => c.id !== co.id) }); };
   const send = (co: CO) => {
     if (num(co.amount) <= 0 || !(co.desc || co.descEs)) { toast(t("Add what will be done and the price first.", "Primero pon qué se va a hacer y el precio.")); return; }
     set({ changeOrders: list.map((c) => (c.id === co.id ? { ...c, status: "sent" } : c)), activity: logLine(e, t(`Change order #${co.n} sent for approval`, `Orden de cambio #${co.n} enviada para aprobar`)) });

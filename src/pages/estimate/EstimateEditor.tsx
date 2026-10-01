@@ -26,6 +26,8 @@ import PricingTab from "./PricingTab";
 import ScopeTab from "./ScopeTab";
 import "./estimate.css";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
+import { PhoneInput } from "../../ui/PhoneInput";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
@@ -129,7 +131,7 @@ export default function EstimateEditor() {
     await update({ jobTemplates: [...s.jobTemplates, { id: uid("tpl"), name, data: data as Partial<Estimate> }] });
     toast(t("Template saved. It shows up when you start a new estimate.", "Plantilla guardada. Aparece cuando empiezas un presupuesto nuevo."));
   };
-  const del = async () => { if (confirm(t("Delete this estimate? This can't be undone.", "¿Eliminar este presupuesto? No se puede deshacer."))) { await remove(e.id); nav("/estimates"); } };
+  const del = async () => { if (await ask(t("Delete this estimate? This can't be undone.", "¿Eliminar este presupuesto? No se puede deshacer."))) { await remove(e.id); nav("/estimates"); } };
   const props = { e, set, s, lang };
 
   return (
@@ -172,7 +174,7 @@ export default function EstimateEditor() {
             <label className="f">{t("Saved client", "Cliente guardado")}<select value={e.clientId} onChange={(ev) => pickClient(ev.target.value)}>
               <option value="">{t("New / not saved", "Nuevo / sin guardar")}</option>{clients.filter((c) => !c.archived).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
             <label className="f">{t("Name", "Nombre")}<input value={e.clientName} onChange={(ev) => set({ clientName: ev.target.value })} /></label>
-            <label className="f">{t("Phone", "Teléfono")}<input value={e.phone} inputMode="tel" onChange={(ev) => set({ phone: ev.target.value })} /></label>
+            <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={e.phone} onChange={(v) => set({ phone: v })} /></label>
             <label className="f">{t("Email", "Correo")}<input type="email" value={e.email} onChange={(ev) => set({ email: ev.target.value })} /></label>
             <label className="f">{t("Job address", "Dirección del trabajo")}<input value={e.address} onChange={(ev) => set({ address: ev.target.value })} /></label>
             <label className="f">{t("Document language", "Idioma del documento")}<select value={e.docLang} onChange={(ev) => set({ docLang: ev.target.value as "en" | "es" })}><option value="en">English</option><option value="es">Español</option></select></label>

@@ -11,6 +11,7 @@ import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
 import { InvoicePreview } from "./invoices/InvoicePreview";
 import { InvBadge, PayClaimBar } from "./invoices/PayParts";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { ask } from "../ui/confirm";
 import "./Invoices.css";
 
 type Filter = "all" | "unpaid" | "paid" | "claims";
@@ -55,7 +56,7 @@ export default function Invoices() {
     toast(now ? t(`${v.number} marked paid.`, `${v.number} marcada como pagada.`) : t(`${v.number} marked unpaid.`, `${v.number} marcada como no pagada.`));
   });
   const del = (v: InvoiceRec) => run(async () => {
-    if (!confirm(t(`Delete invoice ${v.number}? This can't be undone.`, `¿Borrar la factura ${v.number}? No se puede deshacer.`))) return;
+    if (!await ask(t(`Delete invoice ${v.number}? This can't be undone.`, `¿Borrar la factura ${v.number}? No se puede deshacer.`))) return;
     await syncStatus(v, await ops.removeInv(v));
     toast(t("Invoice deleted.", "Factura borrada."));
   });

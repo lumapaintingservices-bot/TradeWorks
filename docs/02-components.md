@@ -78,6 +78,23 @@ Icon tile 56 (radius 16, --acc-soft / --acc) · title 17/600 · text 14 --ink-3 
 ## Modal [.modal-card]
 Radius 18, header with title + Close, body padding 24. Wide variant 980px. On phones becomes a bottom sheet.
 
+## Confirm window [.ask] → /src/ui/confirm.tsx (idea from shadcn Alert Dialog)
+`if (!(await ask(t("Delete this note?", "¿Borrar esta nota?")))) return;` instead of the browser confirm(). The question is the title,
+the rest the explanation (src/lib/confirmText.ts). Delete / remove / clear… get a red button, with focus on Cancel. The button says the
+question's verb (Delete, Quitar…) unless `ok` is given. Esc or the backdrop = Cancel. Phones: bottom sheet. Mounted once in main.tsx (ConfirmHost).
+
+## Toast [.tw-toast] → /src/ui/Toaster.tsx (idea from shadcn Sonner)
+`toast(text, { undo?, kind? })`: icon (green check; red ! for errors, detected from the text), close X, optional "Undo" (6 s, else 3 s).
+Undo is offered after deleting a note, task, worker hours or payment (the record is saved back). Desktop bottom-right, phones above the bar.
+
+## Switch [input.sw] (idea from shadcn Switch)
+`<input type="checkbox" role="switch" className="sw">` for on / off settings: deposit at signing, automatic reminders, referrals,
+card payments, calendar link, discount active. Green when on (--chk overrides).
+
+## Phone input → /src/ui/PhoneInput.tsx (idea from shadcn studio Phone Input)
+US numbers become (555) 010-2030 while typing at the end, and when leaving the field (src/lib/phone.ts). +52…, extensions and long
+numbers are left as typed. Used for every phone field: clients, estimate, onboarding, company, workers, new lead, lead form.
+
 ## Drawer [.drawer] → /src/ui/Drawer.tsx
 Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a
 click on the backdrop closes it; the page behind does not scroll. Used by the invoice preview.

@@ -20,6 +20,8 @@ import TeamMap from "./team/TeamMap";
 import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 import { Badge } from "../ui/Badge";
+import { ask } from "../ui/confirm";
+import { PhoneInput } from "../ui/PhoneInput";
 
 type ModalState =
   | { kind: "worker"; id?: string }
@@ -116,7 +118,12 @@ function OwnerTeam() {
     );
   };
 
-  const delPay = (id: string) => { if (confirm(t("Delete this payment?", "¿Borrar este pago?"))) removePay(id); };
+  const delPay = async (id: string) => {
+    const gone = pays.find((p) => p.id === id);
+    if (!(await ask(t("Delete this payment?", "¿Borrar este pago?")))) return;
+    await removePay(id);
+    toast(t("Payment deleted.", "Pago borrado."), gone ? { undo: () => savePay(gone) } : undefined);
+  };
 
   const workerActions = (w: Worker) => {
     const st = stats.get(w.id)!;
@@ -294,7 +301,7 @@ function OwnerTeam() {
           jobs={jobOptions(ests, invoices, hours.find((h) => h.id === modal.id)?.estId).map((e) => ({ id: e.id, label: jobLabel(e) }))}
           onSite={jobOnSite(ests, todayISO(), invoices)?.id || ""} onClose={() => setModal(null)}
           onSave={async (h) => { await saveHours({ ...h, jobLabel: h.estId ? jobLabel(estById(h.estId)) : "" }); setModal(null); toast(t("Hours saved.", "Horas guardadas.")); }}
-          onDelete={async (id) => { await removeHours(id); setModal(null); }} />
+          onDelete={async (id) => { const gone = hours.find((h) => h.id === id); await removeHours(id); setModal(null); toast(t("Hours deleted.", "Horas borradas."), gone ? { undo: () => saveHours(gone) } : undefined); }} />
       )}
       {modal?.kind === "pay" && (
         <PayModal workers={workers} startWorker={modal.workerId} owedOf={(id) => { const w = wById(id); return w ? workerStats(w, { from: "", to: "" }, hours, pays).owed : 0; }}
@@ -306,7 +313,7 @@ function OwnerTeam() {
           jobs={jobOptions(ests, invoices, tasks.find((k) => k.id === modal.id)?.estId).map((e) => ({ id: e.id, label: jobLabel(e) }))}
           onClose={() => setModal(null)}
           onSave={async (k) => { await saveTask({ ...k, jobLabel: k.estId ? jobLabel(estById(k.estId)) : "" }); setModal(null); toast(t("Task saved.", "Tarea guardada.")); }}
-          onDelete={async (id) => { await removeTask(id); setModal(null); toast(t("Task deleted.", "Tarea eliminada.")); }} />
+          onDelete={async (id) => { const gone = tasks.find((k) => k.id === id); await removeTask(id); setModal(null); toast(t("Task deleted.", "Tarea eliminada."), gone ? { undo: () => saveTask(gone) } : undefined); }} />
       )}
     </div>
   );
@@ -350,18 +357,18 @@ function WorkerModal({ worker, hasRecords, onSave, onDelete, onClose }: {
   };
   const del = () => run(async () => {
     if (hasRecords(w.id)) {
-      if (!confirm(t("This worker has hours or payments. Mark as inactive instead? (Cancel keeps everything as is.)", "Este trabajador tiene horas o pagos. ¿Marcarlo como inactivo? (Cancelar deja todo igual.)"))) { setSaving(false); return; }
+      if (!await ask(t("This worker has hours or payments. Mark as inactive instead? (Cancel keeps everything as is.)", "Este trabajador tiene horas o pagos. ¿Marcarlo como inactivo? (Cancelar deja todo igual.)"), { ok: t("Mark inactive", "Marcar inactivo") })) { setSaving(false); return; }
       await onSave({ ...w, active: false });
       return;
     }
-    if (!confirm(t("Delete this worker?", "¿Borrar este trabajador?"))) { setSaving(false); return; }
+    if (!await ask(t("Delete this worker?", "¿Borrar este trabajador?"))) { setSaving(false); return; }
     await onDelete(w);
   });
   return (
     <Modal title={isNew ? t("New worker", "Trabajador nuevo") : t("Edit worker", "Editar trabajador")} onClose={onClose}>
       <label className="f">{t("Name", "Nombre")}<input autoFocus={!w.name} value={w.name} onChange={(e) => setW({ ...w, name: e.target.value })} /></label>
       <div className="grid2">
-        <label className="f">{t("Phone", "Teléfono")}<input type="tel" value={w.phone || ""} onChange={(e) => setW({ ...w, phone: e.target.value })} /></label>
+        <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={w.phone || ""} onChange={(v) => setW({ ...w, phone: v })} /></label>
         <label className="f">{t("Pay per hour ($)", "Pago por hora ($)")}<NumInput step="0.5" value={num(w.rate)} onChange={(n) => setW({ ...w, rate: n })} /></label>
       </div>
       <label className="f">{t("Role", "Rol")}<input value={w.role || ""} onChange={(e) => setW({ ...w, role: e.target.value })} placeholder={t("Painter, helper, sprayer…", "Pintor, ayudante, sprayador…")} /></label>
@@ -414,7 +421,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
       <p className="muted tm-amt">{num(h.rate) ? t(`Amount: ${money(hourAmount(h))} (${money(num(h.rate))}/h)`, `Monto: ${money(hourAmount(h))} (${money(num(h.rate))}/h)`) : " "}</p>
       <div className="tm-actions">
         <button className="btn pri" disabled={saving} onClick={save}>{t("Save", "Guardar")}</button>
-        {!isNew && <button className="btn danger" disabled={saving} onClick={() => { if (confirm(t("Delete these hours?", "¿Borrar estas horas?"))) run(() => onDelete(h.id)); }}>{t("Delete", "Borrar")}</button>}
+        {!isNew && <button className="btn danger" disabled={saving} onClick={async () => { if (await ask(t("Delete these hours?", "¿Borrar estas horas?"))) run(() => onDelete(h.id)); }}>{t("Delete", "Borrar")}</button>}
       </div>
     </Modal>
   );
@@ -488,7 +495,7 @@ function TaskModal({ task, workers, jobs, onSave, onDelete, onClose }: {
       {!isNew && <label className="tm-check"><input type="checkbox" checked={!!k.done} onChange={(e) => setK({ ...k, done: e.target.checked })} /> {t("Done", "Hecha")}</label>}
       <div className="tm-actions">
         <button className="btn pri" disabled={saving} onClick={save}>{t("Save task", "Guardar tarea")}</button>
-        {!isNew && <button className="btn danger" disabled={saving} onClick={() => { if (confirm(t("Delete this task?", "¿Eliminar esta tarea?"))) run(() => onDelete(k.id)); }}>{t("Delete task", "Eliminar tarea")}</button>}
+        {!isNew && <button className="btn danger" disabled={saving} onClick={async () => { if (await ask(t("Delete this task?", "¿Eliminar esta tarea?"))) run(() => onDelete(k.id)); }}>{t("Delete task", "Eliminar tarea")}</button>}
       </div>
     </Modal>
   );

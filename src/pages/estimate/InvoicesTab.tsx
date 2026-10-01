@@ -17,6 +17,7 @@ import { InvoicePreview } from "../invoices/InvoicePreview";
 import { InvBadge, PayClaimBar } from "../invoices/PayParts";
 import "../Invoices.css";
 import type { TabProps } from "./types";
+import { ask } from "../../ui/confirm";
 
 /** Reads and writes this company's invoices. Shared by the Invoices page and the estimate tabs. */
 export function useInvoiceOps() {
@@ -116,7 +117,7 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
   const [open, setOpen] = useState<{ id: string; start: "doc" | "send" } | null>(null);
   const openInv = open ? mine.find((v) => v.id === open.id) : undefined;
   const del = (v: InvoiceRec) => run(async () => {
-    if (!confirm(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
+    if (!await ask(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
     const list = await ops.removeInv(v);
     const patch = statusPatch(e, list);
     if (patch) set(patch);

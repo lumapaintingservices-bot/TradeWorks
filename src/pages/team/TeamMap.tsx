@@ -7,6 +7,7 @@ import { fmtMi, geocode, geoQuery, mapJobs, needsGeo, siteOf, whereIs, type Loc,
 import type { ClockRec, Estimate, HourEntry, Invoice, Worker } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import type { MapPoint } from "./LeafletMap";
+import { ask } from "../../ui/confirm";
 import "./map.css";
 
 const LeafletMap = lazy(() => import("./LeafletMap"));
@@ -89,7 +90,7 @@ export default function TeamMap({ workers, clocks, hours, ests, invoices, label,
 
   const turn = async (v: boolean) => {
     if (!company) return;
-    if (!v && !confirm(t("Stop saving your workers' location?", "¿Dejar de guardar la ubicación de tus trabajadores?"))) return;
+    if (!v && !await ask(t("Stop saving your workers' location?", "¿Dejar de guardar la ubicación de tus trabajadores?"))) return;
     await saveCompany({ id: company.id, name: company.name, trackLocation: v });
     toast(v ? t("Location at clock-in is on.", "Ubicación al marcar entrada activada.") : t("Location is off.", "Ubicación apagada."));
   };
