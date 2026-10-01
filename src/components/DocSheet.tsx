@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { clientCanSee } from "../lib/jobPhotos";
 import { calcEstimate } from "../lib/estimate";
 import { fmtDate } from "../lib/format";
 import { invKindLabel, planAmounts, type InvoiceRec } from "../lib/invoices";
@@ -145,7 +146,7 @@ const Payment = ({ T, pay, es }: { T: Tx; pay: PayInfo; es: boolean }) => {
   );
 };
 const Photos = ({ e, T }: { e: Estimate; T: Tx }) => {
-  const ph = e.showPhotos ? (e.photos || []).filter((x) => safeImgSrc(x.url)) : [];
+  const ph = e.showPhotos ? (e.photos || []).filter((x) => safeImgSrc(x.url) && clientCanSee(x)) : [];
   if (!ph.length) return null;
   const K: Record<string, string> = { before: T.before, after: T.after, detail: T.detail };
   return <Sec title={T.photos} cls="doc-photos"><div className="pg">{ph.map((x) => { const cap = [K[x.kind] || "", x.caption || ""].filter(Boolean).join(" — ");

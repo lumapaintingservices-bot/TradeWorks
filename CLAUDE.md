@@ -129,6 +129,12 @@ crew's checklist ticks into estimate.check; crew members are added to the job ch
 ("Jobs" in the bottom bar): Today / Coming up / Not scheduled / Recent; /jobs/:id = directions (Google Maps), dates, crew,
 notes, checklist to tick (who + when), colors, photos (WorkerPhotos fixedJob), time clock and chat links. Clock-in and photo
 job choices include crew jobs. Calendar day panel shows "👷 crew" or "No crew yet — assign" (opens ?tab=jobday).
+Same PR, owner feedback 2026-09-30: ErrorBoundary (src/ui/ErrorBoundary.tsx, around the app and each page) instead of a blank
+page, shows the error text and reloads once on stale code chunks (a worker reported a blank page on refresh; not reproduced in
+demo). Calendar month cells: task = worker initials + title + "worker · client"; job chips show crew initials. Worker photos are
+private on the client link / documents until the owner ticks "Show to the client" (PhotoRef.toClient, clientCanSee). Client
+profile photos have a delete (deleteJobPhoto). Chat: photos (camera button, upload cards, lightbox), a worker's job photo is
+also posted to the job chat; only owners / admins delete a message or a whole chat (rules: workers can't delete).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

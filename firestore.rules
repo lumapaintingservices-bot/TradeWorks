@@ -65,13 +65,22 @@ service cloud.firestore {
       return l is map && l.keys().hasOnly(['by', 'name', 'text', 'at']) && l.by == by
         && l.name is string && l.name.size() <= 80 && l.text is string && l.text.size() <= 200 && l.at is string && l.at.size() <= 40;
     }
-    // one chat message { by, name, text, at }; by = 'u:' + uid (owner / admin) or 'w:' + workerId (worker), checked by the caller
-    function teamMsgOk() {
+    // one chat message { by, name, text, at, photo? }; by = 'u:' + uid (owner / admin) or 'w:' + workerId (worker), checked by the caller.
+    // A photo must be a file of this company (pathRe: where this sender may store it) and its URL that file's download URL.
+    function teamMsgOk(pathRe) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['by', 'name', 'text', 'at', 'companyId', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['by', 'name', 'text', 'at', 'photo', 'companyId', 'createdAt', 'updatedAt'])
         && d.by is string && d.name is string && d.name.size() <= 80
-        && d.text is string && d.text.size() > 0 && d.text.size() <= 2000
-        && d.at is string && d.at.size() <= 40;
+        && d.text is string && d.text.size() <= 2000 && (d.text.size() > 0 || 'photo' in d)
+        && d.at is string && d.at.size() <= 40
+        && (!('photo' in d) || chatPhotoOk(d.photo, pathRe));
+    }
+    function chatPhotoOk(p, pathRe) {
+      return p is map && p.keys().hasOnly(['url', 'path', 'kind'])
+        && p.path is string && p.path.size() <= 300 && p.path.matches(pathRe)
+        && p.url is string && p.url.size() <= 2000
+        && p.url.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/?#]+/o/' + p.path.replace('/', '%2F') + '[?].*')
+        && (!('kind' in p) || (p.kind is string && p.kind.size() <= 10));
     }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
@@ -155,15 +164,18 @@ service cloud.firestore {
 
       // ---- job team chats: messages live in jobchats/{chatId}/msgs ----
       // owners / admins: everything. A worker: only chats whose members list holds their worker id; they post as themselves
-      // ('w:' + workerId) while the chat is open, and may delete their own messages. Nobody edits a message.
+      // ('w:' + workerId) while the chat is open (text and / or a photo from their own folder). Nobody edits a message;
+      // only owners / admins delete (a message or the whole chat).
       match /jobchats/{chatId}/msgs/{mid} {
         function chat() { return get(/databases/$(db)/documents/companies/$(cid)/jobchats/$(chatId)).data; }
         function inChat() { return isWorker(cid) && myWorkerId(cid) != '' && myWorkerId(cid) in chat().get('members', []); }
         allow read: if admin(cid) || inChat();
-        allow create: if teamMsgOk() && (
-          (admin(cid) && request.resource.data.by == 'u:' + request.auth.uid)
-          || (inChat() && request.resource.data.by == 'w:' + myWorkerId(cid) && !chat().get('closed', false)));
-        allow delete: if admin(cid) || (inChat() && resource.data.by == 'w:' + myWorkerId(cid));
+        allow create: if
+          (admin(cid) && request.resource.data.by == 'u:' + request.auth.uid
+            && teamMsgOk('companies/' + cid + '/([A-Za-z0-9_-]+/){1,3}[A-Za-z0-9_-]+[.]jpg'))
+          || (inChat() && request.resource.data.by == 'w:' + myWorkerId(cid) && !chat().get('closed', false)
+            && teamMsgOk('companies/' + cid + '/jobphotos/' + myWorkerId(cid) + '/[A-Za-z0-9_-]+[.]jpg'));
+        allow delete: if admin(cid);
       }
 
       // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos, jobchats, crewjobs ...

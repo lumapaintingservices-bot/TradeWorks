@@ -3,7 +3,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentGroup, AttachmentMedia, AttachmentTitle, AttachmentTrigger } from "../../components/Attachment";
 import { Lightbox } from "../../components/Lightbox";
 import { UploadList, useUploadQueue } from "../../components/UploadQueue";
-import { useJobPhotos } from "../../data/hooks";
+import { useJobChats, useJobPhotos } from "../../data/hooks";
+import { sendTeamMsg, useChatMe } from "../../data/teamChat";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
@@ -28,6 +29,8 @@ export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { 
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const { company } = useAuth();
   const { rows, save, remove } = useJobPhotos();
+  const { rows: chats } = useJobChats(); // the job chats I am in: a new job photo is posted there too
+  const me = useChatMe();
   const today = todayISO();
   const opts = useMemo(() => fixedJob ? [fixedJob] : mergeJobOptions(photoJobOptions([], today, clock), extraJobs || [], photoJobOptions(tasks, today, null)),
     [tasks, today, clock, extraJobs, fixedJob]);
@@ -56,6 +59,8 @@ export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { 
     const { url, path } = await putImage(`companies/${company.id}/jobphotos/${workerId}/${id}.jpg`, data, onProgress);
     const now = new Date().toISOString();
     await save({ id, workerId, estId: m.estId, jobLabel: m.jobLabel.slice(0, 120), kind: m.kind, caption: "", url, path, date: todayISO(), at: now, size: dataUrlSize(data) } as JobPhoto);
+    const chat = chats.find((c) => c.id === m.estId);
+    if (chat && !chat.closed) await sendTeamMsg(company.id, chat.id, me, "", { url, path, kind: m.kind }).catch(() => { /* the photo is saved on the job anyway */ });
   });
   const add = (files: FileList | null) => {
     if (!job) return;
@@ -114,7 +119,7 @@ export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { 
                   </Attachment>);
               })}</AttachmentGroup>
             </div>))}
-          <p className="muted wk-ph-note">{t("Your boss sees these photos on the job.", "Tu jefe ve estas fotos en el trabajo.")}</p>
+          <p className="muted wk-ph-note">{t("Your boss sees these photos on the job (and in the job's team chat).", "Tu jefe ve estas fotos en el trabajo (y en el chat del equipo del trabajo).")}</p>
         </div>
       )}
       <Lightbox index={zoom} onIndex={setZoom} onClose={() => setZoom(-1)}

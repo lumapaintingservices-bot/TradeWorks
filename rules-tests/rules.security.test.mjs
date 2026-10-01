@@ -321,6 +321,12 @@ await no("worker reads a chat they are not in", () => getDocs(collection(wrk1, "
 await no("worker message too long", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m5"), msg("w:w1", { text: "x".repeat(2001) })));
 await no("worker empty message", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m6"), msg("w:w1", { text: "" })));
 await no("worker message with an extra key", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m7"), msg("w:w1", { pinned: true })));
+const furl = (p) => "https://firebasestorage.googleapis.com/v0/b/tw.appspot.com/o/" + p.split("/").join("%2F") + "?alt=media&token=t";
+await ok("worker sends a photo from their folder", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/p1"), msg("w:w1", { text: "", photo: { url: furl("companies/c1/jobphotos/w1/p1.jpg"), path: "companies/c1/jobphotos/w1/p1.jpg", kind: "before" } })));
+await no("worker photo from someone else's folder", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/p2"), msg("w:w1", { text: "", photo: { url: furl("companies/c1/jobphotos/w2/p2.jpg"), path: "companies/c1/jobphotos/w2/p2.jpg" } })));
+await no("worker photo pointing at another site", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/p3"), msg("w:w1", { text: "", photo: { url: "https://evil.example/x.jpg", path: "companies/c1/jobphotos/w1/p3.jpg" } })));
+await no("worker photo with a URL of another file", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/p4"), msg("w:w1", { text: "", photo: { url: furl("companies/c1/jobphotos/w1/other.jpg"), path: "companies/c1/jobphotos/w1/p4.jpg" } })));
+await ok("admin sends a chat photo", () => setDoc(doc(adm1, "companies/c1/jobchats/e1/msgs/p5"), msg("u:adm1", { text: "Mira esto", photo: { url: furl("companies/c1/chats/e1/p5.jpg"), path: "companies/c1/chats/e1/p5.jpg" } })));
 await no("worker edits a message", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1"), { text: "editado" }));
 await ok("worker updates the chat preview as themselves", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { last: { by: "w:w1", name: "Carlos", text: "Ya llegué", at: "2026-09-30T13:00:00Z" } }));
 await no("worker preview as someone else", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { last: { by: "w:w2", name: "x", text: "x", at: "x" } }));
@@ -331,7 +337,8 @@ await ok("admin posts as themselves", () => setDoc(doc(adm1, "companies/c1/jobch
 await no("admin posts as a worker", () => setDoc(doc(adm1, "companies/c1/jobchats/e1/msgs/m9"), msg("w:w1")));
 await ok("admin closes the chat", () => updateDoc(doc(adm1, "companies/c1/jobchats/e1"), { closed: true }));
 await no("worker cannot post in a closed chat", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m10"), msg("w:w1")));
-await ok("worker deletes their own message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1")));
+await no("worker cannot delete messages (only the boss)", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1")));
+await ok("admin deletes a message", () => deleteDoc(doc(adm1, "companies/c1/jobchats/e1/msgs/m1")));
 await no("worker deletes the boss's message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m8")));
 
 // ---------------------------------------------------------------- job crews (crewjobs: the crew's copy of a job)

@@ -2,15 +2,20 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClients, useEstimates, useInvoices, useJobChats, useTasks, useTeamMsgs, useWorkers } from "../../data/hooks";
-import { saveRec, type Rec } from "../../data/repo";
+import { removeRec, saveRec, type Rec } from "../../data/repo";
+import { Lightbox } from "../../components/Lightbox";
+import { UploadList, useUploadQueue } from "../../components/UploadQueue";
+import { shrinkImage } from "../../lib/image";
+import { deleteFolder, deleteImage, putImage } from "../../lib/storage";
+import { uid } from "../../lib/estimate";
 import { sendTeamMsg, useChatMe, useChatSeen } from "../../data/teamChat";
 import { useT } from "../../i18n";
 import { clientNameOf } from "../../lib/calendar";
 import { todayISO } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { jobStatus } from "../../lib/jobStatus";
-import { MSG_MAX, defaultMembers, isUnread, isWorkerKey, latestAt, localDay, msgDays, sortChats } from "../../lib/teamChat";
-import type { Estimate, JobChat } from "../../lib/types";
+import { MSG_MAX, chatPhotoPath, defaultMembers, isUnread, isWorkerKey, latestAt, localDay, msgDays, sortChats } from "../../lib/teamChat";
+import type { Estimate, JobChat, TeamMsg } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
@@ -89,7 +94,17 @@ function ChatThread({ chatId }: { chatId: string }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [members, setMembers] = useState(false);
+  const [zoom, setZoom] = useState(-1);
+  const photoIn = useRef<HTMLInputElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  // a photo: upload card with progress / retry, then the message
+  const q = useUploadQueue<null>(async (file, _m, onProgress) => {
+    if (!company) throw new Error("signed out");
+    const id = uid("m");
+    const path = chatPhotoPath(company.id, chatId, me.key, id);
+    const { url } = await putImage(path, await shrinkImage(file, 1600, 0.8), onProgress);
+    await sendTeamMsg(company.id, chatId, me, "", { url, path }, id);
+  });
   const days = useMemo(() => msgDays(chat ? msgs : []), [msgs, chat]);
 
   // read: everything up to the newest message
@@ -119,6 +134,26 @@ function ChatThread({ chatId }: { chatId: string }) {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && matchMedia("(pointer: fine)").matches) { e.preventDefault(); send(); }
   };
   const dayName = (d: string) => d === todayISO() ? t("Today", "Hoy") : fmtDate(d, lang);
+  const kindName = (k?: string) => (k === "before" ? t("Before", "Antes") : k === "after" ? t("After", "Después") : k === "detail" ? t("Detail", "Detalle") : "");
+  const photos = days.flatMap((d) => d.msgs).filter((m) => m.photo?.url);
+  // only the owner / admins delete: one message, or the whole chat
+  const delMsg = async (m: TeamMsg) => {
+    if (!company || !confirm(t("Delete this message for everyone?", "¿Borrar este mensaje para todos?"))) return;
+    try {
+      await removeRec(company.id, `jobchats/${chatId}/msgs`, m.id);
+      if (m.photo?.path?.includes("/chats/")) deleteImage(m.photo.path); // a chat-only photo; job photos stay on the job
+    } catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
+  };
+  const delChat = async () => {
+    if (!company || !confirm(t("Delete this whole chat and all its messages for everyone? This can't be undone.", "¿Borrar todo este chat y todos sus mensajes para todos? No se puede deshacer."))) return;
+    try {
+      for (const m of msgs) await removeRec(company.id, `jobchats/${chatId}/msgs`, m.id);
+      await removeRec(company.id, "jobchats", chatId);
+      deleteFolder(`companies/${company.id}/chats/${chatId}`);
+      toast(t("Chat deleted.", "Chat borrado."));
+      nav("/chats");
+    } catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
+  };
   const setClosed = async (closed: boolean) => {
     try { await patch(chatId, { closed }); toast(closed ? t("Chat closed.", "Chat cerrado.") : t("Chat open again.", "Chat abierto de nuevo.")); }
     catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); }
@@ -135,6 +170,7 @@ function ChatThread({ chatId }: { chatId: string }) {
         {me.isBoss && <div className="chat-top-a">
           <button className="btn sm" onClick={() => setMembers(true)}><Icon name="team" size={16} />{t("Members", "Miembros")} · {chat.members.length}</button>
           <button className="btn sm" onClick={() => setClosed(!chat.closed)}>{chat.closed ? t("Reopen", "Reabrir") : t("Close chat", "Cerrar chat")}</button>
+          <button className="btn sm danger" onClick={delChat}>{t("Delete chat", "Borrar chat")}</button>
         </div>}
       </div>
 
@@ -148,7 +184,11 @@ function ChatThread({ chatId }: { chatId: string }) {
               return (
                 <div key={m.id} className={"chat-msg" + (mine ? " mine" : "") + (sameAsPrev ? " cont" : "")}>
                   {!mine && !sameAsPrev && <span className="chat-name">{m.name || "—"}{!isWorkerKey(m.by) && <em>{t("Boss", "Jefe")}</em>}</span>}
-                  <div className="chat-bub"><span className="chat-txt">{m.text}</span><small>{hhmm(m.at, lang)}</small></div>
+                  <div className={"chat-bub" + (m.photo ? " has-ph" : "")}>
+                    {m.photo?.url && <button type="button" className="chat-ph" onClick={() => setZoom(photos.indexOf(m))} aria-label={t("Open photo", "Abrir foto")}>
+                      <img src={m.photo.url} alt="" loading="lazy" />{kindName(m.photo.kind) && <em>{kindName(m.photo.kind)}</em>}</button>}
+                    {m.text && <span className="chat-txt">{m.text}</span>}<small>{hhmm(m.at, lang)}</small></div>
+                  {me.isBoss && <button type="button" className="chat-del" onClick={() => delMsg(m)} aria-label={t("Delete message", "Borrar mensaje")} title={t("Delete message", "Borrar mensaje")}>×</button>}
                 </div>);
             })}
           </div>))}
@@ -157,12 +197,19 @@ function ChatThread({ chatId }: { chatId: string }) {
       {chat.closed ? (
         <p className="chat-closed muted">{me.isBoss ? t("This chat is closed. Reopen it to write again.", "Este chat está cerrado. Reábrelo para escribir otra vez.") : t("This chat is closed.", "Este chat está cerrado.")}</p>
       ) : (
+        <>
+        {q.items.length > 0 && <div className="chat-ups"><UploadList q={q} /></div>}
         <div className="chat-comp">
+          <button type="button" className="btn chat-attach" onClick={() => photoIn.current?.click()} aria-label={t("Send a photo", "Enviar una foto")} title={t("Send a photo", "Enviar una foto")}><Icon name="camera" size={18} /></button>
+          <input ref={photoIn} type="file" accept="image/*" multiple hidden onChange={(ev) => { q.add(ev.target.files, null); ev.target.value = ""; }} />
           <textarea rows={1} value={text} maxLength={MSG_MAX} placeholder={t("Write a message…", "Escribe un mensaje…")} aria-label={t("Message", "Mensaje")}
             onChange={(e) => setText(e.target.value)} onKeyDown={onKey} />
           <button className="btn pri chat-send" disabled={sending || !text.trim()} onClick={send} aria-label={t("Send", "Enviar")} title={t("Send", "Enviar")}><Icon name="send" size={18} /></button>
         </div>
+        </>
       )}
+      <Lightbox index={zoom} onIndex={setZoom} onClose={() => setZoom(-1)}
+        items={photos.map((m) => ({ url: m.photo!.url, cap: [m.name, kindName(m.photo!.kind), hhmm(m.at, lang)].filter(Boolean).join(" · ") }))} />
       {members && <MembersModal chat={chat} onClose={() => setMembers(false)} onSave={async (ids) => { await patch(chatId, { members: ids }); setMembers(false); toast(t("Members saved.", "Miembros guardados.")); }} />}
     </div>
   );

@@ -30,6 +30,9 @@ export function photoJobOptions(tasks: Pick<Task, "date" | "estId" | "jobLabel" 
   return order.map((estId) => ({ estId, label: (named.get(estId) || titled.get(estId) || estId).slice(0, 120) }));
 }
 
+/** May the client see this photo (client link, documents)? Owner photos yes; a worker's only once the owner shares it. */
+export const clientCanSee = (ph: Pick<PhotoRef, "teamId" | "toClient">) => !ph.teamId || !!ph.toClient;
+
 /** A worker's photo as a photo of the job: same id, "by" the worker. */
 export const teamPhotoRef = (p: JobPhoto, by: string): PhotoRef =>
   ({ id: p.id, kind: p.kind || "", caption: p.caption || "", inWork: false, url: p.url, path: p.path, teamId: p.id, by, at: p.at });

@@ -3,15 +3,26 @@ import { useAuth } from "../auth/AuthProvider";
 import { useT } from "../i18n";
 import { mergeTeamPhotos } from "../lib/jobPhotos";
 import { deleteImage } from "../lib/storage";
-import type { PhotoRef } from "../lib/types";
+import type { Estimate, PhotoRef } from "../lib/types";
 import { useUi } from "../store/ui";
 import { useEstimates, useJobPhotos, useWorkers } from "./hooks";
+import { patchRec, removeRec } from "./repo";
 
 /** Name of a worker for a photo ("Carlos"); "" until the workers are loaded. */
 function useWorkerName() {
   const { rows, loading } = useWorkers();
   const nameOf = useCallback((id: string) => rows.find((w) => w.id === id)?.name || "", [rows]);
   return { nameOf, ready: !loading };
+}
+
+/**
+ * Delete one photo of a job from outside the editor (client profile): off the job, off the worker's list if it is theirs,
+ * and its file (unless "Our recent work" still shows it).
+ */
+export async function deleteJobPhoto(cid: string, e: Pick<Estimate, "id" | "photos">, ph: PhotoRef): Promise<void> {
+  await patchRec(cid, "estimates", e.id, { photos: (e.photos || []).filter((x) => x.id !== ph.id) });
+  if (ph.teamId) await removeRec(cid, "jobphotos", ph.teamId).catch(() => {});
+  if (!ph.inWork) await deleteImage(ph.path);
 }
 
 /** A photo taken off a job: its file goes too, unless it is shown in "Our recent work" (the showcase still points at it). */

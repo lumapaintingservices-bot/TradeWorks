@@ -1,5 +1,6 @@
 /** Client link (portal) logic — port of portalSnapshot / portalApply from the prototype. */
 import { calcEstimate, findDiscount, servicesLine } from "./estimate";
+import { clientCanSee } from "./jobPhotos";
 import { num } from "./money";
 import type { ChatMsg, Estimate, Settings } from "./types";
 
@@ -39,7 +40,7 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
   PORTAL_STRIP.forEach((k) => delete (x as unknown as Record<string, unknown>)[k]);
   if (!x.showMaterials) x.materialsList = [];
   // job photos travel only when shown on the link, and only what the client needs (no storage paths, no showcase flags)
-  x.photos = e.showPhotos ? (e.photos || []).filter((ph) => ph.url).map((ph) => ({ id: ph.id, kind: ph.kind || "", caption: ph.caption || "", url: ph.url })) : [];
+  x.photos = e.showPhotos ? (e.photos || []).filter((ph) => ph.url && clientCanSee(ph)).map((ph) => ({ id: ph.id, kind: ph.kind || "", caption: ph.caption || "", url: ph.url })) : [];
   x.showPhotos = !!(e.showPhotos && x.photos.length);
   // job-day work data (checklist ticks, crew tasks, paint colors) stays with the contractor
   delete x.check; delete x.jobTasks; delete x.colors;

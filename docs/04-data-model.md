@@ -50,7 +50,9 @@ companies/{cid}/crewjobs/{estId}     { estId, jobLabel, crew: [workerId], crewNa
                                      Checklist = checklistFor(e, "es") (work-order language) so keys stay stable.
 companies/{cid}/jobchats/{estId}     { estId, jobLabel, members: [workerId], closed?, last?: { by, name, text, at } }
                                      team chat of one job: owners / admins + the workers in members (src/lib/teamChat.ts)
-companies/{cid}/jobchats/{estId}/msgs/{id}  { by ("u:{uid}" owner/admin | "w:{workerId}"), name, text (<= 2000), at }
+companies/{cid}/jobchats/{estId}/msgs/{id}  { by ("u:{uid}" owner/admin | "w:{workerId}"), name, text (<= 2000), at, photo?: { url, path, kind? } }
+                                     chat photos: workers in companies/{cid}/jobphotos/{workerId}/, owners in companies/{cid}/chats/{chatId}/;
+                                     a worker's new job photo is also posted to the job chat (kind = before/after/detail)
                                      read state is per device and person (localStorage tw.chatSeen.{cid}.{me})
 companies/{cid}/jobphotos/{id}       { workerId, estId, jobLabel, kind (before|after|detail), caption, url, path, date, at, size }
                                      a photo a worker took (Team > Job photos); file at companies/{cid}/jobphotos/{workerId}/{id}.jpg.

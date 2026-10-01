@@ -100,7 +100,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
             <input ref={camIn} type="file" accept="image/*" capture="environment" hidden onChange={(ev) => { addFiles(ev.target.files); ev.target.value = ""; }} />
           </div>
           {q.items.length > 0 && <div className="ph-ups"><UploadList q={q} /></div>}
-          {e.showPhotos && photos.length > 0 && <p className="muted" style={{ fontSize: 12.5, marginTop: 12 }}>{t("The client sees these photos on their link, between the summary and the scope of work.", "El cliente ve estas fotos en su enlace, entre el resumen y el alcance del trabajo.")}</p>}
+          {e.showPhotos && photos.length > 0 && <p className="muted" style={{ fontSize: 12.5, marginTop: 12 }}>{t("The client sees these photos on their link, between the summary and the scope of work. Photos from your team only when you tick “Show to the client”.", "El cliente ve estas fotos en su enlace, entre el resumen y el alcance del trabajo. Las fotos de tu equipo solo si marcas “Mostrar al cliente”.")}</p>}
 
           {photos.length === 0 && !q.items.length
             ? <p className="muted" style={{ fontSize: 13.5, marginTop: 14 }}>{t("No photos on this job yet.", "Todavía no hay fotos en este trabajo.")}</p>
@@ -120,6 +120,8 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
                     <button type="button" className="btn sm danger" onClick={() => remove(ph)} title={t("Remove photo", "Quitar foto")} aria-label={t("Remove photo", "Quitar foto")}>×</button>
                   </div>
                   <label className="ph-work"><input type="checkbox" checked={!!ph.inWork} disabled={!ph.url} onChange={(ev) => setInWork(ph, ev.target.checked)} />{t("Our recent work", "Trabajos recientes")}</label>
+                  {ph.teamId && <label className="ph-work" title={t("Photos from your team stay private until you share them", "Las fotos de tu equipo son privadas hasta que las compartas")}>
+                    <input type="checkbox" checked={!!ph.toClient} onChange={(ev) => patch(ph.id, { toClient: ev.target.checked })} />{t("Show to the client", "Mostrar al cliente")}</label>}
                 </div>
               </div>))}</div>}
 

@@ -22,6 +22,7 @@ import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
 import LocationPing from "../pages/team/LocationPing";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 
 function LangSwitch() {
   const { lang, setLang } = useUi();
@@ -212,7 +213,8 @@ function ShellBody() {
         {canNew && <button className="btn pri sm" onClick={newEstimate}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
       </header>
 
-      <main className="main"><InviteBanner /><BillingBanner /><Outlet /></main>
+      {/* a crashing screen shows a message inside the app (menu still works); it resets when you go to another page */}
+      <main className="main"><InviteBanner /><BillingBanner /><ErrorBoundary key={loc.pathname}><Outlet /></ErrorBoundary></main>
 
       {more && <div className="more-back" onClick={() => setMore(false)} />}
       {more && (
