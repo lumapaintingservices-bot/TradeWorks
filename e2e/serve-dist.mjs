@@ -4,9 +4,10 @@
 // Usage: node e2e/serve-dist.mjs [port]   (run `npm run build` first). Used by the "csp" Playwright project.
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(new URL("../dist", import.meta.url).pathname);
+const root = fileURLToPath(new URL("../dist", import.meta.url));
 const port = Number(process.argv[2] || 5301);
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".json": "application/json", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 

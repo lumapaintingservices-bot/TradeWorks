@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
  * browser's localStorage), so they are fast, need no network and never touch a real project.
  *
  * - No browser download: the browser at /opt/pw-browsers/chromium is used when it exists (this sandbox); otherwise Playwright's own
- *   (run `npx playwright install chromium` once).
+ *   (run `npx playwright install chromium` once), or the installed Edge / Chrome with E2E_CHANNEL=msedge / chrome.
  * - E2E_PORT changes the dev-server port (default 5300); E2E_DIST_PORT the port of the production-build check (default 5301, see e2e/csp.spec.ts).
  */
 const PORT = Number(process.env.E2E_PORT || 5300);
@@ -30,6 +30,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1300, height: 900 },
     launchOptions: existsSync(SANDBOX_CHROMIUM) ? { executablePath: SANDBOX_CHROMIUM, args: ["--no-sandbox"] } : {},
+    // E2E_CHANNEL=msedge (or chrome) uses the browser already installed on the PC instead of downloading Playwright's
+    ...(process.env.E2E_CHANNEL ? { channel: process.env.E2E_CHANNEL } : {}),
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

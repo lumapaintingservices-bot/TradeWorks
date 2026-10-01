@@ -76,9 +76,10 @@ test("owner invites a worker who only sees Calendar, Team and Settings", async (
   await w.getByRole("button", { name: /Clock in/i }).first().click();
   await expect(w.getByRole("button", { name: /Clock out/i }).first()).toBeVisible();
 
-  // settings: language and theme only
+  // settings: their photo, language and theme only (one section, no section menu)
   await w.goto("/settings");
-  await expect(w.getByRole("heading", { name: "General" })).toBeVisible();
+  await expect(w.getByRole("heading", { name: "Your profile" })).toBeVisible();
+  await expect(w.getByRole("heading", { name: "Appearance & language" })).toBeVisible();
   for (const section of ["Prices", "Costs & profit", "Job types", "Client link & payments", "Team & plan", "Backup & storage"]) await expect(w.getByRole("button", { name: section })).toHaveCount(0);
   await expect(w.getByText("Team & access")).toHaveCount(0);
   expect(errors, "worker console errors").toEqual([]);

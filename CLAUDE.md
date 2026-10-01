@@ -53,6 +53,7 @@ Rebuild it in React with the same look and behavior, as a multi-tenant product.
 
 ## Current status (update this at the end of each work session)
 **Owner:** non-technical, writes Spanish, Windows/PowerShell. Explain in plain Spanish, step by step. UI stays bilingual EN/ES.
+E2E tests on this Windows PC: `E2E_CHANNEL=msedge npx.cmd playwright test` (uses the installed Edge, no browser download). All 23 passed 2026-10-01.
 
 **Live:** https://tradeworks-app.pages.dev (Cloudflare Pages). Firebase project `tradeworks-99ba7`
 (the old prototype project `luma-painting-estimate` is separate). Always use the main URL, not
