@@ -15,3 +15,6 @@ select.kp{border:1px solid var(--line);border-radius:8px;background:var(--surfac
 .dp{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:600}
 .dp.up{background:var(--up-bg);color:var(--up-ink)}.dp.down{background:var(--down-bg);color:var(--down-ink)}
 @media (max-width:640px){ .kv{font-size:24px} .kcard{padding:var(--s4)} }
+.kvrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+.kvrow .kv{margin-top:0}
+.dp svg{width:13px;height:13px;flex:none}

@@ -24,6 +24,7 @@ import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
 import LocationPing from "../pages/team/LocationPing";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { modKey, QuickMenu, SearchPalette } from "./QuickActions";
 
 function LangSwitch() {
   const { lang, setLang } = useUi();
@@ -137,6 +138,8 @@ function ShellBody() {
   const [more, setMore] = useState(false);
   const [ws, setWs] = useState(false);       // desktop popover
   const [wsMore, setWsMore] = useState(false); // list inside the mobile More sheet
+  const [qc, setQc] = useState<"" | "side" | "sheet">(""); // Quick create menu (sidebar popover / phone sheet)
+  const [search, setSearch] = useState(false);              // Ctrl/Cmd+K
   const badges = useContext(Badges);
   const items = navFor(role);
   // desktop sidebar folded to icons: the button at its top or Ctrl/Cmd+B (remembered on this device)
@@ -151,12 +154,13 @@ function ShellBody() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b" && window.innerWidth >= 900) { e.preventDefault(); setMini(!useUi.getState().sbMini); }
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k" && canNewRef.current) { e.preventDefault(); setQc(""); setSearch((o) => !o); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [setMini]);
   useEffect(() => { setTipAt(null); }, [mini]);
-  useEffect(() => { setMore(false); setWs(false); setTipAt(null); }, [loc.pathname]);
+  useEffect(() => { setMore(false); setWs(false); setTipAt(null); setQc(""); }, [loc.pathname]);
   useEffect(() => { if (!more) setWsMore(false); }, [more]);
   // public branding for the lead form (public/{companyId}); readable by anyone with the link, holds no private data.
   // Only owners/admins may write it (rules), so workers skip it.
@@ -166,6 +170,7 @@ function ShellBody() {
   }, [company?.id, role, company?.name, company?.phone, company?.website, company?.logoUrl, company?.brandColor, company?.area, company?.trade]); // eslint-disable-line react-hooks/exhaustive-deps
   const newEstimate = () => nav("/estimates?new=1");
   const canNew = can(role, "data.all");
+  const canNewRef = useRef(canNew); canNewRef.current = canNew; // search reads owner data: owners / admins only
 
   return (
     <div className={"shell" + (mini ? " sb-mini" : "")}>
@@ -192,7 +197,14 @@ function ShellBody() {
               <WorkspaceList onDone={() => setWs(false)} signOut /></div>
           </>}
         </div>
-        {canNew && <MiniBtn className="btn pri sb-new" label={t("New estimate", "Nuevo presupuesto")} onClick={newEstimate}><Icon name="plus" /><span>{t("New estimate", "Nuevo presupuesto")}</span></MiniBtn>}
+        {canNew && <div className="sb-new-row">
+          <MiniBtn className="btn pri sb-new" label={t("New estimate", "Nuevo presupuesto")} onClick={newEstimate}><Icon name="plus" /><span>{t("New estimate", "Nuevo presupuesto")}</span></MiniBtn>
+          <button type="button" className="btn sb-qc" aria-haspopup="menu" aria-expanded={qc === "side"} aria-label={t("Create something else", "Crear otra cosa")} title={t("Create something else", "Crear otra cosa")}
+            onClick={() => setQc((o) => (o ? "" : "side"))}><Chevron /></button>
+          {qc === "side" && <QuickMenu onDone={() => setQc("")} />}
+        </div>}
+        {canNew && <MiniBtn className="sb-search" label={t("Search", "Buscar") + " (" + modKey() + "+K)"} onClick={() => setSearch(true)}>
+          <Icon name="search" size={17} /><span>{t("Search…", "Buscar…")}</span><kbd>{modKey()} K</kbd></MiniBtn>}
         {items.work.length > 0 && <div className="sb-lbl">{t("Work", "Trabajo")}</div>}
         <nav>{items.work.map((it) => <Item key={it.to} it={it} />)}</nav>
         {items.business.length > 0 && <div className="sb-lbl">{t("Business", "Negocio")}</div>}
@@ -212,8 +224,11 @@ function ShellBody() {
       <header className="mtop">
         <div className="sb-top" onClick={() => nav(homeFor(role))}><Logo size={28} /><b>TradeWorks</b></div>
         <LangSwitch />
-        {canNew && <button className="btn pri sm" onClick={newEstimate}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
+        {canNew && <button className="btn sm icon-only" onClick={() => setSearch(true)} aria-label={t("Search", "Buscar")}><Icon name="search" size={18} /></button>}
+        {canNew && <button className="btn pri sm" aria-haspopup="menu" aria-expanded={qc === "sheet"} onClick={() => setQc("sheet")}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
       </header>
+      {qc === "sheet" && <QuickMenu className="sheet" onDone={() => setQc("")} />}
+      {search && canNew && <SearchPalette onClose={() => setSearch(false)} />}
 
       {/* a crashing screen shows a message inside the app (menu still works); it resets when you go to another page */}
       <main className="main"><InviteBanner /><BillingBanner /><ErrorBoundary key={loc.pathname}><Outlet /></ErrorBoundary></main>

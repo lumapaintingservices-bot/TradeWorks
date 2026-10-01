@@ -15,6 +15,7 @@ type Props = {
   onPeriodChange?: (p: Period) => void;
   t: (en: string, es: string) => string;
 };
+const TREND_UP = '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>', TREND_DOWN = '<path d="m3 7 6 6 4-4 8 8"/><path d="M15 17h6v-6"/>';
 const PERIODS: [Period, string, string][] = [["month","This month","Este mes"],["lastmonth","Last month","Mes pasado"],["ytd","This year to date","Este año hasta hoy"],["lastyear","Last year","Año pasado"]];
 
 export default function KpiCard({ id, title, value, delta, deltaIsPoints, lowerIsBetter, subtitle, period, onPeriodChange, t }: Props) {
@@ -34,11 +35,13 @@ export default function KpiCard({ id, title, value, delta, deltaIsPoints, lowerI
           </select>
         ) : <span className="kp muted">{t("As of today", "A hoy")}</span>}
       </div>
-      <div className="kv">{value}</div>
-      {delta != null && isFinite(delta) ? (
-        <div className="kd"><span className={`dp ${good ? "up" : "down"}`}>{delta >= 0 ? "↑ " : "↓ "}{Math.abs(delta).toFixed(deltaIsPoints ? 1 : 0)}{deltaIsPoints ? " pts" : "%"}</span>
-          {t("from previous period", "vs periodo anterior")}</div>
-      ) : <div className="kd">{subtitle}</div>}
+      {delta != null && isFinite(delta) ? <>
+        {/* trend badge next to the number (idea from the studio-admin dashboard) */}
+        <div className="kvrow"><div className="kv">{value}</div>
+          <span className={`dp ${good ? "up" : "down"}`}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden
+            dangerouslySetInnerHTML={{ __html: delta >= 0 ? TREND_UP : TREND_DOWN }} />{delta >= 0 ? "+" : "−"}{Math.abs(delta).toFixed(deltaIsPoints ? 1 : 0)}{deltaIsPoints ? " pts" : "%"}</span></div>
+        <div className="kd">{t("from previous period", "vs periodo anterior")}</div>
+      </> : <><div className="kv">{value}</div><div className="kd">{subtitle}</div></>}
     </div>
   );
 }

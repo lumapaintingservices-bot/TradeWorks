@@ -10,6 +10,7 @@ import { Icon } from "../ui/Icon";
 import { ClientForm, blankClient } from "./ClientForm";
 import { LeadInbox } from "./LeadInbox";
 import { Badge } from "../ui/Badge";
+import { useUrlFlag } from "../ui/useUrlFlag";
 
 export default function Clients() {
   const t = useT();
@@ -19,6 +20,7 @@ export default function Clients() {
   const { rows: ests } = useEstimates();
   const [q, setQ] = useState("");
   const [edit, setEdit] = useState<Client | null>(null);
+  useUrlFlag("new", () => setEdit(blankClient(lang))); // Quick create
 
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();

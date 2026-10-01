@@ -14,6 +14,7 @@ import { Badge } from "../../ui/Badge";
 import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { ColumnsEditor, NoteEditor } from "./NoteEditor";
+import { useUrlFlag } from "../../ui/useUrlFlag";
 import "./notes.css";
 
 const ini = (name: string) => (name.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2) || "?").toUpperCase();
@@ -55,6 +56,8 @@ export default function Notes() {
 
   const put = (n: Note) => save(cleanNote(n, cols) as Note & Rec).catch(() => toast(t("Couldn't save. Check your connection.", "No se pudo guardar. Revisa tu conexión.")));
   const newNote = (col = cols[0].id) => setEdit({ isNew: true, note: { id: uid("n"), title: "", text: "", col, order: 0, prio: "", by: me.name } });
+  useUrlFlag("new", () => newNote()); // Quick create
+  useUrlFlag("open", (id) => { const n = all.find((x) => x.id === id); if (n) setEdit({ note: n, isNew: false }); }, !loading); // Search
   const onSave = (n: Note) => {
     const old = all.find((x) => x.id === n.id);
     // new notes, and notes moved to another column, go to the top of their column
