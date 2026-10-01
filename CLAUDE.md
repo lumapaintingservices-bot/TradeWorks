@@ -154,6 +154,9 @@ Invoice preview (owner liked the studio-admin template, 2026-09-30; also wants l
 calendar with multi-day bars + week view; extras offered: Quick create button, Ctrl+K search, trend badges): click an invoice ->
 Drawer (src/ui/Drawer.tsx) with the document (InvoicePaper + PaperFit in src/pages/invoices/InvoicePaper.tsx, also used by
 InvoiceDoc) and PaySend (PayParts.tsx; replaced PayLinkModal). No download button by owner choice, only Print / Save PDF.
+Merged (PR #26). Code backup before the next steps: tag backup-2026-09-30-before-notes-calendar + branch backup/2026-09-30-before-notes-calendar.
+Notes board (/notes, sidebar after Chats, More sheet): src/lib/notes.ts (+ test), src/pages/notes/Notes.tsx + NoteEditor.tsx; notes collection
+(owners / admins only: no workerScope, generic rules already deny workers; rules test added), columns in settings.noteCols; in the backup file.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

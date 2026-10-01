@@ -37,6 +37,7 @@ companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'
                                        pay{token}, payViews, payClaim{method,at,note}, payClaimSeen,
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, jobLabel ("EST-1001 · Ana Ruiz", for workers), workerId, done }
+companies/{cid}/notes/{id}           { title, text, col (settings.noteCols id), order (number, fractional for drag & drop), prio (high|med|low|""), due?, estId?, jobLabel?, workerId?, by }  owners / admins only
 companies/{cid}/workers/{id}         { name, phone, role, rate, active }
 companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }

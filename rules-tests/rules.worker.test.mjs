@@ -67,6 +67,9 @@ await no("reassign my task", () => updateDoc(doc(wrk, C + "/tasks/t1"), { worker
 await no("delete task", () => deleteDoc(doc(wrk, C + "/tasks/t1")));
 await no("clock in for someone else", () => setDoc(doc(wrk, C + "/clock/w2"), { at }));
 await no("edit own worker rate", () => updateDoc(doc(wrk, C + "/workers/w1"), { rate: 99 }));
+// the notes board is for owners / admins only
+await no("read the notes board", () => getDocs(C1(wrk, C + "/notes")));
+await no("write a note", () => setDoc(doc(wrk, C + "/notes/n1"), { title: "x", text: "", col: "todo", order: 1, prio: "" }));
 
 console.log(`worker rules tests: ${pass} passed, ${fail} failed`);
 await env.cleanup();

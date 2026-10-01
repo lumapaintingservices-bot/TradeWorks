@@ -50,11 +50,11 @@ test("owner invites a worker who only sees Calendar, Team and Settings", async (
 
   // navigation: only Jobs, Calendar, Team, Settings (+ Chats, My pay)
   for (const name of ["Jobs", "Calendar", "Team", "Settings"]) await expect(w.getByRole("link", { name, exact: true }).first()).toBeVisible();
-  for (const name of ["Dashboard", "Pipeline", "Estimates", "Invoices", "Clients", "Expenses", "Reports"]) await expect(w.getByRole("link", { name, exact: true })).toHaveCount(0);
+  for (const name of ["Dashboard", "Pipeline", "Estimates", "Invoices", "Clients", "Expenses", "Reports", "Notes"]) await expect(w.getByRole("link", { name, exact: true })).toHaveCount(0);
   await expect(w.getByRole("button", { name: "New estimate" })).toHaveCount(0);
 
   // routes the role may not open bounce back to My jobs
-  for (const path of ["/", "/estimates", "/clients", "/invoices", "/expenses", "/reports", "/pipeline"]) {
+  for (const path of ["/", "/estimates", "/clients", "/invoices", "/expenses", "/reports", "/pipeline", "/notes"]) {
     await w.goto(path);
     await w.waitForURL((u) => u.pathname === "/jobs");
   }

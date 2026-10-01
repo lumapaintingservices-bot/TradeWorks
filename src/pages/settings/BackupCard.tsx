@@ -21,7 +21,7 @@ export default function BackupCard() {
   const { company, saveCompany } = useAuth();
   const c = {
     clients: useCollection<Rec>("clients"), estimates: useCollection<Rec>("estimates"), invoices: useCollection<Rec>("invoices"), expenses: useCollection<Rec>("expenses"),
-    workers: useCollection<Rec>("workers"), hours: useCollection<Rec>("hours"), payouts: useCollection<Rec>("payouts"), tasks: useCollection<Rec>("tasks"), settings: useCollection<Rec>("settings"),
+    workers: useCollection<Rec>("workers"), hours: useCollection<Rec>("hours"), payouts: useCollection<Rec>("payouts"), tasks: useCollection<Rec>("tasks"), settings: useCollection<Rec>("settings"), notes: useCollection<Rec>("notes"),
   };
   const loading = BACKUP_COLLECTIONS.some((k) => c[k].loading);
   const [last, setLast] = useState(() => (company ? readLast(company.id) : ""));

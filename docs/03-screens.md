@@ -86,6 +86,14 @@ Marketing: spend, leads, cost per lead, cost per job, return per $1. Export CSVs
 Range pills; tiles (hours, labor cost, paid, owed); workers table (rate, hours, earned, paid, owed,
 **clock in/out**, pay, WhatsApp, edit); hours log; labor by job (logged vs planned); payments; assigned tasks.
 
+## Notes (/notes, owners / admins only)
+Board of notes (idea from the studio-admin Kanban): columns Ideas / To do / Doing / Done by default, renamed, reordered, added
+(up to 8) in "Columns". Card = priority badge (High / Medium / Low), due date (red late, accent today, amber within 3 days),
+title, text (5 lines), linked job chip (opens the estimate), person in charge. Drag cards between / inside columns (computer)
+or ‹ › (phone; on computer on hover). "+" in a column header / "Add note" at its foot. Search + priority filter, Board / List view
+(remembered per device). Editor modal: title, note, column, due date, priority, job, person in charge, delete. Done column = strikethrough.
+Phone: columns snap one by one. Not shown to workers (route + Firestore rules).
+
 ## Settings
 Appearance (light/dark/auto), storage meter, calendar link, job types (services line, spec, days, scope,
 terms per type), client link (web address, reviews, website, Instagram, **Zelle + name + note**,
