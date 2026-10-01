@@ -51,3 +51,4 @@
 .tm-who{display:flex;align-items:center;gap:10px;min-width:0}
 .tm-card .tm-who{gap:8px}
 .tm-card .tm-who>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tm-photo{margin-bottom:14px}

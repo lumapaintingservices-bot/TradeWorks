@@ -164,3 +164,18 @@ html.tw-dark .thsw button.on{background:var(--surface-2)}
 .avt-g>.avt{box-shadow:0 0 0 2px var(--avt-ring,var(--surface))}
 .avt-g>.avt+.avt{margin-left:calc(var(--avt) * -.12)}
 .avt-cnt .avt-f{font-size:.92em;letter-spacing:-.02em}
+/* Profile photo picker (AvatarPicker.tsx) */
+.avp{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.avp-face{position:relative;padding:0;border:0;background:none;border-radius:50%;cursor:pointer;flex:none}
+.avp-face:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+.avp-face:disabled{cursor:default}
+.avp-cam{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);box-shadow:var(--shadow-xs)}
+.avp-face:hover:not(:disabled) .avp-cam{color:var(--ink);background:var(--surface-2)}
+.avp-spin{width:12px;height:12px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:b-spin .8s linear infinite}
+.avp-r{flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.avp-who{display:flex;flex-direction:column;gap:1px;min-width:0}
+.avp-who b{font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.avp-who span{font-size:13px;color:var(--ink-3);overflow-wrap:anywhere}
+.avp-btns{display:flex;flex-wrap:wrap;gap:8px}
+.avp-btns .btn{gap:6px}
+.avp-hint{margin:0;font-size:12.5px;color:var(--ink-3)}

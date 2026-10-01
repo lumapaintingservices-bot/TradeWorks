@@ -1,5 +1,5 @@
 /* TradeWorks design tokens — paste into src/styles/tokens.css and import once in main.tsx */
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap");
 :root{
   --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#F7F8FA;
   --ink:#0B0D12; --ink-2:#4B5263; --ink-3:#9097A3;
@@ -10,7 +10,7 @@
   --active-nav:linear-gradient(180deg,#1C1F26 0%,#0B0D12 100%);
   --blue-grad:linear-gradient(180deg,#2F74FF 0%,#8FB3FF 100%);
   --hatch:repeating-linear-gradient(135deg,#E4E7EC 0 6px,#F2F4F7 6px 12px);
-  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --font:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   --fs-xs:11.5px; --fs-sm:12.5px; --fs-md:14px; --fs-lg:15px; --fs-h2:15px; --fs-h1:24px; --fs-kpi:30px;
   --fw-regular:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700; --tracking-tight:-.025em;
   --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;

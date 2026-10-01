@@ -67,6 +67,16 @@ await no("reassign my task", () => updateDoc(doc(wrk, C + "/tasks/t1"), { worker
 await no("delete task", () => deleteDoc(doc(wrk, C + "/tasks/t1")));
 await no("clock in for someone else", () => setDoc(doc(wrk, C + "/clock/w2"), { at }));
 await no("edit own worker rate", () => updateDoc(doc(wrk, C + "/workers/w1"), { rate: 99 }));
+// profile photo: only the photo of my own worker record (patchRec = updateDoc({photo, updatedAt}))
+const ph = (wid, f = "a-1") => { const path = `companies/c1/avatars/${wid}/${f}.jpg`; return { url: "https://firebasestorage.googleapis.com/v0/b/tw.appspot.com/o/" + path.split("/").join("%2F") + "?alt=media&token=t", path }; };
+await ok("set my photo", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: ph("w1"), updatedAt: serverTimestamp() }));
+await ok("remove my photo", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: null, updatedAt: serverTimestamp() }));
+await no("set another worker's photo", () => updateDoc(doc(wrk, C + "/workers/w2"), { photo: ph("w2"), updatedAt: serverTimestamp() }));
+await no("photo from another worker's folder", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: ph("w2"), updatedAt: serverTimestamp() }));
+await no("photo from another site", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: { url: "https://evil.example/x.jpg", path: "companies/c1/avatars/w1/a.jpg" }, updatedAt: serverTimestamp() }));
+await no("photo with extra fields", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: { ...ph("w1"), x: 1 }, updatedAt: serverTimestamp() }));
+await no("photo + rate together", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: ph("w1"), rate: 99, updatedAt: serverTimestamp() }));
+await no("unlinked worker sets a photo", () => updateDoc(doc(wnl, C + "/workers/w1"), { photo: ph("w1"), updatedAt: serverTimestamp() }));
 // the notes board is for owners / admins only
 await no("read the notes board", () => getDocs(C1(wrk, C + "/notes")));
 await no("write a note", () => setDoc(doc(wrk, C + "/notes/n1"), { title: "x", text: "", col: "todo", order: 1, prio: "" }));

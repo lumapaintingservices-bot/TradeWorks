@@ -1,5 +1,5 @@
 /* Page chrome around the client document (the sheet itself lives in src/components/DocSheet.css). Always light. */
-.doc-wrap{min-height:100vh;background:#F5F6F8;color:#0B0D12;padding:22px 16px 80px;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color-scheme:light}
+.doc-wrap{min-height:100vh;background:#F5F6F8;color:#0B0D12;padding:22px 16px 80px;font-family:"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color-scheme:light}
 .doc-wrap *{box-sizing:border-box}
 .docbar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid #ECEEF2;margin:-22px -16px 22px}
 .docbar-in{max-width:1140px;margin:0 auto;padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}

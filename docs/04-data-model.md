@@ -5,7 +5,7 @@ and one user in several companies (e.g. a painter + a cleaning LLC). Everything 
 companies/{companyId}. Field names below come from the prototype so logic can be ported 1:1.
 
 ```
-users/{uid}                          { name, email, lang, theme, companies:[companyId], activeCompanyId }
+users/{uid}                          { name, email, lang, theme, companies:[companyId], activeCompanyId, avatar?: {url, path} | 'none' }  (avatar: own profile photo; 'none' hides the Google photo)
 companies/{companyId}                { name, legalName, phone, email, website, area, services, servicesEs,
                                        logoUrl, brandColor, trade, plan, ownerUid, createdAt,
                                        stripeAccountId, stripeReady, stripeDetails, stripeCheckedAt,   Stripe Connect fields: server only (docs/10)
@@ -38,7 +38,7 @@ companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, jobLabel ("EST-1001 · Ana Ruiz", for workers), workerId, done }
 companies/{cid}/notes/{id}           { title, text, col (settings.noteCols id), order (number, fractional for drag & drop), prio (high|med|low|""), due?, estId?, jobLabel?, workerId?, by }  owners / admins only
-companies/{cid}/workers/{id}         { name, phone, role, rate, active }
+companies/{cid}/workers/{id}         { name, phone, role, rate, active, photo?: {url, path} | null }  (photo file: companies/{cid}/avatars/{workerId}/; the worker may change only photo)
 companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,

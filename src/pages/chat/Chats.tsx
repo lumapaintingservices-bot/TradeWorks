@@ -169,7 +169,7 @@ function ChatThread({ chatId }: { chatId: string }) {
           {me.isBoss ? <Link to={"/estimates/" + chat.estId}><b>{chat.jobLabel}</b></Link> : <b>{chat.jobLabel}</b>}
           <small className="muted">{who}</small>
         </div>
-        {chat.members.length > 0 && <AvatarGroup className="chat-top-g" people={chat.members.map(workerName)} max={4} />}
+        {me.isBoss && chat.members.length > 0 && <AvatarGroup className="chat-top-g" people={chat.members.map((id) => ({ name: workerName(id), src: workers.find((w) => w.id === id)?.photo?.url }))} max={4} />}
         {me.isBoss && <div className="chat-top-a">
           <button className="btn sm" onClick={() => setMembers(true)}><Icon name="team" size={16} />{t("Members", "Miembros")} · {chat.members.length}</button>
           <button className="btn sm" onClick={() => setClosed(!chat.closed)}>{chat.closed ? t("Reopen", "Reabrir") : t("Close chat", "Cerrar chat")}</button>
@@ -227,7 +227,7 @@ function WorkerChecks({ value, onChange }: { value: string[]; onChange(ids: stri
   return (
     <div className="chat-checks">{list.map((w) => (
       <label key={w.id} className="chk"><input type="checkbox" checked={value.includes(w.id)} onChange={(e) => onChange(e.target.checked ? [...value, w.id] : value.filter((x) => x !== w.id))} />
-        <Avatar name={w.name} size="sm" />{w.name}</label>))}
+        <Avatar name={w.name} src={w.photo?.url} size="sm" />{w.name}</label>))}
     </div>
   );
 }

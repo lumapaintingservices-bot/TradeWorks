@@ -6,6 +6,7 @@ import { useT } from "../i18n";
 import { hasFirebase } from "../lib/firebase";
 import { roleLabel } from "../lib/roles";
 import { Avatar } from "../ui/Avatar";
+import { useMyPhoto } from "../data/avatar";
 import { Icon } from "../ui/Icon";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
@@ -14,10 +15,11 @@ import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 export function UserHead() {
   const t = useT();
   const { user, company, role } = useAuth();
+  const photo = useMyPhoto().url;
   const name = user?.name || company?.name || "";
   return (
     <div className="nu-head">
-      <Avatar name={user?.name || user?.email} src={user?.photo} square />
+      <Avatar name={user?.name || user?.email} src={photo} square />
       <div><b>{name}</b><span>{user?.email}</span>
         <em><i style={hasFirebase ? undefined : { background: "var(--warn)" }} />{hasFirebase ? t("Cloud on", "Nube activa") : t("Demo mode", "Modo demo")}{role ? " · " + t(...roleLabel(role)) : ""}</em></div>
     </div>
@@ -32,6 +34,7 @@ export function NavUser({ mini, onTip }: { mini: boolean; onTip?(text: string, e
   const t = useT();
   const nav = useNavigate();
   const { user, company } = useAuth();
+  const photo = useMyPhoto().url;
   const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
   const btn = useRef<HTMLButtonElement>(null), menu = useRef<HTMLDivElement>(null);
   const name = user?.name || company?.name || "";
@@ -57,7 +60,7 @@ export function NavUser({ mini, onTip }: { mini: boolean; onTip?(text: string, e
         aria-label={mini ? name + " · " + t("Account menu", "Menú de la cuenta") : undefined}
         onMouseEnter={(e) => mini && onTip?.(name, e.currentTarget)} onMouseLeave={() => onTip?.("")}
         onClick={() => (pos ? close() : open())}>
-        <Avatar name={user?.name || user?.email} src={user?.photo} square badge={hasFirebase ? "ok" : "warn"} />
+        <Avatar name={user?.name || user?.email} src={photo} square badge={hasFirebase ? "ok" : "warn"} />
         <span className="nu-txt"><b>{name}</b><span>{user?.email}</span></span>
         <svg className="nu-chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m7 15 5 5 5-5M7 9l5-5 5 5" /></svg>
       </button>
@@ -65,6 +68,7 @@ export function NavUser({ mini, onTip }: { mini: boolean; onTip?(text: string, e
         <div ref={menu} className="nu-menu" role="menu" style={{ position: "fixed", left: pos.left, bottom: pos.bottom }}>
           <UserHead />
           <div className="nu-sep" />
+          <button role="menuitem" className="nu-it" onClick={() => go("/settings?section=general")}><Icon name="user" size={17} />{t("Profile & photo", "Perfil y foto")}</button>
           <button role="menuitem" className="nu-it" onClick={() => go("/settings")}><Icon name="settings" size={17} />{t("Settings", "Ajustes")}</button>
           <button role="menuitem" className="nu-it" onClick={() => go("/settings?section=general")}><Icon name="globe" size={17} />{t("Language & appearance", "Idioma y apariencia")}</button>
           <div className="nu-theme"><span>{t("Theme", "Tema")}</span><ThemeSwitcher small /></div>

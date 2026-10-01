@@ -30,6 +30,8 @@ import CardPayCard from "./settings/CardPayCard";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
+import { AvatarPicker } from "../ui/AvatarPicker";
+import { useMyPhoto } from "../data/avatar";
 import "./Settings.css";
 
 function LinkRow({ label, url }: { label: string; url: string }) {
@@ -42,6 +44,28 @@ function LinkRow({ label, url }: { label: string; url: string }) {
       <div style={{ display: "flex", gap: 8 }}>
         <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} style={{ flex: 1, minWidth: 0 }} />
         <button className="btn" onClick={copy}>{t("Copy", "Copiar")}</button>
+      </div>
+    </div>
+  );
+}
+
+/** Your photo (Avatar + change / remove). Workers: the photo on their worker record, which the boss sees too. */
+function ProfileCard() {
+  const t = useT(), toast = useUi((s) => s.toast);
+  const { user } = useAuth();
+  const me = useMyPhoto();
+  if (!user) return null;
+  return (
+    <div className="card">
+      <div className="card-h"><h2>{t("Your profile", "Tu perfil")}</h2></div>
+      <div className="card-b">
+        <AvatarPicker name={user.name || user.email} src={me.url} disabled={!me.canEdit}
+          onFile={async (f) => { await me.change(f); toast(t("Photo saved.", "Foto guardada.")); }}
+          onRemove={async () => { await me.remove(); toast(t("Photo removed.", "Foto quitada.")); }}>
+          <b>{user.name || user.email}</b><span>{user.email}</span></AvatarPicker>
+        <p className="muted st-help" style={{ marginBottom: 0 }}>{me.isWorker
+          ? t("Your boss and your crew see it on jobs, chats and the team list.", "Tu jefe y tu equipo la ven en los trabajos, los chats y la lista del equipo.")
+          : t("Shown in your menu at the bottom of the sidebar.", "Se muestra en tu menú, abajo de la barra lateral.")}</p>
       </div>
     </div>
   );
@@ -269,7 +293,7 @@ function OwnerOnly({ children }: { children: ReactNode }) { return can(useRole()
 type Section = { id: string; icon: string; en: string; es: string; descEn: string; descEs: string; body: () => ReactNode };
 const SECTIONS: Section[] = [
   { id: "general", icon: "settings", en: "General", es: "General", descEn: "How the app looks and your business details.", descEs: "Cómo se ve la app y los datos de tu negocio.",
-    body: () => <><AppearanceCard /><BusinessGate /><OwnerOnly><DeleteCompanyCard /></OwnerOnly></> },
+    body: () => <><ProfileCard /><AppearanceCard /><BusinessGate /><OwnerOnly><DeleteCompanyCard /></OwnerOnly></> },
   { id: "pricing", icon: "dollar", en: "Prices", es: "Precios", descEn: "What a new estimate starts with: your rates, deposit, tax, discounts and numbering.", descEs: "Con qué empieza un presupuesto nuevo: tus precios, depósito, impuesto, descuentos y numeración.",
     body: () => <><PricingCard /><DiscountsCard /></> },
   { id: "services", icon: "tag", en: "Services & prices", es: "Servicios y precios", descEn: "Your trade and your own priced services, picked on every estimate.", descEs: "Tu oficio y tus servicios con precio, que eliges en cada presupuesto.",
@@ -303,7 +327,7 @@ export default function Settings() {
 
   return (
     <div className="page">
-      <div className="page-h"><div><h1>{t("Settings", "Ajustes")}</h1><p>{only ? t("Your language and how the app looks.", "Tu idioma y cómo se ve la app.") : t("Defaults for new estimates. Existing estimates keep the values they were written with.", "Valores para presupuestos nuevos. Los presupuestos que ya existen conservan sus valores.")}</p></div></div>
+      <div className="page-h"><div><h1>{t("Settings", "Ajustes")}</h1><p>{only ? t("Your photo, your language and how the app looks.", "Tu foto, tu idioma y cómo se ve la app.") : t("Defaults for new estimates. Existing estimates keep the values they were written with.", "Valores para presupuestos nuevos. Los presupuestos que ya existen conservan sus valores.")}</p></div></div>
       <div className={"st-layout" + (only ? " only" : "")}>
         {!only && <nav className="st-nav" aria-label={t("Settings sections", "Secciones de ajustes")}>
           {sections.map((s) => (

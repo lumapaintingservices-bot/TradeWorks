@@ -21,6 +21,10 @@ import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 import { Badge } from "../ui/Badge";
 import { Avatar } from "../ui/Avatar";
+import { AvatarPicker } from "../ui/AvatarPicker";
+import { workerAvatarPath } from "../lib/avatar";
+import { squareImage } from "../lib/image";
+import { deleteImage, putImage } from "../lib/storage";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
 import { Combobox } from "../ui/Combobox";
@@ -142,7 +146,7 @@ function OwnerTeam() {
   const sub = (w: Worker) => [w.role, w.phone].filter(Boolean).join(" · ") || "—";
   // green dot = on the clock right now
   const face = (w: Worker, size?: "sm") => { const on = clocks.some((c) => c.id === w.id);
-    return <Avatar name={w.name} size={size} badge={on ? "ok" : null} badgeLabel={on ? t("On the clock", "Trabajando ahora") : undefined} />; };
+    return <Avatar name={w.name} src={w.photo?.url} size={size} badge={on ? "ok" : null} badgeLabel={on ? t("On the clock", "Trabajando ahora") : undefined} />; };
   const owedCell = (owed: number) => <b className={owed > 0.005 ? "tm-owed" : ""}>{money(owed)}</b>;
 
   const section = (title: string, action: ReactNode, empty: string, has: boolean, table: ReactNode, cards: ReactNode, hint?: string) => (
@@ -299,7 +303,7 @@ function OwnerTeam() {
         <WorkerModal worker={workers.find((w) => w.id === modal.id)} onClose={() => setModal(null)}
           hasRecords={(id) => hours.some((h) => h.workerId === id) || pays.some((p) => p.workerId === id)}
           onSave={async (w) => { await saveWorker(w); setModal(null); }}
-          onDelete={async (w) => { await removeWorker(w.id); if (clocks.some((c) => c.id === w.id)) await removeClock(w.id); setModal(null); }} />
+          onDelete={async (w) => { await removeWorker(w.id); deleteImage(w.photo?.path); if (clocks.some((c) => c.id === w.id)) await removeClock(w.id); setModal(null); }} />
       )}
       {modal?.kind === "hours" && (
         <HoursModal entry={hours.find((h) => h.id === modal.id)} workers={modal.id ? workers : activeWorkers} startWorker={modal.workerId}
@@ -349,14 +353,25 @@ function WorkerModal({ worker, hasRecords, onSave, onDelete, onClose }: {
   worker?: Worker; hasRecords(id: string): boolean; onSave(w: Worker): Promise<void>; onDelete(w: Worker): Promise<void>; onClose(): void;
 }) {
   const t = useT(), toast = useUi((s) => s.toast);
+  const { company } = useAuth();
   const isNew = !worker;
   const [w, setW] = useState<Worker>(() => worker || { id: uid("w"), name: "", phone: "", role: "", rate: 0, active: true });
   const [saving, setSaving] = useState(false);
+  // the photo is only stored when Save is pressed: a new one (square JPEG) or "remove"
+  const [newPhoto, setNewPhoto] = useState<string | "remove" | null>(null);
+  const shown = newPhoto === "remove" ? null : newPhoto || w.photo?.url || null;
   const run = async (fn: () => Promise<void>) => { if (saving) return; setSaving(true); try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); setSaving(false); } };
   const save = () => {
     const name = w.name.trim();
     if (!name) { toast(t("Write the name.", "Escribe el nombre.")); return; }
-    return run(() => onSave({ ...w, name, phone: (w.phone || "").trim(), role: (w.role || "").trim(), rate: num(w.rate) }));
+    return run(async () => {
+      const next: Worker = { ...w, name, phone: (w.phone || "").trim(), role: (w.role || "").trim(), rate: num(w.rate) };
+      const old = worker?.photo;
+      if (newPhoto === "remove") next.photo = null;
+      else if (newPhoto && company) next.photo = await putImage(workerAvatarPath(company.id, w.id, uid("a")), newPhoto);
+      await onSave(next);
+      if (newPhoto && old?.path && old.path !== next.photo?.path) deleteImage(old.path);
+    });
   };
   const del = () => run(async () => {
     if (hasRecords(w.id)) {
@@ -369,6 +384,8 @@ function WorkerModal({ worker, hasRecords, onSave, onDelete, onClose }: {
   });
   return (
     <Modal title={isNew ? t("New worker", "Trabajador nuevo") : t("Edit worker", "Editar trabajador")} onClose={onClose}>
+      <div className="tm-photo"><AvatarPicker name={w.name || "?"} src={shown} confirmRemove={false} disabled={saving}
+        onFile={async (f) => setNewPhoto(await squareImage(f))} onRemove={() => setNewPhoto("remove")} /></div>
       <label className="f">{t("Name", "Nombre")}<input autoFocus={!w.name} value={w.name} onChange={(e) => setW({ ...w, name: e.target.value })} /></label>
       <div className="grid2">
         <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={w.phone || ""} onChange={(v) => setW({ ...w, phone: v })} /></label>

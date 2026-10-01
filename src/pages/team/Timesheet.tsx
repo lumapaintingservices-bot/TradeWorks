@@ -59,7 +59,7 @@ export function OwnerWorkerTimesheet() {
   return (
     <div className="page">
       <div className="page-h"><div><Link className="ts-back" to="/team">← {t("Team", "Equipo")}</Link>
-        <h1 className="ts-name">{w && <Avatar name={w.name} size="lg" />}{w ? w.name : t("Worker", "Trabajador")}</h1><p>{t("Timesheet: hours by day, money by job and payments. This is what the worker sees.", "Hoja de horas: horas por día, dinero por trabajo y pagos. Es lo mismo que ve el trabajador.")}</p></div></div>
+        <h1 className="ts-name">{w && <Avatar name={w.name} src={w.photo?.url} size="lg" />}{w ? w.name : t("Worker", "Trabajador")}</h1><p>{t("Timesheet: hours by day, money by job and payments. This is what the worker sees.", "Hoja de horas: horas por día, dinero por trabajo y pagos. Es lo mismo que ve el trabajador.")}</p></div></div>
       {w ? <TimesheetBody worker={w} hours={hours} payouts={pays} labelOf={labelOf} />
         : !loading && <div className="card"><p className="muted tm-empty">{t("Worker not found.", "No se encontró el trabajador.")}</p></div>}
     </div>

@@ -43,6 +43,11 @@ Used: user menu (Google photo, green dot = cloud on, orange = demo), Settings me
 worker timesheet, client profile, Still to collect, Crew chips (check badge when on the job), chat members + header group,
 worker job page crew. Client-facing pages keep their own (contractor branding).
 
+## Profile photo picker [.avp] → /src/ui/AvatarPicker.tsx (idea from shadcn's Avatar + account settings)
+Big avatar (click = pick a photo, camera badge) + "Upload photo" / "Change photo" + "Remove" (asks first) + hint. The photo is cropped to a
+320px square JPEG (squareImage in src/lib/image.ts). Settings > General > Your profile (everyone; workers change the photo on their worker
+record, src/data/avatar.ts useMyPhoto) and Team > Edit worker (saved with Save). User menu: "Profile & photo".
+
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 

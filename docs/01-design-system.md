@@ -24,7 +24,7 @@ All values live in /design/tokens.css and /design/tokens.ts. Reference screensho
 KPI icon tiles: soft bg + saturated icon (blue, green, purple, orange, pink, red, teal, amber) — see tokens.
 Client-facing brand color: company.brandColor (default #EF6A2C, LUMA orange).
 
-## Typography (Inter)
+## Typography (Figtree)
 | Role | Size / weight |
 |---|---|
 | Page title (h1) | 24 / 600, letter-spacing -0.025em |

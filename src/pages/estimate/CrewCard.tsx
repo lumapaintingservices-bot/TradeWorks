@@ -43,7 +43,7 @@ export function CrewCard({ e, set }: { e: Estimate; set(p: Partial<Estimate>): v
             {active.map((w) => {
               const on = crew.includes(w.id);
               return <button key={w.id} type="button" className={"crew-chip" + (on ? " on" : "")} aria-pressed={on} onClick={() => toggle(w.id)}>
-                <Avatar name={w.name} size="sm" badge={on ? "acc" : null} badgeIcon="check" />{w.name}</button>;
+                <Avatar name={w.name} src={w.photo?.url} size="sm" badge={on ? "acc" : null} badgeIcon="check" />{w.name}</button>;
             })}
           </div>
         )}
