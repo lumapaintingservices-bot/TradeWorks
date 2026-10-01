@@ -198,8 +198,8 @@ Access control + clock by task (owner 2026-10-01; backup tag backup-2026-10-01-b
   (hoursText), running clock "02:05" (clockHHMM). Global radio style (shadcn Radio Group) in base.css.
 Merged (PR #34), Firestore rules published and admins/RqJH4iTMLOdNcUy5ODyyak6WR3g1 (lumapaintingservices@gmail.com) added 2026-10-01.
 The two companies other accounts created before the lock ("ginolacera94@gmail.com" etbFLIZx2gzjhAvj1efR, "Jeksk" wxBkkazjG40h5k1yiLGl) were deleted by
-the owner 2026-10-01; only Luma Painting Services LLC (xSTQaO1jXsFNmuIhbSXL) remains. Leftover public/{cid} cards to delete by hand: etbFL..., wxBk...,
-2fZh0DZc2RuYdmoINoEt ("kkkkkk"), ZrHxqT89cVtClqJgoW8J (old test).
+the owner 2026-10-01; only Luma Painting Services LLC (xSTQaO1jXsFNmuIhbSXL) remains. Their leftover public/{cid} cards (and 2 old test ones)
+were deleted too; public/ holds only xSTQaO1jXsFNmuIhbSXL.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
