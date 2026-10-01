@@ -95,6 +95,20 @@ card payments, calendar link, discount active. Green when on (--chk overrides).
 US numbers become (555) 010-2030 while typing at the end, and when leaving the field (src/lib/phone.ts). +52…, extensions and long
 numbers are left as typed. Used for every phone field: clients, estimate, onboarding, company, workers, new lead, lead form.
 
+## Combobox [.cbx] → /src/ui/Combobox.tsx (idea from shadcn Combobox)
+A select you can type into: button with the current choice → floating list (position fixed, so modals don't clip it) with a search
+box; ↑ ↓ Enter, Esc. `none` = the empty choice. Used for: saved client on the estimate (name + phone / address), and the job of a
+task (calendar, team), an expense and a note.
+
+## Sortable table headers → /src/ui/useTableSort.tsx (idea from shadcn Data Table)
+`const { sorted, th } = useTableSort(rows, { amount: { get: (r) => r.amount, first: "desc" } })`. Click = natural order (text A→Z,
+numbers / dates biggest first), again = flipped, third = back to the page's order. Empty values last (src/lib/sort.ts).
+On Estimates, Invoices, Clients and Expenses.
+
+## Row menu [.rm] → /src/ui/RowMenu.tsx (idea from shadcn Dropdown Menu)
+"⋯" button with a row's other actions, floating, kept on screen; ↑ ↓ Esc. Invoices (page + estimate tab): "Mark paid" (unpaid only)
+and "Send" stay as buttons; See the invoice / Print / Open estimate / Mark unpaid / Delete go in the menu.
+
 ## Drawer [.drawer] → /src/ui/Drawer.tsx
 Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a
 click on the backdrop closes it; the page behind does not scroll. Used by the invoice preview.

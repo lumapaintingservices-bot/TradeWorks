@@ -6,6 +6,7 @@ import type { Client, Estimate, Note, NoteCol } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
 import { ask } from "../../ui/confirm";
+import { Combobox } from "../../ui/Combobox";
 
 /** Write or edit one note: title, text, column, priority, due date, linked job, person in charge. */
 export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onSave, onDelete, onClose }: {
@@ -38,11 +39,9 @@ export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onS
         </div>
         <div className="grid2">
           <label className="f">{t("Job (optional)", "Trabajo (opcional)")}
-            <select value={d.estId || ""} onChange={(e) => { const j = jobs.find((x) => x.id === e.target.value); set({ estId: j?.id || "", jobLabel: j?.label || "" }); }}>
-              <option value="">{t("No job", "Sin trabajo")}</option>
-              {d.estId && !jobs.some((j) => j.id === d.estId) && <option value={d.estId}>{d.jobLabel || d.estId}</option>}
-              {jobs.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}
-            </select></label>
+            <Combobox value={d.estId || ""} none={t("No job", "Sin trabajo")} placeholder={t("Search jobs…", "Buscar trabajos…")}
+              options={[...(d.estId && !jobs.some((j) => j.id === d.estId) ? [{ value: d.estId, label: d.jobLabel || d.estId }] : []), ...jobs.map((j) => ({ value: j.id, label: j.label }))]}
+              onChange={(v) => { const j = jobs.find((x) => x.id === v); set({ estId: j?.id || "", jobLabel: j?.label || "" }); }} /></label>
           <label className="f">{t("Person in charge (optional)", "Encargado (opcional)")}
             <select value={d.workerId || ""} onChange={(e) => set({ workerId: e.target.value })}>
               <option value="">{t("Nobody", "Nadie")}</option>

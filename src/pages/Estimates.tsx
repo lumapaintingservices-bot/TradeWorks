@@ -11,6 +11,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { StatusBadge, statusLabel } from "../ui/StatusBadge";
+import { useTableSort } from "../ui/useTableSort";
 
 export default function Estimates() {
   const t = useT();
@@ -59,6 +60,7 @@ export default function Estimates() {
   }
   const sug = suggestTypeFor(client, settings.trade);
 
+  const { sorted, th } = useTableSort(list, { num: { get: (e) => e.number, first: "desc" }, client: { get: (e) => e.clientName }, date: { get: (e) => e.date, first: "desc" }, status: { get: (e) => e.status }, total: { get: (e) => totalOf(e), first: "desc" } });
   return (
     <div className="page">
       <div className="page-h">
@@ -77,8 +79,8 @@ export default function Estimates() {
           </div>
           <div className="card only-desk tbl-wrap">
             <table className="tbl">
-              <thead><tr><th>#</th><th>{t("Client", "Cliente")}</th><th>{t("Date", "Fecha")}</th><th>{t("Job", "Trabajo")}</th><th>{t("Status", "Estado")}</th><th className="r">{t("Total", "Total")}</th></tr></thead>
-              <tbody>{list.map((e) => (
+              <thead><tr>{th("num", "#")}{th("client", t("Client", "Cliente"))}{th("date", t("Date", "Fecha"))}<th>{t("Job", "Trabajo")}</th>{th("status", t("Status", "Estado"))}{th("total", t("Total", "Total"), "r")}</tr></thead>
+              <tbody>{sorted.map((e) => (
                 <tr key={e.id} className="click" onClick={() => nav(`/estimates/${e.id}`)}>
                   <td><b>{e.number}</b></td>
                   <td><b>{e.clientName || t("No client", "Sin cliente")}</b><div className="muted" style={{ fontSize: 12.5 }}>{e.address}</div></td>
@@ -88,7 +90,7 @@ export default function Estimates() {
                 </tr>))}</tbody>
             </table>
           </div>
-          <div className="cards only-phone">{list.map((e) => (
+          <div className="cards only-phone">{sorted.map((e) => (
             <div key={e.id} className="ec" onClick={() => nav(`/estimates/${e.id}`)}>
               <div className="l1"><span>{e.clientName || t("No client", "Sin cliente")}</span><span>{money(totalOf(e))}</span></div>
               <div className="l2"><span>{e.number} · {fmtDate(e.date, lang)} · {jobTypeLabel(e.jobType || "cabinets", lang === "es")}</span><StatusBadge status={e.status} /></div>

@@ -163,6 +163,11 @@ in src/lib/calendar.ts), phone week = day list. Worker calendar (WorkerCalendar.
 Merged (PR #28).
 Quick create menu + Ctrl/Cmd+K search (src/layout/QuickActions.tsx, src/lib/search.ts, src/ui/useUrlFlag.ts: ?new=1 on Clients / Calendar /
 Expenses / Notes, ?open=<id> on Invoices / Notes). KPI cards: trend badge next to the value. All template ideas the owner picked are now done.
+Merged (PR #29).
+shadcn studio components (owner said "hazlo" 2026-10-01; backup tag backup-2026-10-01-before-shadcn-ui): app confirm window `ask()` replaces every
+browser confirm() (src/ui/confirm.tsx); toasts with icon + Undo (src/ui/Toaster.tsx, toast(text, { undo })); on/off settings are switches
+(input.sw); PhoneInput formats US numbers; Combobox for client / job pickers; sortable table headers (useTableSort); "⋯" RowMenu on invoice rows.
+See docs/02-components.md. Not done (offered, lower value): date picker, skeletons, drag to reorder line items.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

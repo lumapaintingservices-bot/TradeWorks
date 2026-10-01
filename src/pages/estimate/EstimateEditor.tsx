@@ -28,6 +28,7 @@ import "./estimate.css";
 import { Badge } from "../../ui/Badge";
 import { ask } from "../../ui/confirm";
 import { PhoneInput } from "../../ui/PhoneInput";
+import { Combobox } from "../../ui/Combobox";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
@@ -171,8 +172,8 @@ export default function EstimateEditor() {
       <div className="ed-grid">
         <div className="stack">
           <div className="card"><div className="card-h"><h2>{t("Client", "Cliente")}</h2></div><div className="card-b">
-            <label className="f">{t("Saved client", "Cliente guardado")}<select value={e.clientId} onChange={(ev) => pickClient(ev.target.value)}>
-              <option value="">{t("New / not saved", "Nuevo / sin guardar")}</option>{clients.filter((c) => !c.archived).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+            <label className="f">{t("Saved client", "Cliente guardado")}<Combobox value={e.clientId} onChange={pickClient} none={t("New / not saved", "Nuevo / sin guardar")} placeholder={t("Search clients…", "Buscar clientes…")}
+              options={clients.filter((c) => !c.archived).map((c) => ({ value: c.id, label: c.name, sub: [c.phone, c.address].filter(Boolean).join(" · ") }))} /></label>
             <label className="f">{t("Name", "Nombre")}<input value={e.clientName} onChange={(ev) => set({ clientName: ev.target.value })} /></label>
             <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={e.phone} onChange={(v) => set({ phone: v })} /></label>
             <label className="f">{t("Email", "Correo")}<input type="email" value={e.email} onChange={(ev) => set({ email: ev.target.value })} /></label>

@@ -21,6 +21,7 @@ import { WeekRow } from "./calendar/WeekRow";
 import { useAuth } from "../auth/AuthProvider";
 import { useUrlFlag } from "../ui/useUrlFlag";
 import { ask } from "../ui/confirm";
+import { Combobox } from "../ui/Combobox";
 import "./Calendar.css";
 
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
@@ -281,10 +282,8 @@ function OwnerCalendar() {
           </div>
           <label className="f">{t("Note (optional)", "Nota (opcional)")}<textarea rows={3} value={draft.note || ""} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
           <label className="f">{t("Link to a job (optional)", "Vincular a un trabajo (opcional)")}
-            <select value={draft.estId || ""} onChange={(e) => setDraft({ ...draft, estId: e.target.value })}>
-              <option value="">{t("Not linked to a job", "Sin trabajo vinculado")}</option>
-              {recent.map((e) => <option key={e.id} value={e.id}>{e.number} · {nameOf(e)}</option>)}
-            </select></label>
+            <Combobox value={draft.estId || ""} onChange={(v) => setDraft({ ...draft, estId: v })} none={t("Not linked to a job", "Sin trabajo vinculado")}
+              placeholder={t("Search jobs…", "Buscar trabajos…")} options={recent.map((e) => ({ value: e.id, label: `${e.number} · ${nameOf(e)}`, sub: e.address }))} /></label>
           {workers.length > 0 && (
             <label className="f">{t("Assign to", "Asignar a")}
               <select value={draft.workerId || ""} onChange={(e) => setDraft({ ...draft, workerId: e.target.value })}>

@@ -21,6 +21,8 @@ import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { useUrlFlag } from "../ui/useUrlFlag";
 import { ask } from "../ui/confirm";
+import { Combobox } from "../ui/Combobox";
+import { useTableSort } from "../ui/useTableSort";
 import "./Expenses.css";
 
 const FALLBACK_SOURCES = ["Thumbtack", "Google", "Referral", "Instagram", "Nextdoor", "Facebook", "Repeat client", "Walk-by / sign", "Other"];
@@ -93,7 +95,8 @@ export default function Expenses() {
       .sort((a, b) => String(b.date).localeCompare(String(a.date)) || a.id.localeCompare(b.id));
   }, [allRows, bounds, cat, q, estNo, estName]);
   const shownTot = r2(shown.reduce((a, r) => a + r.amount, 0));
-  const visible = shown.slice(0, limit);
+  const { sorted, th } = useTableSort(shown, { date: { get: (r) => r.date, first: "desc" }, vendor: { get: (r) => r.vendor }, cat: { get: (r) => r.cat }, amount: { get: (r) => r.amount, first: "desc" } });
+  const visible = sorted.slice(0, limit);
 
   const methodLabel = (m: string) => (es ? METHOD_ES[m] || m : m);
   const vendorText = (r: ExpenseRow) => r.vendor || (r.legacy ? t("Job materials", "Materiales del trabajo") : "—");
@@ -149,7 +152,7 @@ export default function Expenses() {
             <>
               <div className="card only-desk tbl-wrap">
                 <table className="tbl ex-tbl">
-                  <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("Vendor", "Proveedor")}</th><th>{t("Category", "Categoría")}</th><th>{t("Source", "Origen")}</th><th>{t("Job", "Trabajo")}</th><th>{t("Paid with", "Pagado con")}</th><th /><th className="r">{t("Amount", "Monto")}</th></tr></thead>
+                  <thead><tr>{th("date", t("Date", "Fecha"))}{th("vendor", t("Vendor", "Proveedor"))}{th("cat", t("Category", "Categoría"))}<th>{t("Source", "Origen")}</th><th>{t("Job", "Trabajo")}</th><th>{t("Paid with", "Pagado con")}</th><th />{th("amount", t("Amount", "Monto"), "r")}</tr></thead>
                   <tbody>{visible.map((r) => (
                     <tr key={r.id} className="click" onClick={() => open(r)}>
                       <td className="nw">{fmtDate(r.date, lang)}</td>
@@ -289,10 +292,8 @@ function ExpenseModal({ exp, onClose }: { exp: Expense | null; onClose(): void }
           <label className="f">{t("Which source is this for?", "¿De qué origen es?")}<select value={source} onChange={(e) => setSource(e.target.value)}>
             <option value="" />{sources.map((s) => <option key={s} value={s}>{s}</option>)}</select></label>)}
         <div className="grid2">
-          <label className="f">{t("Job (optional)", "Trabajo (opcional)")}<select value={estId} onChange={(e) => setEstId(e.target.value)}>
-            <option value="">{t("No job — business expense", "Sin trabajo — gasto del negocio")}</option>
-            {jobs.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}
-            {estId && !jobs.some((j) => j.id === estId) && <option value={estId}>{estId}</option>}</select></label>
+          <label className="f">{t("Job (optional)", "Trabajo (opcional)")}<Combobox value={estId} onChange={setEstId} none={t("No job — business expense", "Sin trabajo — gasto del negocio")} placeholder={t("Search jobs…", "Buscar trabajos…")}
+            options={jobs.map((j) => ({ value: j.id, label: j.label }))} /></label>
           <label className="f">{t("Paid with", "Pagado con")}<select value={method} onChange={(e) => setMethod(e.target.value)}>
             {EXP_METHODS.map((m) => <option key={m} value={m}>{es ? METHOD_ES[m] : m}</option>)}
             {method && !(EXP_METHODS as readonly string[]).includes(method) && <option value={method}>{method}</option>}</select></label>

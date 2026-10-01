@@ -97,3 +97,39 @@ a.badge:focus-visible,button.badge:focus-visible{outline:0;box-shadow:var(--focu
 @keyframes tt-in{from{transform:translateY(8px);opacity:0}}
 @media(prefers-reduced-motion:reduce){.toast.tw-toast{animation:none}}
 @media(max-width:899px){.toast.tw-toast{left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom));max-width:none;min-width:0}}
+/* Combobox (Combobox.tsx), idea from shadcn's Combobox: a select you can type into */
+.cbx{display:block;margin-top:6px;font-weight:400}
+.cbx-btn{display:flex;align-items:center;gap:8px;width:100%;height:40px;padding:0 10px 0 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.cbx-btn:hover{border-color:var(--ink-3)}
+.cbx-btn:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+.cbx-btn.empty .cbx-v{color:var(--ink-3)}
+.cbx-btn svg{flex:none;color:var(--ink-3)}
+.cbx-v{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbx-pop{z-index:95;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-pop);padding:6px;display:flex;flex-direction:column;gap:4px}
+.cbx-pop input{height:36px;font-size:14px}
+.cbx-list{max-height:260px;overflow-y:auto;display:flex;flex-direction:column}
+.cbx-it{display:flex;align-items:center;gap:8px;width:100%;padding:7px 9px;border:0;border-radius:8px;background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.cbx-it.on{background:var(--surface-2)}
+.cbx-it.nil .cbx-l b{font-weight:500;color:var(--ink-2)}
+.cbx-l{display:flex;flex-direction:column;min-width:0;flex:1}
+.cbx-l b{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbx-l small{font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbx-ck{flex:none;color:var(--acc);font-weight:700}
+.cbx-none{padding:12px;text-align:center;color:var(--ink-3);font-size:13px}
+/* Sortable table headers (useTableSort.tsx) */
+.th-sort{display:inline-flex;align-items:center;gap:4px;border:0;background:none;padding:2px 4px;margin:-2px -4px;border-radius:6px;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}
+.th-sort:hover{background:var(--surface-2);color:var(--ink)}
+.th-sort.on{color:var(--ink)}
+.th-ar{font-size:11px;opacity:.35}
+.th-sort:hover .th-ar,.th-sort.on .th-ar{opacity:1}
+th.r .th-sort{flex-direction:row}
+/* Row "⋯" menu (RowMenu.tsx), idea from shadcn's Dropdown Menu */
+.rm{display:inline-flex}
+.rm-btn{min-width:32px;justify-content:center;font-size:16px;letter-spacing:1px;padding:0 8px}
+.rm-menu{z-index:95;min-width:190px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-pop);padding:5px;display:flex;flex-direction:column}
+.rm-it{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer;white-space:nowrap}
+.rm-it svg{color:var(--ink-3)}
+.rm-it:hover,.rm-it:focus-visible{background:var(--surface-2);outline:0}
+.rm-it.danger{color:var(--bad)}
+.rm-it.danger svg{color:var(--bad)}
+.rm-it:disabled{opacity:.5;cursor:default}

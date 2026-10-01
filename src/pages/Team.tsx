@@ -22,6 +22,7 @@ import "./Team.css";
 import { Badge } from "../ui/Badge";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
+import { Combobox } from "../ui/Combobox";
 
 type ModalState =
   | { kind: "worker"; id?: string }
@@ -335,10 +336,8 @@ function JobSelect({ value, jobs, onChange, label }: { value: string; jobs: Job[
   const t = useT();
   return (
     <label className="f">{label}
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{t("No job", "Sin trabajo")}</option>
-        {jobs.map((j) => <option key={j.id} value={j.id}>{j.label}</option>)}
-      </select></label>
+      <Combobox value={value} onChange={onChange} none={t("No job", "Sin trabajo")} placeholder={t("Search jobs…", "Buscar trabajos…")}
+        options={jobs.map((j) => ({ value: j.id, label: j.label }))} /></label>
   );
 }
 
