@@ -1,13 +1,13 @@
 import { convertLegacy, isLegacyBackup } from "./legacyImport";
 /** Backup file: build (export) and validate/normalise (restore). Pure — no I/O. */
-export const BACKUP_COLLECTIONS = ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings"] as const;
+export const BACKUP_COLLECTIONS = ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "notes"] as const;
 export type BackupCol = (typeof BACKUP_COLLECTIONS)[number];
 export type BackupRec = { id: string } & Record<string, unknown>;
 export type BackupFile = { app: "TradeWorks"; version: 1; createdAt: string; company: { id: string; name: string }; data: Record<BackupCol, BackupRec[]> };
 
 export const BACKUP_LABELS: Record<BackupCol, [string, string]> = {
   clients: ["Clients", "Clientes"], estimates: ["Estimates", "Presupuestos"], invoices: ["Invoices", "Facturas"], expenses: ["Expenses", "Gastos"],
-  workers: ["Workers", "Trabajadores"], hours: ["Hours", "Horas"], payouts: ["Payments to workers", "Pagos a trabajadores"], tasks: ["Tasks", "Tareas"], settings: ["Settings", "Ajustes"],
+  workers: ["Workers", "Trabajadores"], hours: ["Hours", "Horas"], payouts: ["Payments to workers", "Pagos a trabajadores"], tasks: ["Tasks", "Tareas"], settings: ["Settings", "Ajustes"], notes: ["Notes", "Notas"],
 };
 
 /** Firestore Timestamp (or its JSON form) / Date / ISO string -> ISO string; anything else -> undefined. */
@@ -60,6 +60,7 @@ const SHAPE: Record<BackupCol, (r: Record<string, unknown>) => boolean> = {
   hours: (r) => str(r.workerId) && numb(r.hours),
   payouts: (r) => str(r.workerId) && numb(r.amount),
   tasks: (r) => str(r.title),
+  notes: (r) => str(r.col) && (str(r.title) || str(r.text)),
   settings: (r) => r.id === "main" && isObj(r.pricing) && isObj(r.production) && isObj(r.materials),
 };
 

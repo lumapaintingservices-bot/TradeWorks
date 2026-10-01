@@ -3,7 +3,7 @@ import { demoCompanyId, expect, newCabinetEstimate, signUpAndSkip, test } from "
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 /** (g) phone smoke: every main screen at 390 px wide opens, has no horizontal scroll and logs no console errors. */
-const ROUTES = ["/", "/pipeline", "/calendar", "/estimates", "/invoices", "/clients", "/expenses", "/reports", "/team", "/settings",
+const ROUTES = ["/", "/pipeline", "/calendar", "/estimates", "/invoices", "/clients", "/expenses", "/reports", "/team", "/notes", "/settings",
   ...["general", "pricing", "profit", "jobtypes", "leads", "client", "calendar", "team", "backup"].map((s) => "/settings?section=" + s)];
 
 /** Fails when the page can be scrolled sideways. The message names the elements that stick out (ignoring ones inside their own scroller or hidden). */

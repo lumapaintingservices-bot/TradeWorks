@@ -19,7 +19,7 @@ describe("subscriptionPlan (what a login may subscribe to)", () => {
     expect(subscriptionPlan("worker", "w1", "workers")).toEqual({ kind: "doc", id: "w1" });
   });
   it("a worker reads nothing else, and nothing at all while not linked", () => {
-    for (const col of ["estimates", "invoices", "clients", "settings", "expenses", "members"]) expect(subscriptionPlan("worker", "w1", col)).toEqual({ kind: "none" });
+    for (const col of ["estimates", "invoices", "clients", "settings", "expenses", "members", "notes"]) expect(subscriptionPlan("worker", "w1", col)).toEqual({ kind: "none" });
     expect(subscriptionPlan("worker", "w1", "payouts")).toEqual({ kind: "filter", field: "workerId", value: "w1" }); // my payments (timesheet)
     for (const col of ["tasks", "hours", "clock", "workers"]) { expect(subscriptionPlan("worker", null, col)).toEqual({ kind: "none" }); expect(subscriptionPlan("worker", "", col)).toEqual({ kind: "none" }); }
   });

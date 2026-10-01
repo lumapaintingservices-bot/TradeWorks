@@ -15,7 +15,7 @@ describe("route permissions", () => {
     expect(canAccess(worker, "/settings")).toBe(true);
     expect(canAccess(worker, "/team/")).toBe(true);
     expect(canAccess(worker, "/calendar?d=2026-01-01")).toBe(true);
-    for (const p of ["/", "/pipeline", "/estimates", "/estimates/x", "/invoices", "/clients", "/expenses", "/reports", "/invoices/1/doc"]) expect(canAccess(worker, p)).toBe(false);
+    for (const p of ["/", "/pipeline", "/estimates", "/estimates/x", "/invoices", "/clients", "/expenses", "/reports", "/invoices/1/doc", "/notes"]) expect(canAccess(worker, p)).toBe(false);
   });
   it("no prefix confusion and no role = no access", () => {
     expect(canAccess(worker, "/teamwork")).toBe(false);

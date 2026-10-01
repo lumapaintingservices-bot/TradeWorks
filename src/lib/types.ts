@@ -104,6 +104,15 @@ export type Discount = { code: string; type: "percent" | "fixed"; value: number;
 export type Supply = { name: string; qty?: number; cost: number; basis: "item" | "door" | "drawer" | "job" };
 export type TypePreset = { days: number; services?: string; servicesEs?: string; spec: string; specEs: string; scopeEn: string; scopeEs: string; termsEn: string; termsEs: string };
 
+/** Notes board (owners / admins only): ideas, reminders and to-dos. Column ids come from settings.noteCols (src/lib/notes.ts). */
+export type NoteCol = { id: string; name: string };
+export type NotePrio = "high" | "med" | "low" | "";
+export type Note = {
+  id: string; title: string; text: string; col: string; order: number; prio: NotePrio;
+  due?: string; estId?: string; jobLabel?: string; workerId?: string; by?: string;
+  companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+};
+
 export type Settings = {
   pricing: {
     doorRate: number; drawerRate: number; spec: string; specEs: string;
@@ -149,6 +158,8 @@ export type Settings = {
   depositAtSign?: boolean;
   /** When the company default was switched on: only signatures after it get an automatic deposit invoice. */
   depositAtSignSince?: string;
+  /** Notes board columns, left to right (empty name = the built-in name in the app language). Missing = the defaults. */
+  noteCols?: NoteCol[];
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];
