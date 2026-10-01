@@ -81,7 +81,7 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   await page.getByRole("button", { name: "Create deposit + balance invoices" }).click();
   await expect(page.getByText("2 invoices created.")).toBeVisible();
   await page.locator(".iv-row, .card", { hasText: "Deposit" }).getByRole("button", { name: "Mark paid" }).first().click();
-  await expect(page.getByRole("button", { name: "Mark unpaid" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Mark paid" })).toHaveCount(1); // only the balance is left ("Mark unpaid" is in the ⋯ menu)
   await expect(page.locator("select").first()).toHaveValue("Deposit Paid");
 
   await page.goto("/invoices");

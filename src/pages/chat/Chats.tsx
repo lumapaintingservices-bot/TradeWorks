@@ -22,6 +22,7 @@ import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
 import "./chat.css";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 const WON = ["Sent", "Viewed", "Accepted", "Deposit Paid", "Paid in Full"];
 const hhmm = (iso: string, lang: string) => { const d = new Date(iso); return isNaN(d.getTime()) ? "" : d.toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }); };
@@ -139,14 +140,14 @@ function ChatThread({ chatId }: { chatId: string }) {
   const photos = days.flatMap((d) => d.msgs).filter((m) => m.photo?.url);
   // only the owner / admins delete: one message, or the whole chat
   const delMsg = async (m: TeamMsg) => {
-    if (!company || !confirm(t("Delete this message for everyone?", "¿Borrar este mensaje para todos?"))) return;
+    if (!company || !await ask(t("Delete this message for everyone?", "¿Borrar este mensaje para todos?"))) return;
     try {
       await removeRec(company.id, `jobchats/${chatId}/msgs`, m.id);
       if (m.photo?.path?.includes("/chats/")) deleteImage(m.photo.path); // a chat-only photo; job photos stay on the job
     } catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
   };
   const delChat = async () => {
-    if (!company || !confirm(t("Delete this whole chat and all its messages for everyone? This can't be undone.", "¿Borrar todo este chat y todos sus mensajes para todos? No se puede deshacer."))) return;
+    if (!company || !await ask(t("Delete this whole chat and all its messages for everyone? This can't be undone.", "¿Borrar todo este chat y todos sus mensajes para todos? No se puede deshacer."))) return;
     try {
       for (const m of msgs) await removeRec(company.id, `jobchats/${chatId}/msgs`, m.id);
       await removeRec(company.id, "jobchats", chatId);

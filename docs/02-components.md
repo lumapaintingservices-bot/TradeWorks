@@ -37,6 +37,13 @@ disabled and focus ring supported.
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 
+## Theme switcher [.thsw] → /src/ui/ThemeSwitcher.tsx (idea from Vercel Geist Theme Switcher)
+Pill with three round icon buttons: match device / light / dark (radio group, ← → keys). Settings > General and the user menu.
+
+## User menu → /src/layout/NavUser.tsx (idea from shadcn dashboard-01 NavUser)
+Sidebar bottom: Settings, then avatar + name + e-mail + ⇅. Menu (opens beside the sidebar): who / cloud or demo / role, Settings,
+Language & appearance, Theme, Sign out. Phones: the same block at the end of the More sheet. The app language is only in Settings.
+
 ## Sidebar [.v4-sb]
 White, border-right 1px --line. Top: TradeWorks logo 34px + "TradeWorks" 18/700 + subtitle.
 Workspace chip (company logo + name) → settings. "+ New estimate" black button full width.
@@ -77,6 +84,37 @@ Icon tile 56 (radius 16, --acc-soft / --acc) · title 17/600 · text 14 --ink-3 
 
 ## Modal [.modal-card]
 Radius 18, header with title + Close, body padding 24. Wide variant 980px. On phones becomes a bottom sheet.
+
+## Confirm window [.ask] → /src/ui/confirm.tsx (idea from shadcn Alert Dialog)
+`if (!(await ask(t("Delete this note?", "¿Borrar esta nota?")))) return;` instead of the browser confirm(). The question is the title,
+the rest the explanation (src/lib/confirmText.ts). Delete / remove / clear… get a red button, with focus on Cancel. The button says the
+question's verb (Delete, Quitar…) unless `ok` is given. Esc or the backdrop = Cancel. Phones: bottom sheet. Mounted once in main.tsx (ConfirmHost).
+
+## Toast [.tw-toast] → /src/ui/Toaster.tsx (idea from shadcn Sonner)
+`toast(text, { undo?, kind? })`: icon (green check; red ! for errors, detected from the text), close X, optional "Undo" (6 s, else 3 s).
+Undo is offered after deleting a note, task, worker hours or payment (the record is saved back). Desktop bottom-right, phones above the bar.
+
+## Switch [input.sw] (idea from shadcn Switch)
+`<input type="checkbox" role="switch" className="sw">` for on / off settings: deposit at signing, automatic reminders, referrals,
+card payments, calendar link, discount active. Green when on (--chk overrides).
+
+## Phone input → /src/ui/PhoneInput.tsx (idea from shadcn studio Phone Input)
+US numbers become (555) 010-2030 while typing at the end, and when leaving the field (src/lib/phone.ts). +52…, extensions and long
+numbers are left as typed. Used for every phone field: clients, estimate, onboarding, company, workers, new lead, lead form.
+
+## Combobox [.cbx] → /src/ui/Combobox.tsx (idea from shadcn Combobox)
+A select you can type into: button with the current choice → floating list (position fixed, so modals don't clip it) with a search
+box; ↑ ↓ Enter, Esc. `none` = the empty choice. Used for: saved client on the estimate (name + phone / address), and the job of a
+task (calendar, team), an expense and a note.
+
+## Sortable table headers → /src/ui/useTableSort.tsx (idea from shadcn Data Table)
+`const { sorted, th } = useTableSort(rows, { amount: { get: (r) => r.amount, first: "desc" } })`. Click = natural order (text A→Z,
+numbers / dates biggest first), again = flipped, third = back to the page's order. Empty values last (src/lib/sort.ts).
+On Estimates, Invoices, Clients and Expenses.
+
+## Row menu [.rm] → /src/ui/RowMenu.tsx (idea from shadcn Dropdown Menu)
+"⋯" button with a row's other actions, floating, kept on screen; ↑ ↓ Esc. Invoices (page + estimate tab): "Mark paid" (unpaid only)
+and "Send" stay as buttons; See the invoice / Print / Open estimate / Mark unpaid / Delete go in the menu.
 
 ## Drawer [.drawer] → /src/ui/Drawer.tsx
 Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a

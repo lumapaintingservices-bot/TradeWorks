@@ -20,6 +20,8 @@ import { WorkerCalendar } from "./calendar/WorkerCalendar";
 import { WeekRow } from "./calendar/WeekRow";
 import { useAuth } from "../auth/AuthProvider";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { ask } from "../ui/confirm";
+import { Combobox } from "../ui/Combobox";
 import "./Calendar.css";
 
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
@@ -104,7 +106,7 @@ function OwnerCalendar() {
     toast(t(`${e.number} moved to ${fmtDate(to, "en")}.`, `${e.number} movido al ${fmtDate(to, "es")}.`) + (moved ? " " + t(`${moved} task(s) moved with the job.`, `${moved} tarea(s) se movieron con el trabajo.`) : ""));
   }
   async function takeOff(e: Estimate) {
-    if (!confirm(t(`Take ${e.number} off the calendar? The job stays saved; it only loses its dates.`, `¿Quitar ${e.number} del calendario? El trabajo sigue guardado; solo pierde sus fechas.`))) return;
+    if (!await ask(t(`Take ${e.number} off the calendar? The job stays saved; it only loses its dates.`, `¿Quitar ${e.number} del calendario? El trabajo sigue guardado; solo pierde sus fechas.`))) return;
     await saveEst({ ...e, startDate: "" });
     toast(t(`${e.number} is off the calendar now.`, `${e.number} ya no está en el calendario.`));
   }
@@ -262,7 +264,7 @@ function OwnerCalendar() {
                     {(job || w) && <div className="muted sm">{[job && `${job.number} · ${nameOf(job)}`, w?.name].filter(Boolean).join(" · ")}</div>}
                   </div>
                   <button className="btn sm" onClick={() => setDraft({ ...k })}>{t("Edit", "Editar")}</button>
-                  <button className="btn sm danger" onClick={() => { if (confirm(t("Delete this task?", "¿Eliminar esta tarea?"))) { removeTask(k.id); toast(t("Task deleted.", "Tarea eliminada.")); } }}>{t("Delete", "Eliminar")}</button>
+                  <button className="btn sm danger" onClick={async () => { if (await ask(t("Delete this task?", "¿Eliminar esta tarea?"))) { removeTask(k.id); toast(t("Task deleted.", "Tarea eliminada."), { undo: () => saveTask(k) }); } }}>{t("Delete", "Eliminar")}</button>
                 </div>
               );
             })}
@@ -280,10 +282,8 @@ function OwnerCalendar() {
           </div>
           <label className="f">{t("Note (optional)", "Nota (opcional)")}<textarea rows={3} value={draft.note || ""} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
           <label className="f">{t("Link to a job (optional)", "Vincular a un trabajo (opcional)")}
-            <select value={draft.estId || ""} onChange={(e) => setDraft({ ...draft, estId: e.target.value })}>
-              <option value="">{t("Not linked to a job", "Sin trabajo vinculado")}</option>
-              {recent.map((e) => <option key={e.id} value={e.id}>{e.number} · {nameOf(e)}</option>)}
-            </select></label>
+            <Combobox value={draft.estId || ""} onChange={(v) => setDraft({ ...draft, estId: v })} none={t("Not linked to a job", "Sin trabajo vinculado")}
+              placeholder={t("Search jobs…", "Buscar trabajos…")} options={recent.map((e) => ({ value: e.id, label: `${e.number} · ${nameOf(e)}`, sub: e.address }))} /></label>
           {workers.length > 0 && (
             <label className="f">{t("Assign to", "Asignar a")}
               <select value={draft.workerId || ""} onChange={(e) => setDraft({ ...draft, workerId: e.target.value })}>
@@ -292,7 +292,7 @@ function OwnerCalendar() {
           )}
           <div className="cal-actions" style={{ marginTop: 6 }}>
             <button className="btn pri" onClick={submitTask}>{t("Save task", "Guardar tarea")}</button>
-            {!draft.isNew && <button className="btn danger" onClick={() => { if (confirm(t("Delete this task?", "¿Eliminar esta tarea?"))) { removeTask(draft.id); setDraft(null); toast(t("Task deleted.", "Tarea eliminada.")); } }}>{t("Delete task", "Eliminar tarea")}</button>}
+            {!draft.isNew && <button className="btn danger" onClick={async () => { if (await ask(t("Delete this task?", "¿Eliminar esta tarea?"))) { const gone = tasks.find((x) => x.id === draft.id); removeTask(draft.id); setDraft(null); toast(t("Task deleted.", "Tarea eliminada."), gone ? { undo: () => saveTask(gone) } : undefined); } }}>{t("Delete task", "Eliminar tarea")}</button>}
           </div>
         </Modal>
       )}

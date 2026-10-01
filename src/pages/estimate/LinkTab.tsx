@@ -14,6 +14,7 @@ import type { Estimate, Settings } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 export { brandOf };
 
@@ -60,7 +61,7 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
   const now = () => new Date().toISOString();
   // remove the client's signature: off the client link first (else the link would sign it again), then off the estimate
   const removeSig = async () => {
-    if (!confirm(t("Remove the client's signature? The estimate goes back to waiting for a signature and the client can sign the link again.",
+    if (!await ask(t("Remove the client's signature? The estimate goes back to waiting for a signature and the client can sign the link again.",
       "¿Quitar la firma del cliente? El presupuesto vuelve a quedar esperando firma y el cliente puede firmar el enlace otra vez."))) return;
     try {
       if (e.portal) await patchTop("portal", e.portal.token, { remove: ["client.sign"] });
@@ -69,8 +70,8 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
       toast(t("Signature removed.", "Firma quitada."));
     } catch { toast(t("Couldn't remove it. Check your connection and try again.", "No se pudo quitar. Revisa tu conexión e inténtalo de nuevo.")); }
   };
-  const clearActivity = () => {
-    if (confirm(t("Clear the whole activity log of this estimate? This can't be undone.", "¿Borrar todo el registro de actividad de este presupuesto? No se puede deshacer."))) {
+  const clearActivity = async () => {
+    if (await ask(t("Clear the whole activity log of this estimate? This can't be undone.", "¿Borrar todo el registro de actividad de este presupuesto? No se puede deshacer."))) {
       set({ activity: [] }); toast(t("Activity cleared.", "Actividad borrada."));
     }
   };

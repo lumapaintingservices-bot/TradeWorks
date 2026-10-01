@@ -10,6 +10,7 @@ import { useUi } from "../../store/ui";
 import { NumInput } from "../../ui/NumInput";
 import { Help, Pills, SaveCard, useDraft } from "./parts";
 import { useState } from "react";
+import { ask } from "../../ui/confirm";
 
 const BUILTIN = new Set(SERVICES.map((s) => s.id));
 
@@ -33,7 +34,7 @@ export function TradeCard() {
         `¿Cambiar a ${target.es}? Tu lista de servicios sigue siendo la inicial, así que se reemplaza por la lista inicial de ${target.es.toLowerCase()}. Los tipos de trabajo, alcance y términos siguen al nuevo oficio. Los presupuestos que ya escribiste no cambian.`)
       : t(`Switch to ${target.en}? Your own services and prices stay exactly as they are (use “Add starter items” to add this trade's list). Job types, scope and terms follow the new trade. Estimates you already wrote do not change.`,
         `¿Cambiar a ${target.es}? Tus servicios y precios propios se quedan como están (usa “Agregar servicios iniciales” para sumar la lista de este oficio). Los tipos de trabajo, alcance y términos siguen al nuevo oficio. Los presupuestos que ya escribiste no cambian.`);
-    if (!confirm(msg)) return;
+    if (!await ask(msg)) return;
     setBusy(true);
     try {
       await saveCompany({ name: company!.name, trade: target.id });

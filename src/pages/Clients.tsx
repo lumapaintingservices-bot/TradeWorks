@@ -11,6 +11,7 @@ import { ClientForm, blankClient } from "./ClientForm";
 import { LeadInbox } from "./LeadInbox";
 import { Badge } from "../ui/Badge";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { useTableSort } from "../ui/useTableSort";
 
 export default function Clients() {
   const t = useT();
@@ -30,6 +31,7 @@ export default function Clients() {
   const jobs = (id: string) => ests.filter((e) => e.clientId === id).length;
   const leadBadge = (c: Client) => (c.lead && !jobs(c.id) ? <Badge tone="blue" size="sm" style={{ marginLeft: 8 }}>{t("Lead", "Prospecto")}</Badge> : null);
 
+  const { sorted, th } = useTableSort(list, { client: { get: (c) => c.name }, jobs: { get: (c) => jobs(c.id), first: "desc" } });
   return (
     <div className="page">
       <div className="page-h">
@@ -46,14 +48,14 @@ export default function Clients() {
           <div className="toolbar"><input placeholder={t("Search clients…", "Buscar clientes…")} value={q} onChange={(e) => setQ(e.target.value)} /></div>
           <div className="card only-desk tbl-wrap">
             <table className="tbl">
-              <thead><tr><th>{t("Client", "Cliente")}</th><th>{t("Phone", "Teléfono")}</th><th>{t("Email", "Correo")}</th><th>{t("Address", "Dirección")}</th><th className="r">{t("Jobs", "Trabajos")}</th></tr></thead>
-              <tbody>{list.map((c) => (
+              <thead><tr>{th("client", t("Client", "Cliente"))}<th>{t("Phone", "Teléfono")}</th><th>{t("Email", "Correo")}</th><th>{t("Address", "Dirección")}</th>{th("jobs", t("Jobs", "Trabajos"), "r")}</tr></thead>
+              <tbody>{sorted.map((c) => (
                 <tr key={c.id} className="click" onClick={() => nav(`/clients/${c.id}`)}>
                   <td><b>{c.name}</b>{leadBadge(c)}</td><td>{c.phone}</td><td>{c.email}</td><td>{c.address}</td><td className="r">{jobs(c.id)}</td>
                 </tr>))}</tbody>
             </table>
           </div>
-          <div className="cards only-phone">{list.map((c) => (
+          <div className="cards only-phone">{sorted.map((c) => (
             <div key={c.id} className="ec" onClick={() => nav(`/clients/${c.id}`)}>
               <div className="l1"><span>{c.name}{leadBadge(c)}</span><span className="muted">{jobs(c.id)}</span></div>
               <div className="l2"><span>{c.phone || c.email || initials(c.name)}</span></div>

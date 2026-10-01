@@ -14,6 +14,8 @@ import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { statusLabel } from "../ui/StatusBadge";
 import { FollowUpList } from "./FollowUps";
+import { ask } from "../ui/confirm";
+import { PhoneInput } from "../ui/PhoneInput";
 import "./Pipeline.css";
 
 type Stage = "lead" | "Draft" | "Sent" | "Viewed" | "Accepted" | "Deposit Paid" | "Paid in Full";
@@ -65,7 +67,7 @@ export default function Pipeline() {
     await saveEst({ ...e, status: to, sentAt: to === "Sent" && !e.sentAt ? today : e.sentAt, activity: [...(e.activity || []), { at: new Date().toISOString(), text }].slice(-100) } as never);
   }
   async function drop(c: Client) {
-    if (!confirm(t(`Take ${c.name} off the pipeline? The client stays saved.`, `¿Quitar a ${c.name} del embudo? El cliente queda guardado.`))) return;
+    if (!await ask(t(`Take ${c.name} off the pipeline? The client stays saved.`, `¿Quitar a ${c.name} del embudo? El cliente queda guardado.`))) return;
     await saveClient({ ...c, archived: true, archivedAt: new Date().toISOString() } as never);
     toast(t("Removed. You can put it back from “Removed leads”.", "Quitado. Lo puedes regresar desde “Leads quitados”."));
   }
@@ -167,7 +169,7 @@ export default function Pipeline() {
         <Modal title={t("New lead", "Lead nuevo")} onClose={() => setNewLead(null)}>
           <label className="f">{t("Name", "Nombre")}<input value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} autoFocus /></label>
           <div className="grid2">
-            <label className="f">{t("Phone", "Teléfono")}<input type="tel" inputMode="tel" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} /></label>
+            <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={newLead.phone} onChange={(v) => setNewLead({ ...newLead, phone: v })} /></label>
             <label className="f">{t("Email", "Correo")}<input type="email" value={newLead.email} onChange={(e) => setNewLead({ ...newLead, email: e.target.value })} /></label>
             <label className="f">{t("Where they came from", "De dónde llegó")}
               <select value={newLead.source} onChange={(e) => setNewLead({ ...newLead, source: e.target.value })}><option value="" />{sources.map((x) => <option key={x} value={x}>{x}</option>)}</select></label>
@@ -195,13 +197,13 @@ export default function Pipeline() {
                     <div className="muted" style={{ fontSize: 12 }}>{[c.phone, c.source, (c as Archivable).archivedAt ? t("removed ", "quitado ") + fmtDate(dayOf((c as Archivable).archivedAt), lang) : ""].filter(Boolean).join(" · ")}</div></div>
                   <div className="btns">
                     <button className="btn sm pri" onClick={async () => { await saveClient({ ...c, archived: false } as never); toast(t(`${c.name} is back in Leads.`, `${c.name} regresó a Leads.`)); }}>{t("Put back", "Regresar")}</button>
-                    <button className="btn sm danger" onClick={async () => { if (confirm(t(`Delete ${c.name} for good? This can't be undone.`, `¿Borrar a ${c.name} para siempre? No se puede deshacer.`))) { await removeClient(c.id); toast(t("Deleted.", "Borrado.")); } }}>{t("Delete", "Borrar")}</button>
+                    <button className="btn sm danger" onClick={async () => { if (await ask(t(`Delete ${c.name} for good? This can't be undone.`, `¿Borrar a ${c.name} para siempre? No se puede deshacer.`))) { await removeClient(c.id); toast(t("Deleted.", "Borrado.")); } }}>{t("Delete", "Borrar")}</button>
                   </div>
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                 <button className="btn sm danger" onClick={async () => {
-                  if (!confirm(t(`Delete all ${removed.length} removed leads for good? This can't be undone.`, `¿Borrar los ${removed.length} leads quitados para siempre? No se puede deshacer.`))) return;
+                  if (!await ask(t(`Delete all ${removed.length} removed leads for good? This can't be undone.`, `¿Borrar los ${removed.length} leads quitados para siempre? No se puede deshacer.`))) return;
                   for (const c of removed) await removeClient(c.id);
                   setRemovedOpen(false); toast(t("Removed leads cleared.", "Leads quitados borrados."));
                 }}>{t("Delete all for good", "Borrar todos para siempre")}</button>

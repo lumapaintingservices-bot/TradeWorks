@@ -68,8 +68,8 @@ test("backup download and restore round trip", async ({ page }) => {
   await page.goto("/settings?section=backup");
   await page.locator('input[type="file"]').setInputFiles(path);
   await expect(page.locator(".st-restore")).toContainText("Clients: 2");
-  page.once("dialog", (d) => d.accept());
   await page.locator(".st-restore").getByRole("button", { name: /^Restore/ }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Restore" }).click();
   await expect(page.getByText(/Restored \d+ records/)).toBeVisible();
 
   const clients = await demoRows<{ name: string }>(page, cid, "clients");
@@ -102,7 +102,7 @@ test("owner can delete only the chosen company, after typing its name", async ({
   const btn = card.getByRole("button", { name: "Delete company" });
   await expect(btn).toBeDisabled();
   await card.getByRole("textbox").fill(name);
-  page.once("dialog", (d) => d.accept());
   await btn.click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
   await expect.poll(async () => page.evaluate((id) => Object.keys(localStorage).some((k) => k.startsWith(`tw.demo.${id}.`)) || JSON.stringify(localStorage.getItem("tw.demo.companies")).includes(id), cid)).toBe(false);
 });

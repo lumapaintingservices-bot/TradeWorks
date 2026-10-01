@@ -4,6 +4,7 @@ import { cleanDiscounts } from "../../lib/settingsForm";
 import type { Discount } from "../../lib/types";
 import { NumInput } from "../../ui/NumInput";
 import { Help, SaveCard, useDraft } from "./parts";
+import { ask } from "../../ui/confirm";
 
 /** Discount codes a client (or you) can pick on an estimate — e.g. CASH3 for paying cash or Zelle. */
 export default function DiscountsCard() {
@@ -31,8 +32,8 @@ export default function DiscountsCard() {
             <label className="f st-c-l1">{t("Label — English", "Etiqueta — inglés")}<input value={d.label} onChange={(e) => set(i, { label: e.target.value })} /></label>
             <label className="f st-c-l2">{t("Label — Español", "Etiqueta — español")}<input value={d.labelEs} onChange={(e) => set(i, { labelEs: e.target.value })} /></label>
             <div className="st-row-end">
-              <label className="st-check"><input type="checkbox" checked={d.active !== false} onChange={(e) => set(i, { active: e.target.checked })} />{t("Active", "Activo")}</label>
-              <button className="btn sm danger" type="button" onClick={() => { if (confirm(t(`Delete the code ${d.code || ""}? Estimates that use it will lose that discount.`, `¿Borrar el código ${d.code || ""}? Los presupuestos que lo usan perderán ese descuento.`))) setDraft(list.filter((_, j) => j !== i)); }}>{t("Delete", "Borrar")}</button>
+              <label className="st-check"><input type="checkbox" role="switch" className="sw" checked={d.active !== false} onChange={(e) => set(i, { active: e.target.checked })} />{t("Active", "Activo")}</label>
+              <button className="btn sm danger" type="button" onClick={async () => { if (await ask(t(`Delete the code ${d.code || ""}? Estimates that use it will lose that discount.`, `¿Borrar el código ${d.code || ""}? Los presupuestos que lo usan perderán ese descuento.`))) setDraft(list.filter((_, j) => j !== i)); }}>{t("Delete", "Borrar")}</button>
             </div>
           </div>
         ))}

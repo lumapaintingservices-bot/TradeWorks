@@ -108,3 +108,5 @@ html.tw-dark .st-nav-i.on{background:var(--surface-2);box-shadow:none}
   .st-showcase{grid-template-columns:1fr 1fr}
 }
 .st-body .card-b>p.muted:first-child{margin-bottom:14px}
+.st-theme{display:flex;align-items:center;gap:12px;margin-bottom:18px;font-size:14px;color:var(--ink-2)}
+.st-layout.only{grid-template-columns:minmax(0,640px)}

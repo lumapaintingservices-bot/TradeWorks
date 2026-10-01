@@ -17,6 +17,8 @@ import { InvoicePreview } from "../invoices/InvoicePreview";
 import { InvBadge, PayClaimBar } from "../invoices/PayParts";
 import "../Invoices.css";
 import type { TabProps } from "./types";
+import { ask } from "../../ui/confirm";
+import { RowMenu } from "../../ui/RowMenu";
 
 /** Reads and writes this company's invoices. Shared by the Invoices page and the estimate tabs. */
 export function useInvoiceOps() {
@@ -116,7 +118,7 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
   const [open, setOpen] = useState<{ id: string; start: "doc" | "send" } | null>(null);
   const openInv = open ? mine.find((v) => v.id === open.id) : undefined;
   const del = (v: InvoiceRec) => run(async () => {
-    if (!confirm(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
+    if (!await ask(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
     const list = await ops.removeInv(v);
     const patch = statusPatch(e, list);
     if (patch) set(patch);
@@ -149,10 +151,14 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
               <b className="iv-amt">{money(v.amount)}</b>
               <InvBadge v={v} />
               <div className="iv-act">
-                <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
+                {!isPaid(v) && <button className="btn sm pri" disabled={busy} onClick={() => toggle(v)}>{t("Mark paid", "Marcar pagada")}</button>}
                 <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "doc" })}><Icon name="eye" size={15} />{t("Preview", "Ver")}</button>
                 <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "send" })}>{v.pay?.token ? t("Send ✓", "Enviar ✓") : t("Send", "Enviar")}</button>
-                <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
+                <RowMenu label={t(`More for ${v.number}`, `Más para ${v.number}`)} items={[
+                  { label: t("Print / Save PDF", "Imprimir / Guardar PDF"), icon: "print", onClick: () => window.open(`/invoices/${v.id}/doc`, "_blank") },
+                  { label: t("Mark unpaid", "Marcar sin pagar"), icon: "refresh", onClick: () => toggle(v), hidden: !isPaid(v), disabled: busy },
+                  { label: t("Delete invoice", "Borrar factura"), icon: "x", danger: true, onClick: () => del(v), disabled: busy },
+                ]} />
               </div>
               <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />
             </div>

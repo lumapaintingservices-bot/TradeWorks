@@ -8,6 +8,7 @@ import type { Company } from "../auth/types";
 import { useT } from "../i18n";
 import { useUi } from "../store/ui";
 import { Logo } from "../ui/Logo";
+import { PhoneInput } from "../ui/PhoneInput";
 import "./auth.css";
 
 const UNITS = ["job", "hr", "ea", "sq ft", "lin ft", "visit", "room", "day"];
@@ -72,7 +73,7 @@ export default function Onboarding() {
           <p className="sub">{t("This appears on your estimates and client link.", "Esto aparece en tus presupuestos y enlace de cliente.")}</p>
           <label className="f">{t("Business name", "Nombre del negocio")}<input value={f.name} onChange={set("name")} autoFocus /></label>
           <div className="grid2">
-            <label className="f">{t("Phone", "Teléfono")}<input value={f.phone} onChange={set("phone")} inputMode="tel" /></label>
+            <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={f.phone} onChange={(v) => set("phone")({ target: { value: v } })} /></label>
             <label className="f">{t("Email", "Correo")}<input type="email" value={f.email} onChange={set("email")} /></label>
             <label className="f">{t("Website", "Sitio web")}<input value={f.website} onChange={set("website")} /></label>
             <label className="f">{t("Area served", "Zona de servicio")}<input value={f.area} onChange={set("area")} /></label>

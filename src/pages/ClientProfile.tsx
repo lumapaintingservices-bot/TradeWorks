@@ -20,6 +20,7 @@ import { StatusBadge } from "../ui/StatusBadge";
 import { ClientForm } from "./ClientForm";
 import "./ClientProfile.css";
 import { Badge } from "../ui/Badge";
+import { ask } from "../ui/confirm";
 
 export default function ClientProfile() {
   const t = useT();
@@ -46,7 +47,7 @@ export default function ClientProfile() {
   const rewardFriend = clients.find((c) => c.id === reward);
   /** Takes a given reward back (and the marketing expense it logged). */
   const undoReward = async (friend: Client) => {
-    if (!confirm(t("Mark this reward as not given?", "¿Marcar esta recompensa como no entregada?"))) return;
+    if (!await ask(t("Mark this reward as not given?", "¿Marcar esta recompensa como no entregada?"))) return;
     if (friend.refReward?.expenseId) await removeExpense(friend.refReward.expenseId).catch(() => {});
     await save({ ...friend, refReward: undefined });
   };
@@ -54,7 +55,7 @@ export default function ClientProfile() {
   const photos = useMemo(() => clientPhotos(jobs), [jobs]);
   const delPhoto = async (p: (typeof photos)[number]) => {
     const e = ests.find((x) => x.id === p.estId);
-    if (!e || !company || !confirm(t("Delete this photo? It is removed from the job too.", "¿Borrar esta foto? También se quita del trabajo."))) return;
+    if (!e || !company || !await ask(t("Delete this photo? It is removed from the job too.", "¿Borrar esta foto? También se quita del trabajo."))) return;
     try { await deleteJobPhoto(company.id, e, p); toast(t("Photo deleted.", "Foto borrada.")); }
     catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
   };

@@ -5,6 +5,7 @@ import { useT } from "../../i18n";
 import { newToken } from "../../lib/portal";
 import { useUi } from "../../store/ui";
 import { feedUrl, WORKER_BASE } from "./calendarFeed";
+import { ask } from "../../ui/confirm";
 
 /** Settings card: subscribe to your jobs and tasks from Google / Apple / Outlook calendar. */
 export default function CalendarCard() {
@@ -20,12 +21,12 @@ export default function CalendarCard() {
   const drop = async (tk: string) => { if (tk) { try { await deleteTop("calfeed", tk); } catch { /* already gone */ } } };
   async function turnOn() { setBusy(true); try { await update({ calOn: true, calToken: token || newToken() }); } finally { setBusy(false); } }
   async function turnOff() {
-    if (!confirm(t("Turn off the calendar link? Your calendar app will stop receiving updates.", "¿Apagar el enlace de calendario? Tu app de calendario dejará de recibir cambios."))) return;
+    if (!await ask(t("Turn off the calendar link? Your calendar app will stop receiving updates.", "¿Apagar el enlace de calendario? Tu app de calendario dejará de recibir cambios."))) return;
     setBusy(true);
     try { await drop(token); await update({ calOn: false, calToken: "" }); toast(t("Calendar link turned off", "Enlace de calendario apagado")); } finally { setBusy(false); }
   }
   async function renew() {
-    if (!confirm(t("Make a new link? You will need to add the new one to your calendar again.", "¿Crear un enlace nuevo? Tendrás que agregar el nuevo a tu calendario otra vez."))) return;
+    if (!await ask(t("Make a new link? You will need to add the new one to your calendar again.", "¿Crear un enlace nuevo? Tendrás que agregar el nuevo a tu calendario otra vez."))) return;
     setBusy(true);
     try { await drop(token); await update({ calOn: true, calToken: newToken() }); } finally { setBusy(false); }
   }
@@ -47,7 +48,7 @@ export default function CalendarCard() {
         ) : (
           <>
             <label style={{ display: "flex", gap: 10, alignItems: "center", fontWeight: 600, fontSize: 14 }}>
-              <input type="checkbox" style={{ width: 18, height: 18 }} checked={on} disabled={busy} onChange={(e) => (e.target.checked ? turnOn() : turnOff())} />
+              <input type="checkbox" role="switch" className="sw" checked={on} disabled={busy} onChange={(e) => (e.target.checked ? turnOn() : turnOff())} />
               {t("Subscribe from Google / Apple / Outlook calendar", "Suscribir desde el calendario de Google / Apple / Outlook")}
             </label>
             {on && (

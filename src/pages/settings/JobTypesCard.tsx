@@ -7,6 +7,7 @@ import { firstBadNumber, linesOf, textOf } from "../../lib/settingsForm";
 import { isPaintingTrade, jobTypePreset } from "../../lib/trades";
 import type { JobType, Settings } from "../../lib/types";
 import { Grid, Help, Num, Pills, SaveCard, Txt, useDraft } from "./parts";
+import { ask } from "../../ui/confirm";
 
 type Texts = { services: string; servicesEs: string; spec: string; specEs: string; days: number; scopeEn: string; scopeEs: string; termsEn: string; termsEs: string };
 type All = Record<string, Texts>;
@@ -57,8 +58,8 @@ export default function JobTypesCard() {
     // show the saved (tidied) text so the card is not left "unsaved"
     setDraft({ cabinets: { ...tidy(c), scopeEn: textOf(linesOf(c.scopeEn)), scopeEs: textOf(linesOf(c.scopeEs)), termsEn: textOf(linesOf(c.termsEn)), termsEs: textOf(linesOf(c.termsEs)) }, interior: tidy(draft.interior), exterior: tidy(draft.exterior), other: tidy(draft.other) });
   }
-  const restore = () => {
-    if (!confirm(t("Put back the original texts for this job type?", "¿Regresar los textos originales de este tipo de trabajo?"))) return;
+  const restore = async () => {
+    if (!await ask(t("Put back the original texts for this job type?", "¿Regresar los textos originales de este tipo de trabajo?"))) return;
     if (!painting) {
       const o = jobTypePreset(type);
       if (o) set({ services: o.services || "", servicesEs: o.servicesEs || "", spec: o.spec || "", specEs: o.specEs || "", days: o.days, scopeEn: o.scopeEn || "", scopeEs: o.scopeEs || "", termsEn: o.termsEn || "", termsEs: o.termsEs || "" });

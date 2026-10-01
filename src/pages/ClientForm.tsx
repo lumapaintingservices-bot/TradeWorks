@@ -6,6 +6,8 @@ import { uid } from "../lib/estimate";
 import type { Client } from "../lib/types";
 import { useUi } from "../store/ui";
 import { Modal } from "../ui/Modal";
+import { ask } from "../ui/confirm";
+import { PhoneInput } from "../ui/PhoneInput";
 
 export const blankClient = (lang: "en" | "es"): Client => ({ id: uid("c"), name: "", phone: "", email: "", address: "", source: "", lang, note: "" });
 
@@ -20,7 +22,7 @@ export function ClientForm({ client, exists, onClose, onDeleted }: { client: Cli
     <Modal title={exists ? t("Edit client", "Editar cliente") : t("New client", "Nuevo cliente")} onClose={onClose}>
       <label className="f">{t("Name", "Nombre")}<input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} autoFocus /></label>
       <div className="grid2">
-        <label className="f">{t("Phone", "Teléfono")}<input value={edit.phone} inputMode="tel" onChange={(e) => setEdit({ ...edit, phone: e.target.value })} /></label>
+        <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={edit.phone} onChange={(v) => setEdit({ ...edit, phone: v })} /></label>
         <label className="f">{t("Email", "Correo")}<input type="email" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></label>
       </div>
       <label className="f">{t("Address", "Dirección")}<input value={edit.address} onChange={(e) => setEdit({ ...edit, address: e.target.value })} /></label>
@@ -31,7 +33,7 @@ export function ClientForm({ client, exists, onClose, onDeleted }: { client: Cli
       <label className="f">{t("Notes", "Notas")}<textarea rows={3} value={edit.note} onChange={(e) => setEdit({ ...edit, note: e.target.value })} /></label>
       <div className="onb-foot">
         {exists ? (
-          <button className="btn danger" onClick={async () => { if (confirm(t("Delete this client? Their estimates stay.", "¿Eliminar este cliente? Sus presupuestos se quedan."))) { await save({ ...edit, archived: true }); toast(t("Client removed", "Cliente eliminado")); onClose(); onDeleted?.(); } }}>{t("Delete", "Eliminar")}</button>
+          <button className="btn danger" onClick={async () => { if (await ask(t("Delete this client? Their estimates stay.", "¿Eliminar este cliente? Sus presupuestos se quedan."))) { await save({ ...edit, archived: true }); toast(t("Client removed", "Cliente eliminado")); onClose(); onDeleted?.(); } }}>{t("Delete", "Eliminar")}</button>
         ) : <span />}
         <span style={{ display: "flex", gap: 8 }}>
           <button className="btn" disabled={!edit.name.trim()} onClick={async () => { await save(edit); nav(`/estimates?new=1&client=${edit.id}`); }}>{t("Save & new estimate", "Guardar y presupuestar")}</button>

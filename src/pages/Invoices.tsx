@@ -11,6 +11,9 @@ import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
 import { InvoicePreview } from "./invoices/InvoicePreview";
 import { InvBadge, PayClaimBar } from "./invoices/PayParts";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { ask } from "../ui/confirm";
+import { useTableSort } from "../ui/useTableSort";
+import { RowMenu } from "../ui/RowMenu";
 import "./Invoices.css";
 
 type Filter = "all" | "unpaid" | "paid" | "claims";
@@ -55,16 +58,22 @@ export default function Invoices() {
     toast(now ? t(`${v.number} marked paid.`, `${v.number} marcada como pagada.`) : t(`${v.number} marked unpaid.`, `${v.number} marcada como no pagada.`));
   });
   const del = (v: InvoiceRec) => run(async () => {
-    if (!confirm(t(`Delete invoice ${v.number}? This can't be undone.`, `¿Borrar la factura ${v.number}? No se puede deshacer.`))) return;
+    if (!await ask(t(`Delete invoice ${v.number}? This can't be undone.`, `¿Borrar la factura ${v.number}? No se puede deshacer.`))) return;
     await syncStatus(v, await ops.removeInv(v));
     toast(t("Invoice deleted.", "Factura borrada."));
   });
 
   const actions = (v: InvoiceRec) => (
     <div className="iv-act" onClick={(ev) => ev.stopPropagation()}>
-      <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
+      {!isPaid(v) && <button className="btn sm pri" disabled={busy} onClick={() => toggle(v)}>{t("Mark paid", "Marcar pagada")}</button>}
       <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "send" })}>{v.pay?.token ? t("Send ✓", "Enviar ✓") : t("Send", "Enviar")}</button>
-      <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
+      <RowMenu label={t(`More for ${v.number}`, `Más para ${v.number}`)} items={[
+        { label: t("See the invoice", "Ver la factura"), icon: "eye", onClick: () => setOpen({ id: v.id, start: "doc" }) },
+        { label: t("Print / Save PDF", "Imprimir / Guardar PDF"), icon: "print", onClick: () => window.open(`/invoices/${v.id}/doc`, "_blank") },
+        { label: t("Open estimate", "Abrir presupuesto"), icon: "estimates", onClick: () => nav(`/estimates/${v.estId}`), hidden: !estOf(v) },
+        { label: t("Mark unpaid", "Marcar sin pagar"), icon: "refresh", onClick: () => toggle(v), hidden: !isPaid(v), disabled: busy },
+        { label: t("Delete invoice", "Borrar factura"), icon: "x", danger: true, onClick: () => del(v), disabled: busy },
+      ]} />
     </div>
   );
   const claimBar = (v: InvoiceRec) => <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />;
@@ -72,6 +81,7 @@ export default function Invoices() {
   useUrlFlag("open", (id) => setOpen({ id, start: "doc" }), !ops.loading); // Search
   const badge = (v: InvoiceRec) => <InvBadge v={v} />;
 
+  const { sorted, th } = useTableSort(list, { num: { get: (v) => v.number, first: "desc" }, client: { get: (v) => nameOf(v) }, date: { get: (v) => v.date, first: "desc" }, amount: { get: (v) => v.amount, first: "desc" }, status: { get: (v) => (isPaid(v) ? 1 : 0) } });
   return (
     <div className="page">
       <div className="page-h">
@@ -96,8 +106,8 @@ export default function Invoices() {
             <>
               <div className="card only-desk tbl-wrap">
                 <table className="tbl iv-tbl">
-                  <thead><tr><th>#</th><th>{t("Client", "Cliente")}</th><th>{t("Estimate", "Presupuesto")}</th><th>{t("Type", "Tipo")}</th><th>{t("Date", "Fecha")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Status", "Estado")}</th><th /></tr></thead>
-                  <tbody>{list.map((v) => (<Fragment key={v.id}>
+                  <thead><tr>{th("num", "#")}{th("client", t("Client", "Cliente"))}<th>{t("Estimate", "Presupuesto")}</th><th>{t("Type", "Tipo")}</th>{th("date", t("Date", "Fecha"))}{th("amount", t("Amount", "Monto"), "r")}{th("status", t("Status", "Estado"))}<th /></tr></thead>
+                  <tbody>{sorted.map((v) => (<Fragment key={v.id}>
                     <tr className="click" onClick={() => setOpen({ id: v.id, start: "doc" })}>
                       <td><b className="num">{v.number}</b></td>
                       <td><b>{nameOf(v)}</b></td>
@@ -112,7 +122,7 @@ export default function Invoices() {
                   </Fragment>))}</tbody>
                 </table>
               </div>
-              <div className="cards only-phone">{list.map((v) => (
+              <div className="cards only-phone">{sorted.map((v) => (
                 <div key={v.id} className="ec iv-card" onClick={() => setOpen({ id: v.id, start: "doc" })}>
                   <div className="l1"><span>{nameOf(v)}</span><span>{money(v.amount)}</span></div>
                   <div className="l2"><span>{v.number} · {invKindText(v, es)} · {fmtDate(v.date, lang)}</span>{badge(v)}</div>

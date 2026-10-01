@@ -44,7 +44,7 @@ export default function AutoEmailCard() {
           "Every morning TradeWorks e-mails the reminders you pick below, in each client's language, with the payment link when it's about money. Each reminder goes out once. If the client still hasn't answered 3 days later, it shows up in “Who to write to today” so you can follow up by WhatsApp.",
           "Cada mañana TradeWorks envía por correo los recordatorios que elijas abajo, en el idioma de cada cliente y con el enlace de pago cuando se trata de dinero. Cada recordatorio sale una sola vez. Si a los 3 días el cliente no ha respondido, aparece en “A quién escribirle hoy” para que le escribas por WhatsApp.")}</p>
         <label className="chk" style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
-          <input type="checkbox" checked={on} onChange={(e) => setOn(e.target.checked)} />{t("Send reminder e-mails automatically", "Enviar recordatorios por correo automáticamente")}</label>
+          <input type="checkbox" role="switch" className="sw" checked={on} onChange={(e) => setOn(e.target.checked)} />{t("Send reminder e-mails automatically", "Enviar recordatorios por correo automáticamente")}</label>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: "6px 14px", marginBottom: 14, opacity: on ? 1 : 0.55 }}>
           {AUTO_KINDS.map((k) => (
             <label className="chk" key={k} style={{ fontSize: 13.5 }}>

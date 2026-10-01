@@ -9,6 +9,7 @@ import { putImage } from "../../lib/storage";
 import { useUi } from "../../store/ui";
 import { Help, Sub } from "./parts";
 import { Badge } from "../../ui/Badge";
+import { ask } from "../../ui/confirm";
 
 const lastKey = (cid: string) => `tw.lastBackup.${cid}`;
 const readLast = (cid: string) => { try { return localStorage.getItem(lastKey(cid)) || ""; } catch { return ""; } };
@@ -122,7 +123,7 @@ export default function BackupCard() {
             {parsed.p.skipped > 0 && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t(`${parsed.p.skipped} damaged records in the file will be skipped.`, `${parsed.p.skipped} registros dañados del archivo se van a omitir.`)}</p>}
             {progress ? <p style={{ margin: 0 }}>{t("Restoring…", "Restaurando…")} {progress.done} / {progress.total}</p> : (
               <div className="st-actions">
-                <button className="btn pri" onClick={() => { if (confirm(t(`Restore ${parsed.p.total} records into ${company.name}? Records with the same ID will be replaced.`, `¿Restaurar ${parsed.p.total} registros en ${company.name}? Los registros con el mismo ID se reemplazarán.`))) restore(); }}>{t("Restore", "Restaurar")}</button>
+                <button className="btn pri" onClick={async () => { if (await ask(t(`Restore ${parsed.p.total} records into ${company.name}? Records with the same ID will be replaced.`, `¿Restaurar ${parsed.p.total} registros en ${company.name}? Los registros con el mismo ID se reemplazarán.`))) restore(); }}>{t("Restore", "Restaurar")}</button>
                 <button className="btn" onClick={() => { setParsed(null); if (file.current) file.current.value = ""; }}>{t("Cancel", "Cancelar")}</button>
               </div>
             )}

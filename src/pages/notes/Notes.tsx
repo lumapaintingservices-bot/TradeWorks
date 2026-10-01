@@ -173,7 +173,7 @@ export default function Notes() {
       )}
 
       {edit && <NoteEditor note={edit.note} isNew={edit.isNew} cols={cols} estimates={estimates} clients={clients} workers={workers}
-        onSave={onSave} onClose={() => setEdit(null)} onDelete={() => { remove(edit.note.id); setEdit(null); toast(t("Note deleted.", "Nota borrada.")); }} />}
+        onSave={onSave} onClose={() => setEdit(null)} onDelete={() => { const gone = edit.note; remove(gone.id); setEdit(null); toast(t("Note deleted.", "Nota borrada."), { undo: () => put(gone) }); }} />}
       {colsOpen && <ColumnsEditor cols={cols} counts={counts} onClose={() => setColsOpen(false)}
         onSave={(c) => { update({ noteCols: c }); setColsOpen(false); toast(t("Columns saved.", "Columnas guardadas.")); }} />}
     </div>
