@@ -19,6 +19,7 @@ import { useUi } from "../store/ui";
 import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
+import { useUrlFlag } from "../ui/useUrlFlag";
 import "./Expenses.css";
 
 const FALLBACK_SOURCES = ["Thumbtack", "Google", "Referral", "Instagram", "Nextdoor", "Facebook", "Repeat client", "Walk-by / sign", "Other"];
@@ -63,6 +64,7 @@ export default function Expenses() {
   const [custom, setCustom] = useState({ from: today.slice(0, 7) + "-01", to: today });
   const [q, setQ] = useState(""); const [cat, setCat] = useState("all"); const [limit, setLimit] = useState(PAGE);
   const [editing, setEditing] = useState<Expense | "new" | null>(null);
+  useUrlFlag("new", () => setEditing("new")); // Quick create
   const [showRec, setShowRec] = useState(false); const [sp, setSp] = useSearchParams();
   const [showImport, setShowImport] = useState(sp.get("import") === "1");
   const [zoom, setZoom] = useState("");

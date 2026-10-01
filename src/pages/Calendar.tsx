@@ -19,6 +19,7 @@ import { DOW_EN, DOW_ES, MONTH_EN, MONTH_ES, monthKey, p2, shiftMonth } from "./
 import { WorkerCalendar } from "./calendar/WorkerCalendar";
 import { WeekRow } from "./calendar/WeekRow";
 import { useAuth } from "../auth/AuthProvider";
+import { useUrlFlag } from "../ui/useUrlFlag";
 import "./Calendar.css";
 
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
@@ -108,6 +109,7 @@ function OwnerCalendar() {
     toast(t(`${e.number} is off the calendar now.`, `${e.number} ya no está en el calendario.`));
   }
   const newTask = (iso?: string | null) => setDraft({ id: uid("task"), title: "", date: iso || day || today, time: "", note: "", estId: "", workerId: "", done: false, isNew: true });
+  useUrlFlag("new", () => newTask()); // Quick create
   async function submitTask() {
     if (!draft) return;
     if (!draft.title.trim()) { toast(t("Write what the task is.", "Escribe qué es la tarea.")); return; }

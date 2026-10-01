@@ -10,6 +10,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
 import { InvoicePreview } from "./invoices/InvoicePreview";
 import { InvBadge, PayClaimBar } from "./invoices/PayParts";
+import { useUrlFlag } from "../ui/useUrlFlag";
 import "./Invoices.css";
 
 type Filter = "all" | "unpaid" | "paid" | "claims";
@@ -68,6 +69,7 @@ export default function Invoices() {
   );
   const claimBar = (v: InvoiceRec) => <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />;
   const openInv = open ? ops.invoices.find((v) => v.id === open.id) : undefined;
+  useUrlFlag("open", (id) => setOpen({ id, start: "doc" }), !ops.loading); // Search
   const badge = (v: InvoiceRec) => <InvBadge v={v} />;
 
   return (

@@ -82,6 +82,13 @@ Radius 18, header with title + Close, body padding 24. Wide variant 980px. On ph
 Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a
 click on the backdrop closes it; the page behind does not scroll. Used by the invoice preview.
 
+## Quick create + Search → /src/layout/QuickActions.tsx
+Sidebar: "New estimate" + a chevron button that opens the Create menu (New estimate / client / task / expense / note; each page opens its
+form from ?new=1 via src/ui/useUrlFlag.ts). Below it a "Search… Ctrl K" field. Folded sidebar: only the + and a search icon.
+Phone top bar: search icon + "New" (bottom sheet with the same menu). Search window (Ctrl/Cmd+K anywhere, owners / admins):
+pages & actions, clients, estimates, invoices (opens the invoice preview via ?open=), notes (opens the note); ↑ ↓ Enter, Esc.
+Matching in src/lib/search.ts (accents ignored, phone numbers by digits, every word must match).
+
 ## Onboarding [.onb]
 Centered card 560px radius 20, 5 progress dashes, steps: Welcome (language) → Business (logo, name,
 phone, email, website, area) → Trade → Prices (door, drawer, deposit %) → Done (first estimate / sample).

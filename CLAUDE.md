@@ -160,6 +160,9 @@ Notes board (/notes, sidebar after Chats, More sheet): src/lib/notes.ts (+ test)
 Merged (PR #27).
 Calendar redesign (owner): toolbar with Show / Person filters + Month / Week, multi-day job bars (WeekRow.tsx, weekSegments / monthWeeks
 in src/lib/calendar.ts), phone week = day list. Worker calendar (WorkerCalendar.tsx) unchanged, still uses the old .cal-grid styles.
+Merged (PR #28).
+Quick create menu + Ctrl/Cmd+K search (src/layout/QuickActions.tsx, src/lib/search.ts, src/ui/useUrlFlag.ts: ?new=1 on Clients / Calendar /
+Expenses / Notes, ?open=<id> on Invoices / Notes). KPI cards: trend badge next to the value. All template ideas the owner picked are now done.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
