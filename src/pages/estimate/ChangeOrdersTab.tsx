@@ -13,6 +13,7 @@ import { NumInput } from "../../ui/NumInput";
 import "../Invoices.css";
 import { useInvoiceOps } from "./InvoicesTab";
 import type { TabProps } from "./types";
+import { Badge } from "../../ui/Badge";
 
 type CO = ChangeOrder & { via?: string };
 const logLine = (e: Estimate, text: string) => [...(e.activity || []), { at: new Date().toISOString(), text }].slice(-100);
@@ -77,7 +78,7 @@ export default function ChangeOrdersTab({ e, set, s }: TabProps) {
               <div className={"co" + (signed ? " on" : "")} key={co.id || co.n}>
                 <div className="co-h">
                   <b>#{co.n}</b>
-                  <span className={"badge " + (signed ? "b-green" : co.status === "sent" ? "b-blue" : "b-gray")}><i />{signed ? t("Signed", "Firmado") : co.status === "sent" ? t("Waiting for signature", "Esperando firma") : t("Draft", "Borrador")}</span>
+                  <Badge tone={signed ? "green" : co.status === "sent" ? "blue" : "gray"} icon={signed ? "check" : co.status === "sent" ? "clock" : undefined} dot={!signed && co.status !== "sent"}>{signed ? t("Signed", "Firmado") : co.status === "sent" ? t("Waiting for signature", "Esperando firma") : t("Draft", "Borrador")}</Badge>
                   <b className="co-amt">{money(co.amount)}</b>
                 </div>
                 {signed ? (

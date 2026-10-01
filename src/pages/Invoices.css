@@ -6,9 +6,10 @@
 .iv-tile small{color:var(--ink-3);font-size:12.5px}
 .iv-act{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
 .iv-card .iv-act{justify-content:flex-start;margin-top:10px}
-.iv-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:10px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line-2)}
+.iv-row{display:grid;grid-template-columns:minmax(84px,1fr) auto auto auto;gap:10px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line-2)}
 .iv-row:first-of-type{padding-top:0}
 .iv-main{display:flex;flex-direction:column;min-width:0}
+.iv-main .num{white-space:nowrap}
 .iv-main .muted{font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .iv-amt{font-variant-numeric:tabular-nums}
 .iv-sum{margin-top:12px}

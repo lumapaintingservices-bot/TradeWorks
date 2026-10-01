@@ -6,6 +6,7 @@ import { useT } from "../../i18n";
 import { auth, hasFirebase } from "../../lib/firebase";
 import { isTrustedRedirect } from "../../lib/safeUrl";
 import { useUi } from "../../store/ui";
+import { Badge } from "../../ui/Badge";
 
 type Status = { connected: boolean; ready: boolean; details: boolean };
 
@@ -91,7 +92,7 @@ export default function CardPayCard() {
   return (
     <div className="card" style={{ maxWidth: 640, marginTop: 16 }} id="card-payments">
       <div className="card-h"><h2>{t("Card & bank payments", "Pagos con tarjeta y banco")}</h2>
-        {connected && <span className={"badge " + (ready ? "b-green" : "b-amber")} style={ready ? undefined : { background: "var(--tile-amber)", color: "var(--icon-amber)" }}><i />{ready ? t("Connected", "Conectado") : t("Setup not finished", "Falta terminar")}</span>}</div>
+        {connected && <Badge tone={ready ? "green" : "amber"} icon={ready ? "check" : "alert"}>{ready ? t("Connected", "Conectado") : t("Setup not finished", "Falta terminar")}</Badge>}</div>
       <div className="card-b">
         <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>{t(
           "Connect your own Stripe account and each invoice's payment link gets a “Pay by card or bank” button for the exact amount. When the client pays, the invoice is marked paid by itself. The money goes straight to your Stripe account and then to your bank; Stripe charges its fee (about 2.9% + 30¢ per card, 0.8% up to $5 per bank payment).",

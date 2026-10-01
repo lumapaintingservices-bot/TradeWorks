@@ -16,6 +16,7 @@ import type { ClockRec, JobPhoto, Task } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Icon } from "../../ui/Icon";
 import "./worker.css";
+import { Badge } from "../../ui/Badge";
 
 type Meta = { estId: string; jobLabel: string; kind: PhotoKind };
 
@@ -76,7 +77,7 @@ export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { 
 
   return (
     <section className="card tm-sec wk-ph">
-      <div className="card-h"><h2>{t("Job photos", "Fotos del trabajo")}</h2>{mine.length > 0 && <span className="muted wk-ph-n">{mine.length}</span>}</div>
+      <div className="card-h"><h2>{t("Job photos", "Fotos del trabajo")}</h2>{mine.length > 0 && <Badge variant="secondary" size="sm">{mine.length}</Badge>}</div>
       {!job ? (
         <p className="muted tm-empty">{t("When your boss gives you a task linked to a job, you can take before and after photos of it here.",
           "Cuando tu jefe te dé una tarea vinculada a un trabajo, aquí podrás tomar fotos de antes y después.")}</p>

@@ -8,6 +8,7 @@ import { downloadText } from "../../lib/download";
 import { putImage } from "../../lib/storage";
 import { useUi } from "../../store/ui";
 import { Help, Sub } from "./parts";
+import { Badge } from "../../ui/Badge";
 
 const lastKey = (cid: string) => `tw.lastBackup.${cid}`;
 const readLast = (cid: string) => { try { return localStorage.getItem(lastKey(cid)) || ""; } catch { return ""; } };
@@ -116,7 +117,7 @@ export default function BackupCard() {
             <div className="muted" style={{ fontSize: 12.5, margin: "2px 0 8px" }}>
               {parsed.p.company?.name ? parsed.p.company.name + " · " : ""}{parsed.p.createdAt ? fmt(parsed.p.createdAt) : ""}
             </div>
-            <div className="pills" style={{ marginBottom: 10 }}>{counts.map((k) => <span className="badge b-blue" key={k}>{t(BACKUP_LABELS[k][0], BACKUP_LABELS[k][1])}: {parsed.p.counts[k]}</span>)}</div>
+            <div className="pills" style={{ marginBottom: 10 }}>{counts.map((k) => <Badge tone="blue" key={k}>{t(BACKUP_LABELS[k][0], BACKUP_LABELS[k][1])}: {parsed.p.counts[k]}</Badge>)}</div>
             {parsed.p.legacy && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t("This is a backup from your old LUMA app. Clients, estimates, invoices, expenses, team, tasks and your prices will be brought over. Job photos and receipts are uploaded too (this can take a few minutes). Old client links are not included — create a new link from each estimate.", "Esta es una copia de tu app LUMA anterior. Se traen clientes, presupuestos, facturas, gastos, equipo, tareas y tus precios. También se suben las fotos de los trabajos y los recibos (puede tardar unos minutos). Los links viejos de clientes no van incluidos — crea un link nuevo desde cada presupuesto.")}</p>}
             {parsed.p.skipped > 0 && <p className="muted" style={{ fontSize: 12.5, margin: "0 0 10px" }}>{t(`${parsed.p.skipped} damaged records in the file will be skipped.`, `${parsed.p.skipped} registros dañados del archivo se van a omitir.`)}</p>}
             {progress ? <p style={{ margin: 0 }}>{t("Restoring…", "Restaurando…")} {progress.done} / {progress.total}</p> : (

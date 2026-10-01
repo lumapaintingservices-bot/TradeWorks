@@ -8,6 +8,7 @@ import { AUTO_KINDS, autoKindsOf, isEmail } from "../../lib/autoEmail";
 import { DEFAULT_INVOICE_DUE_DAYS } from "../../lib/followups";
 import { TPL_LABELS, type TplKey } from "../../lib/messages";
 import { useUi } from "../../store/ui";
+import { Badge } from "../../ui/Badge";
 
 type Log = Rec & { item?: string; kind?: string; to?: string; subject?: string; status?: string; sentAt?: string; error?: string };
 
@@ -62,7 +63,7 @@ export default function AutoEmailCard() {
           {recent.map((r) => (
             <div className="totline dim" key={r.id} style={{ alignItems: "flex-start" }}>
               <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{r.subject || r.kind} <span className="muted">→ {r.to}</span>
-                {r.status !== "sent" && <span className="badge b-red" style={{ marginLeft: 6 }}><i />{r.status === "sending" ? t("sending", "enviando") : t("failed", "falló")}</span>}</span>
+                {r.status !== "sent" && <Badge tone={r.status === "sending" ? "amber" : "red"} spinner={r.status === "sending"} icon={r.status === "sending" ? undefined : "alert"} size="sm" style={{ marginLeft: 6 }}>{r.status === "sending" ? t("sending", "enviando") : t("failed", "falló")}</Badge>}</span>
               <b style={{ whiteSpace: "nowrap" }}>{when(r.sentAt)}</b>
             </div>))}
         </>}

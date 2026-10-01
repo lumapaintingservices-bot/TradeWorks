@@ -13,6 +13,7 @@ import type { PhotoRef } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import type { TabProps } from "./types";
 import "./jobday.css";
+import { Badge } from "../../ui/Badge";
 
 const KINDS = ["", "before", "after", "detail"] as const;
 
@@ -108,9 +109,9 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
               <div className="ph-card" key={ph.id}>
                 <button type="button" className="ph-thumb" onClick={() => setZoom(i)} aria-label={t("Zoom", "Ampliar")}>
                   {ph.url ? <img src={ph.url} alt={ph.caption || t("Job photo", "Foto del trabajo")} loading="lazy" /> : null}
-                  {ph.kind && <span className="ph-tag">{kindLabel(ph.kind)}</span>}
-                  {ph.inWork && <span className="ph-star">★ {t("Our work", "Nuestro trabajo")}</span>}
-                  {ph.teamId && <span className="ph-by">{ph.by || t("Team", "Equipo")}{ph.at ? " · " + fmtDate(ph.at.slice(0, 10), lang) : ""}</span>}
+                  {ph.kind && <Badge variant="overlay" size="sm" className="ph-tag">{kindLabel(ph.kind)}</Badge>}
+                  {ph.inWork && <Badge tone="green" size="sm" className="ph-star">★ {t("Our work", "Nuestro trabajo")}</Badge>}
+                  {ph.teamId && <Badge variant="overlay" size="sm" icon="camera" className="ph-by">{ph.by || t("Team", "Equipo")}{ph.at ? " · " + fmtDate(ph.at.slice(0, 10), lang) : ""}</Badge>}
                 </button>
                 <div className="ph-meta">
                   <input value={ph.caption} placeholder={t("Caption (optional)", "Descripción (opcional)")} aria-label={t("Caption", "Descripción")} onChange={(ev) => patch(ph.id, { caption: ev.target.value })} />

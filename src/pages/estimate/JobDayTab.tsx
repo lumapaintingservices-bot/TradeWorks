@@ -84,7 +84,7 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
                     <label key={x.key} className={"jd-it" + (at ? " on" : "")}>
                       <input type="checkbox" checked={!!at} onChange={(ev) => tick(x.key, ev.target.checked)} />
                       <span>{x.text}</span>
-                      {at && <em>{fmtDate(String(at).slice(0, 10), lang)}{crewDoc?.doneBy?.[x.key] ? " · " + crewDoc.doneBy[x.key] : ""}</em>}
+                      {at && <em>{fmtDate(isNaN(Date.parse(at)) ? String(at).slice(0, 10) : new Date(at).toLocaleDateString("en-CA"), lang)}{crewDoc?.doneBy?.[x.key] ? " · " + crewDoc.doneBy[x.key] : ""}</em>}
                       {x.custom && <button type="button" className="jd-x" title={t("Remove", "Quitar")} aria-label={t("Remove", "Quitar")} onClick={(ev) => { ev.preventDefault(); delTask(x.id!); }}>×</button>}
                     </label>
                   );

@@ -23,6 +23,17 @@ Component ready: /components/KpiCard.tsx.
 ## Segmented tabs [.v4-subtabs]
 Track #EDEFF2 radius 12 padding 4; tab 7×14 radius 9, 500 --ink-2; active = white chip, 600, shadow 0 1px 3px.
 
+## Badge [.badge] → /src/ui/Badge.tsx (idea from shadcn/ui Badge)
+One pill for the whole app. variant: default (dark) | secondary | destructive | outline | ghost | link | overlay (on photos);
+tone (soft colors, wins): gray | blue | purple | green | teal | red | amber | acc. dot (status dot, estimate statuses keep it),
+icon / iconEnd (design/icons names), spinner (in progress), size sm. to / href / onClick make it clickable (focus ring).
+StatusBadge, RoleBadge, InvBadge use it. Dark mode has its own tints (--tile-* / --icon-* / --up-* / --down-* in html.tw-dark).
+
+## Checkbox [input type=checkbox] (idea from shadcn/ui Checkbox)
+Every checkbox: 18px rounded square (radius 5), filled with a check when on (base.css, :where() so pages can resize it).
+Containers color it with --chk (fill) and --chk-ink (check): checklists green (--ok), chat members accent. Indeterminate,
+disabled and focus ring supported.
+
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 

@@ -7,6 +7,7 @@ import { fmtDate } from "../../lib/format";
 import { useT } from "../../i18n";
 import { useUi } from "../../store/ui";
 import { isTrustedRedirect } from "../../lib/safeUrl";
+import { Badge, type BadgeTone } from "../../ui/Badge";
 
 const BADGE: Record<BillingStatus, { cls: string; en: string; es: string }> = {
   trial: { cls: "b-blue", en: "Free trial", es: "Prueba gratis" },
@@ -96,7 +97,7 @@ export default function BillingCard() {
         )}
 
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <span className={"badge " + badge.cls} style={badge.cls === "b-amber" ? { background: "var(--tile-amber)", color: "var(--icon-amber)" } : undefined}><i />{t(badge.en, badge.es)}</span>
+          <Badge tone={badge.cls.replace("b-", "") as BadgeTone} dot>{t(badge.en, badge.es)}</Badge>
           {st.status === "trial" && <b style={{ fontSize: 14 }}>{t(`${st.daysLeft} ${st.daysLeft === 1 ? "day" : "days"} left`, `Quedan ${st.daysLeft} ${st.daysLeft === 1 ? "día" : "días"}`)}</b>}
           {st.status === "grace" && <b style={{ fontSize: 14 }}>{t(`${st.daysLeft} ${st.daysLeft === 1 ? "day" : "days"} to fix it`, `${st.daysLeft} ${st.daysLeft === 1 ? "día" : "días"} para arreglarlo`)}</b>}
           {st.status === "active" && renew != null && <span className="muted" style={{ fontSize: 13 }}>{t("Renews on", "Se renueva el")} {fmtDate(new Date(renew).toISOString().slice(0, 10), lang)}</span>}

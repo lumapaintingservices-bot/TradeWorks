@@ -9,6 +9,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { ClientForm, blankClient } from "./ClientForm";
 import { LeadInbox } from "./LeadInbox";
+import { Badge } from "../ui/Badge";
 
 export default function Clients() {
   const t = useT();
@@ -25,7 +26,7 @@ export default function Clients() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, q]);
   const jobs = (id: string) => ests.filter((e) => e.clientId === id).length;
-  const leadBadge = (c: Client) => (c.lead && !jobs(c.id) ? <span className="badge b-blue" style={{ marginLeft: 8 }}>{t("Lead", "Prospecto")}</span> : null);
+  const leadBadge = (c: Client) => (c.lead && !jobs(c.id) ? <Badge tone="blue" size="sm" style={{ marginLeft: 8 }}>{t("Lead", "Prospecto")}</Badge> : null);
 
   return (
     <div className="page">

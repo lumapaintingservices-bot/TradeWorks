@@ -14,6 +14,7 @@ import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { WorkerPhotos } from "../team/WorkerPhotos";
 import "./jobs.css";
+import { Badge } from "../../ui/Badge";
 
 type T = ReturnType<typeof useT>;
 const range = (j: Pick<CrewJob, "start" | "days">, lang: string) => {
@@ -69,7 +70,7 @@ function JobCard({ j, today, t, lang }: { j: CrewJob; today: string; t: T; lang:
   const isToday = onSite(j, today);
   return (
     <Link to={"/jobs/" + j.id} className={"card mj-card" + (isToday ? " today" : "")}>
-      <div className="mj-l1"><b>{j.jobLabel}</b><span className={"mj-when" + (isToday ? " on" : "")}>{whenLabel(j, today, t, lang)}</span></div>
+      <div className="mj-l1"><b>{j.jobLabel}</b><Badge tone={isToday ? "acc" : "gray"} icon={isToday ? "pin" : "calendar"} size="sm">{whenLabel(j, today, t, lang)}</Badge></div>
       {j.address && <div className="mj-l2"><Icon name="pin" size={15} />{j.address}</div>}
       <div className="mj-l2"><Icon name="calendar" size={15} />{range(j, lang) || t("Your boss will set the dates", "Tu jefe pondrá las fechas")}</div>
       {c.total > 0 && <div className="mj-prog"><i style={{ width: pct + "%" }} /><span>{c.done}/{c.total}</span></div>}
@@ -110,7 +111,7 @@ export function JobDetail() {
   return (
     <div className="page mj-page">
       <Link to="/jobs" className="mj-back">‹ {t("My jobs", "Mis trabajos")}</Link>
-      <div className="page-h mj-h"><div><h1>{j.jobLabel}</h1><p><span className={"mj-when" + (onSite(j, today) ? " on" : "")}>{whenLabel(j, today, t, lang)}</span>{j.start ? " · " + range(j, lang) : ""}</p></div></div>
+      <div className="page-h mj-h"><div><h1>{j.jobLabel}</h1><p><Badge tone={onSite(j, today) ? "acc" : "gray"} icon={onSite(j, today) ? "pin" : "calendar"}>{whenLabel(j, today, t, lang)}</Badge>{j.start ? " · " + range(j, lang) : ""}</p></div></div>
 
       <div className="mj-actions">
         {j.address && <a className="btn pri" href={mapsUrl(j.address)} target="_blank" rel="noreferrer"><Icon name="pin" size={18} />{t("Directions", "Cómo llegar")}</a>}
@@ -136,7 +137,7 @@ export function JobDetail() {
             if (!items.length) return null;
             return (
               <div key={d} className={"mj-day" + (todayNo === d ? " now" : "")}>
-                <div className="mj-dh">{t("Day", "Día")} {d}{j.titles[String(d)] ? " · " + j.titles[String(d)] : ""}{todayNo === d && <em>{t("Today", "Hoy")}</em>}</div>
+                <div className="mj-dh">{t("Day", "Día")} {d}{j.titles[String(d)] ? " · " + j.titles[String(d)] : ""}{todayNo === d && <Badge tone="acc" size="sm">{t("Today", "Hoy")}</Badge>}</div>
                 {items.map((x) => {
                   const at = done[x.key], by = j.doneBy?.[x.key];
                   return (

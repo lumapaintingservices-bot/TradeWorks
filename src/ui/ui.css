@@ -5,11 +5,36 @@
 .modal-h h2{font-size:17px;font-weight:600}
 .modal-b{padding:24px;overflow-y:auto}
 @media(max-width:640px){.modal-back{align-items:end;padding:0}.modal-card{max-width:none;border-radius:18px 18px 0 0;max-height:92vh}.modal-b{padding:16px}}
-.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;white-space:nowrap}
-.badge i{width:6px;height:6px;border-radius:50%;background:currentColor}
+/* Badge (src/ui/Badge.tsx; idea from shadcn/ui Badge). Tokens only, light + dark. */
+.badge{display:inline-flex;align-items:center;gap:5px;max-width:100%;border:1px solid transparent;border-radius:999px;padding:2px 9px;font:inherit;font-size:12px;font-weight:600;line-height:1.45;white-space:nowrap;vertical-align:middle;text-decoration:none}
+.badge>i{flex:none;width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge>svg{flex:none}
+.badge .b-txt{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.b-sm{padding:0 7px;font-size:11px;gap:4px}
+.b-sm>i{width:5px;height:5px}
+/* variants */
+.b-default{background:var(--ink);color:var(--bg)}
+.b-secondary{background:var(--surface-2);color:var(--ink)}
+.b-destructive{background:var(--bad);color:#fff}
+.b-outline{background:transparent;border-color:var(--line);color:var(--ink-2)}
+.b-ghost{background:transparent;color:var(--ink-2)}
+.b-link{background:transparent;color:var(--acc);padding-left:0;padding-right:0;text-decoration:underline;text-underline-offset:3px}
+.b-overlay{background:rgba(11,13,18,.72);color:#fff}
+/* soft status tones */
 .b-gray{background:var(--surface-2);color:var(--ink-2)}.b-blue{background:var(--tile-blue);color:var(--icon-blue)}
 .b-purple{background:var(--tile-purple);color:var(--icon-purple)}.b-green{background:var(--tile-green);color:var(--up-ink)}
 .b-teal{background:var(--tile-teal);color:var(--icon-teal)}.b-red{background:var(--tile-red);color:var(--down-ink)}
+.b-amber{background:var(--tile-amber);color:var(--icon-amber)}.b-acc{background:var(--acc-soft);color:var(--acc-ink)}
+/* clickable badges */
+a.badge,button.badge{cursor:pointer}
+a.badge:hover,button.badge:hover{filter:brightness(.95)}
+.b-link:hover{filter:none;text-decoration-thickness:2px}
+a.badge:focus-visible,button.badge:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+/* in progress */
+.b-spin{flex:none;width:10px;height:10px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:b-spin .8s linear infinite}
+.b-sm .b-spin{width:8px;height:8px;border-width:1.5px}
+@keyframes b-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.b-spin{animation-duration:2.4s}}
 .pills{display:flex;flex-wrap:wrap;gap:8px}
 .pill{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500}
 .pill.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}

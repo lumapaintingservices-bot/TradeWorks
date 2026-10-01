@@ -19,6 +19,7 @@ import { NumInput } from "../ui/NumInput";
 import TeamMap from "./team/TeamMap";
 import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
+import { Badge } from "../ui/Badge";
 
 type ModalState =
   | { kind: "worker"; id?: string }
@@ -190,7 +191,7 @@ function OwnerTeam() {
               <thead><tr><th>{t("Name", "Nombre")}</th><th className="r">{t("Rate", "Tarifa")}</th><th className="r">{t("Hours", "Horas")}</th><th className="r">{t("Earned", "Ganado")}</th><th className="r">{t("Paid", "Pagado")}</th><th className="r">{t("Owed", "Se le debe")}</th><th /></tr></thead>
               <tbody>{workers.map((w) => { const st = stats.get(w.id)!; return (
                 <tr key={w.id} className={w.active === false ? "tm-off" : ""}>
-                  <td><b>{w.name}</b>{w.active === false && <span className="badge b-gray tm-inact">{t("Inactive", "Inactivo")}</span>}<div className="muted tm-sub">{sub(w)}</div></td>
+                  <td><b>{w.name}</b>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}<div className="muted tm-sub">{sub(w)}</div></td>
                   <td className="r nw">{money(num(w.rate))}/h</td><td className="r nw">{hrs(st.h)}</td><td className="r nw">{money(st.earned)}</td><td className="r nw">{money(st.paid)}</td>
                   <td className="r nw">{owedCell(st.owed)}</td>
                   <td className="r">{workerActions(w)}</td>
@@ -198,7 +199,7 @@ function OwnerTeam() {
             </table>,
             workers.map((w) => { const st = stats.get(w.id)!; return (
               <div key={w.id} className={"tm-card" + (w.active === false ? " tm-off" : "")}>
-                <div className="l1"><span>{w.name}{w.active === false && <span className="badge b-gray tm-inact">{t("Inactive", "Inactivo")}</span>}</span><span>{owedCell(st.owed)}</span></div>
+                <div className="l1"><span>{w.name}{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}</span><span>{owedCell(st.owed)}</span></div>
                 <div className="l2"><span>{sub(w)}</span><span>{t("owed", "se le debe")}</span></div>
                 <div className="tm-stats">
                   <div><span>{t("Rate", "Tarifa")}</span><b>{money(num(w.rate))}/h</b></div><div><span>{t("Hours", "Horas")}</span><b>{hrs(st.h)}</b></div>

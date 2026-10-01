@@ -4,6 +4,7 @@ import { useT } from "../../i18n";
 import { DEFAULT_TEMPLATES, PLACEHOLDERS, TPL_KEYS, TPL_LABELS, type TplKey } from "../../lib/messages";
 import type { MessageTemplates } from "../../lib/types";
 import { useUi } from "../../store/ui";
+import { Badge } from "../../ui/Badge";
 
 type Draft = Record<TplKey, { en: string; es: string }>;
 const fromSettings = (o?: MessageTemplates): Draft =>
@@ -52,7 +53,7 @@ export default function MessageTemplatesCard() {
           <div key={k} style={{ borderTop: "1px solid var(--line-2)", padding: "10px 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between" }}>
               <button className="btn sm" style={{ border: 0, boxShadow: "none", background: "none", fontWeight: 600, padding: 0 }} onClick={() => setOpen(open === k ? null : k)} aria-expanded={open === k}>
-                {open === k ? "▾" : "▸"} {t(TPL_LABELS[k].en, TPL_LABELS[k].es)}{!isDefault(draft, k) && <span className="badge b-blue" style={{ marginLeft: 8 }}>{t("edited", "editado")}</span>}
+                {open === k ? "▾" : "▸"} {t(TPL_LABELS[k].en, TPL_LABELS[k].es)}{!isDefault(draft, k) && <Badge variant="outline" size="sm" style={{ marginLeft: 8 }}>{t("edited", "editado")}</Badge>}
               </button>
               <button className="btn sm" disabled={isDefault(draft, k)} onClick={() => setDraft({ ...draft, [k]: { ...DEFAULT_TEMPLATES[k] } })}>{t("Reset to default", "Volver al original")}</button>
             </div>

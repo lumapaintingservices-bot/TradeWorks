@@ -25,6 +25,7 @@ import LinkTab, { publishPortal } from "./LinkTab";
 import PricingTab from "./PricingTab";
 import ScopeTab from "./ScopeTab";
 import "./estimate.css";
+import { Badge } from "../../ui/Badge";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
@@ -138,8 +139,8 @@ export default function EstimateEditor() {
           <Link to="/estimates" className="back">← {t("All estimates", "Todos los presupuestos")}</Link>
           <h1>{e.number}</h1>
           <p>{saved === "saving" ? t("Saving…", "Guardando…") : t("Saved", "Guardado")} · {company?.name}</p>
-          {e.signature && <button type="button" className="sig-chip" onClick={() => setTab("link")} title={t("See the signature", "Ver la firma")}>
-            ✍ {t("Signed by", "Firmado por")} <b>{e.signature.name || e.clientName}</b> · {fmtDate(e.signature.at && !isNaN(new Date(e.signature.at).getTime()) ? new Date(e.signature.at).toLocaleDateString("en-CA") : e.signature.date, lang)}</button>}
+          {e.signature && <Badge tone="green" icon="check" className="sig-chip" onClick={() => setTab("link")} title={t("See the signature", "Ver la firma")}>
+            {t("Signed by", "Firmado por")} <b>{e.signature.name || e.clientName}</b> · {fmtDate(e.signature.at && !isNaN(new Date(e.signature.at).getTime()) ? new Date(e.signature.at).toLocaleDateString("en-CA") : e.signature.date, lang)}</Badge>}
         </div>
         <div className="actions">
           <select value={e.status} onChange={(ev) => set({ status: ev.target.value as Estimate["status"] })} aria-label="Status">
