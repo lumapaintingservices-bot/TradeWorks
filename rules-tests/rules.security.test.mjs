@@ -305,6 +305,35 @@ await no("worker cannot delete another worker's photo", () => deleteDoc(doc(wrk1
 await ok("worker deletes their own photo", () => deleteDoc(doc(wrk1, "companies/c1/jobphotos/jp1")));
 await ok("admin reads every job photo", () => getDocs(collection(adm1, "companies/c1/jobphotos")));
 
+// ---------------------------------------------------------------- job team chats (jobchats + msgs)
+await ok("admin starts a job chat with w1", () => setDoc(doc(adm1, "companies/c1/jobchats/e1"), { estId: "e1", jobLabel: "EST-1 · Ana", members: ["w1"], closed: false }));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "companies/c1/jobchats/e2"), { estId: "e2", jobLabel: "EST-2", members: ["w2"], closed: false }); });
+const msg = (by, o = {}) => ({ by, name: "Carlos", text: "Ya llegué", at: "2026-09-30T13:00:00Z", ...o });
+await ok("worker lists the chats they are in", () => getDocs(query(collection(wrk1, "companies/c1/jobchats"), where("members", "array-contains", "w1"))));
+await no("worker cannot list every chat", () => getDocs(collection(wrk1, "companies/c1/jobchats")));
+await no("worker cannot read a chat they are not in", () => getDoc(doc(wrk1, "companies/c1/jobchats/e2")));
+await ok("worker posts in their chat as themselves", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1"), msg("w:w1")));
+await ok("worker reads their chat's messages", () => getDocs(collection(wrk1, "companies/c1/jobchats/e1/msgs")));
+await no("worker posts as the boss", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m2"), msg("u:own1")));
+await no("worker posts as another worker", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m3"), msg("w:w2")));
+await no("worker posts in a chat they are not in", () => setDoc(doc(wrk1, "companies/c1/jobchats/e2/msgs/m4"), msg("w:w1")));
+await no("worker reads a chat they are not in", () => getDocs(collection(wrk1, "companies/c1/jobchats/e2/msgs")));
+await no("worker message too long", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m5"), msg("w:w1", { text: "x".repeat(2001) })));
+await no("worker empty message", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m6"), msg("w:w1", { text: "" })));
+await no("worker message with an extra key", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m7"), msg("w:w1", { pinned: true })));
+await no("worker edits a message", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1"), { text: "editado" }));
+await ok("worker updates the chat preview as themselves", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { last: { by: "w:w1", name: "Carlos", text: "Ya llegué", at: "2026-09-30T13:00:00Z" } }));
+await no("worker preview as someone else", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { last: { by: "w:w2", name: "x", text: "x", at: "x" } }));
+await no("worker adds themselves to another chat", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e2"), { members: ["w2", "w1"] }));
+await no("worker changes the members of their chat", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { members: ["w1", "w9"] }));
+await no("worker closes a chat", () => updateDoc(doc(wrk1, "companies/c1/jobchats/e1"), { closed: true }));
+await ok("admin posts as themselves", () => setDoc(doc(adm1, "companies/c1/jobchats/e1/msgs/m8"), msg("u:adm1", { name: "Boss" })));
+await no("admin posts as a worker", () => setDoc(doc(adm1, "companies/c1/jobchats/e1/msgs/m9"), msg("w:w1")));
+await ok("admin closes the chat", () => updateDoc(doc(adm1, "companies/c1/jobchats/e1"), { closed: true }));
+await no("worker cannot post in a closed chat", () => setDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m10"), msg("w:w1")));
+await ok("worker deletes their own message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1")));
+await no("worker deletes the boss's message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m8")));
+
 // ---------------------------------------------------------------- billing fields and company shape
 await no("admin cannot flip the plan", () => updateDoc(doc(adm1, "companies/c1"), { plan: "pro" }));
 await no("admin cannot delete a billing field", () => updateDoc(doc(adm1, "companies/c1"), { trialEndsAt: deleteField() }));

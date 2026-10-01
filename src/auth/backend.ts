@@ -159,7 +159,13 @@ const fbBackend: Backend = {
       }
     }
     await deleteDoc(doc(db, "public", cid)).catch(() => {});
-    for (const col of ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "clock", "jobphotos"]) {
+    // job chats: their messages (a subcollection) first
+    const chats = await getDocs(collection(db, "companies", cid, "jobchats")).catch(() => null);
+    if (chats) for (const c of chats.docs) {
+      const ms = await getDocs(collection(db, "companies", cid, "jobchats", c.id, "msgs")).catch(() => null);
+      if (ms) for (let i = 0; i < ms.docs.length; i += 400) { const b = writeBatch(db); ms.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref)); await b.commit(); }
+    }
+    for (const col of ["clients", "estimates", "invoices", "expenses", "workers", "hours", "payouts", "tasks", "settings", "clock", "jobphotos", "jobchats"]) {
       const s = await getDocs(collection(db, "companies", cid, col));
       for (let i = 0; i < s.docs.length; i += 400) { const b = writeBatch(db); s.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref)); await b.commit(); }
     }

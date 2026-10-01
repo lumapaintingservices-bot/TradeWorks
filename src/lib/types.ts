@@ -60,6 +60,12 @@ export type Expense = { id: string; date: string; vendor: string; amount: number
 export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
 /** teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts). */
 export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string; teamId?: string; by?: string; at?: string };
+/** companies/{cid}/jobchats/{estId}: the team chat of one job: owners / admins + the workers in `members` (worker ids). */
+export type JobChat = { id: string; estId: string; jobLabel: string; members: string[]; closed?: boolean; last?: ChatLast; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+/** The latest message, kept on the chat for the list (preview, unread). */
+export type ChatLast = { by: string; name: string; text: string; at: string };
+/** companies/{cid}/jobchats/{chatId}/msgs/{id}. by = "u:{uid}" (owner / admin) or "w:{workerId}" (worker). */
+export type TeamMsg = { id: string; by: string; name: string; text: string; at: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** companies/{cid}/jobphotos/{id}: a before / after photo a worker took for a job. The file is at companies/{cid}/jobphotos/{workerId}/{id}.jpg. */
 export type JobPhoto = { id: string; workerId: string; estId: string; jobLabel?: string; kind: "before" | "after" | "detail" | ""; caption?: string; url: string; path: string; date: string; at: string; size?: number; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type ColorRow = { area: string; brand: string; color: string; sheen: string; code: string };

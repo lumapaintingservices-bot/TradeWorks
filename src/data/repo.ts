@@ -11,7 +11,8 @@ const bus = new EventTarget();
 const readLocal = <T,>(cid: string, col: string): T[] => { try { return JSON.parse(localStorage.getItem(key(cid, col)) || "[]"); } catch { return []; } };
 
 /** Optional equality filter. Workers MUST use it: Firestore rules are not filters, so a whole-collection read is denied. */
-export type SubFilter = { field: string; value: string };
+/** where(field == value), or where(field array-contains value) (a worker's job chats: members contains their id). */
+export type SubFilter = { field: string; value: string; op?: "array-contains" };
 const reportErr = (what: string, err: unknown) => { console.error(`[TradeWorks] could not read ${what}:`, err); };
 
 /**
@@ -21,7 +22,7 @@ const reportErr = (what: string, err: unknown) => { console.error(`[TradeWorks] 
 export function subscribe<T extends Rec>(cid: string, col: string, cb: Cb<T>, filter?: SubFilter, onError?: (err: unknown) => void): () => void {
   if (hasFirebase) {
     const ref = collection(db, "companies", cid, col);
-    return onSnapshot(filter ? query(ref, where(filter.field, "==", filter.value)) : ref,
+    return onSnapshot(filter ? query(ref, where(filter.field, filter.op || "==", filter.value)) : ref,
       (snap) => cb(snap.docs.map((d) => ({ ...d.data(), id: d.id }) as T)),
       (err) => { reportErr(`${col}`, err); onError?.(err); cb([]); });
   }

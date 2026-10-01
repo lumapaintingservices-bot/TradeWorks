@@ -137,6 +137,7 @@ export default function EstimateEditor() {
             {STATUSES.map((st) => <option key={st} value={st}>{statusLabel(st, lang === "es")}</option>)}</select>
           <Link className="btn" to={`/estimates/${e.id}/doc`} target="_blank">{t("Preview / PDF", "Vista previa / PDF")}</Link>
           <Link className="btn" to={`/estimates/${e.id}/work-order`} target="_blank">{t("Work order", "Orden de trabajo")}</Link>
+          <Link className="btn" to={`/chats/${e.id}`}>{t("Team chat", "Chat del equipo")}</Link>
           <button className="btn" onClick={saveTemplate}>{t("Save as template", "Guardar como plantilla")}</button>
           <button className="btn" onClick={duplicate}>{t("Duplicate", "Duplicar")}</button>
           <button className="btn danger" onClick={del}>{t("Delete", "Eliminar")}</button>
