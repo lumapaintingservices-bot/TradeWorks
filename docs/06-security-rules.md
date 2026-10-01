@@ -73,5 +73,7 @@ Job chats: jobchats/{estId} readable by a worker only when members contains thei
 where members array-contains workerId); a worker may update only `last` (as themselves) while the chat is open.
 jobchats/{estId}/msgs: read by admins and chat members; created as 'u:'+uid (admins) or 'w:'+workerId (members, chat
 open), shape checked (teamMsgOk); nobody edits; admins delete any, workers their own.
+Job crews: crewjobs/{estId} readable by a worker only when crew contains their worker id (query crew array-contains);
+a worker may update only done / doneBy (maps, <= 500 keys); the owner's app cleans the values before mirroring them.
 Add App Check and rate limiting (Cloud Functions) before public launch; move lead photos to Storage via a
 signed-upload Cloud Function to avoid anonymous writes.

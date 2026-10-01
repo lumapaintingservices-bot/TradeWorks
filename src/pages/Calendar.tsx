@@ -168,6 +168,8 @@ function OwnerCalendar() {
                   <div className="info">
                     <div className="nm"><b>{nameOf(e)}</b> <StatusBadge status={stOf(e)} /></div>
                     <div className="muted sm">{e.number}{e.address ? " · " + e.address : ""} · {jobWhat(e, lang)}</div>
+                    <div className="muted sm">👷 {e.crew?.length ? e.crew.map((id) => workers.find((w) => w.id === id)?.name || "?").join(", ")
+                      : <button className="linkish" onClick={() => nav(`/estimates/${e.id}?tab=jobday`)}>{t("No crew yet — assign", "Sin equipo — asignar")}</button>}</div>
                   </div>
                   <b className="tot">{money(calcEstimate(e, settings).total)}</b>
                   <div className="acts">

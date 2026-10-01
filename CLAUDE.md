@@ -122,7 +122,13 @@ bottom, breadcrumb header, Settings submenu. Merged (PR #22).
 Job team chats: /chats and /chats/:estId (worker bottom bar "Chats"; owner sidebar + More; "Team chat" button on each
 estimate). One group chat per job: owner starts it (workers with tasks on the job pre-ticked), adds / removes workers,
 closes / reopens. jobchats/{estId} (members, last) + msgs subcollection; unread badge + toast (useChatInbox in the Shell);
-read state per device + person. Text only for now. Rules: see docs/06.
+read state per device + person. Text only for now. Rules: see docs/06. Merged (PR #23), rules published 2026-09-30.
+Job crews (like Jobber / Housecall Pro): estimate.crew + crewNote, set in Job day tab > Crew card (chips, dates/address
+warnings, double-booking warning, notes). Owner's Shell (useCrewSync) writes crewjobs/{estId} (no prices) and mirrors the
+crew's checklist ticks into estimate.check; crew members are added to the job chat if it exists. Workers: home is now /jobs
+("Jobs" in the bottom bar): Today / Coming up / Not scheduled / Recent; /jobs/:id = directions (Google Maps), dates, crew,
+notes, checklist to tick (who + when), colors, photos (WorkerPhotos fixedJob), time clock and chat links. Clock-in and photo
+job choices include crew jobs. Calendar day panel shows "👷 crew" or "No crew yet — assign" (opens ?tab=jobday).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

@@ -24,9 +24,9 @@ describe("route permissions", () => {
     expect(canAccess(undefined, "/")).toBe(false);
   });
   it("redirects to the role's home", () => {
-    expect(homeFor("worker")).toBe("/calendar");
+    expect(homeFor("worker")).toBe("/jobs");
     expect(homeFor("owner")).toBe("/");
-    expect(redirectFor("worker", "/expenses")).toBe("/calendar");
+    expect(redirectFor("worker", "/expenses")).toBe("/jobs");
     expect(redirectFor("worker", "/team")).toBeNull();
     expect(redirectFor("admin", "/expenses")).toBeNull();
   });
@@ -128,6 +128,7 @@ describe("worker data scope", () => {
     expect(workerScope("jobchats")).toEqual({ field: "members", op: "array-contains" });
     expect(workerScope("jobchats/e1/msgs")).toEqual({ member: true });
     expect(workerScope("jobchats/e1/other")).toBeNull();
+    expect(workerScope("crewjobs")).toEqual({ field: "crew", op: "array-contains" });
     expect(workerScope("clock")).toEqual({ docId: true });
     expect(workerScope("workers")).toEqual({ docId: true });
     expect(workerScope("expenses")).toBeNull();

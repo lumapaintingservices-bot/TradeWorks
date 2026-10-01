@@ -206,7 +206,8 @@ function StartChat({ estId }: { estId: string }) {
   const { rows: tasks, loading: tasksLoading } = useTasks();
   const e = ests.find((x) => x.id === estId);
   const [ids, setIds] = useState<string[] | null>(null);
-  useEffect(() => { if (ids === null && !tasksLoading && e) setIds(defaultMembers(tasks, estId)); }, [tasks, tasksLoading, e, estId, ids]);
+  // the job's crew + workers with tasks on it
+  useEffect(() => { if (ids === null && !tasksLoading && e) setIds([...new Set([...(e.crew || []), ...defaultMembers(tasks, estId)])]); }, [tasks, tasksLoading, e, estId, ids]);
   const [saving, setSaving] = useState(false);
   if (loading) return <div className="card chat-thread" />;
   if (!e) return <div className="card chat-thread"><EmptyState icon="chat" title={t("Job not found", "No se encontró el trabajo")} text=""><Link className="btn" to="/chats">{t("All chats", "Todos los chats")}</Link></EmptyState></div>;
@@ -222,7 +223,7 @@ function StartChat({ estId }: { estId: string }) {
       <div className="chat-top"><div className="chat-top-t"><b>{label}</b><small className="muted">{t("New team chat", "Nuevo chat del equipo")}</small></div></div>
       <div className="chat-start-b">
         <h3>{t("Who should be in this chat?", "¿Quién debe estar en este chat?")}</h3>
-        <p className="muted chat-hint">{t("Workers with tasks on this job are already ticked.", "Los trabajadores con tareas en este trabajo ya están marcados.")}</p>
+        <p className="muted chat-hint">{t("The job's crew and workers with tasks on it are already ticked.", "El equipo del trabajo y los trabajadores con tareas en él ya están marcados.")}</p>
         <WorkerChecks value={ids || []} onChange={setIds} />
         <button className="btn pri" disabled={saving} onClick={start}><Icon name="chat" size={18} />{t("Start chat", "Empezar chat")}</button>
       </div>

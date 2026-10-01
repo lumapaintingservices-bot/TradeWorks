@@ -9,6 +9,7 @@ import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { shrinkImage } from "../../lib/image";
 import { PHOTO_KINDS, dataUrlSize, fmtSize, photoJobOptions, type PhotoKind } from "../../lib/jobPhotos";
+import { mergeJobOptions } from "../../lib/crew";
 import { putImage } from "../../lib/storage";
 import type { ClockRec, JobPhoto, Task } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -19,15 +20,17 @@ type Meta = { estId: string; jobLabel: string; kind: PhotoKind };
 
 /**
  * Worker page: take before / after photos of a job. Photos go to the worker's own folder (jobphotos) and the owner's app
- * puts them on the job (src/data/teamPhotos.ts). Jobs = the one I'm clocked in to + my tasks' jobs around today.
+ * puts them on the job (src/data/teamPhotos.ts). Jobs = the one I'm clocked in to + my crew jobs (extraJobs) + my tasks' jobs
+ * around today; on a job's own page (My jobs) only that job (fixedJob).
  */
-export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tasks: Task[]; clock?: ClockRec }) {
+export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { workerId: string; tasks: Task[]; clock?: ClockRec; extraJobs?: { estId: string; label: string }[]; fixedJob?: { estId: string; label: string } }) {
   const t = useT();
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const { company } = useAuth();
   const { rows, save, remove } = useJobPhotos();
   const today = todayISO();
-  const opts = useMemo(() => photoJobOptions(tasks, today, clock), [tasks, today, clock]);
+  const opts = useMemo(() => fixedJob ? [fixedJob] : mergeJobOptions(photoJobOptions([], today, clock), extraJobs || [], photoJobOptions(tasks, today, null)),
+    [tasks, today, clock, extraJobs, fixedJob]);
   const [pick, setPick] = useState("");
   const job = opts.find((o) => o.estId === pick) || opts[0];
   const mine = useMemo(() => rows.filter((p) => p.workerId === workerId && job && p.estId === job.estId)
@@ -74,7 +77,7 @@ export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tas
           "Cuando tu jefe te dé una tarea vinculada a un trabajo, aquí podrás tomar fotos de antes y después.")}</p>
       ) : (
         <div className="wk-ph-b">
-          {opts.length > 1
+          {fixedJob ? null : opts.length > 1
             ? <label className="f wk-ph-job">{t("Job", "Trabajo")}
                 <select value={job.estId} onChange={(e) => setPick(e.target.value)}>{opts.map((o) => <option key={o.estId} value={o.estId}>{o.label}</option>)}</select></label>
             : <p className="wk-ph-one"><span className="muted">{t("Job: ", "Trabajo: ")}</span>{job.label}</p>}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
 import { normalizeTrade } from "../lib/trades";
-import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, JobChat, JobPhoto, Payout, Settings, Task, TeamMsg, Worker } from "../lib/types";
+import type { ClockRec, Client, CrewJob, Estimate, Expense, HourEntry, Invoice, JobChat, JobPhoto, Payout, Settings, Task, TeamMsg, Worker } from "../lib/types";
 import { subscriptionPlan } from "../lib/workerView";
 import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from "./repo";
 
@@ -42,6 +42,7 @@ export const useClock = () => useCollection<ClockRec & Rec>("clock");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
 export const useJobPhotos = () => useCollection<JobPhoto & Rec>("jobphotos");
 export const useJobChats = () => useCollection<JobChat & Rec>("jobchats");
+export const useCrewJobs = () => useCollection<CrewJob & Rec>("crewjobs");
 /** Messages of one job chat (jobchats/{chatId}/msgs). */
 export const useTeamMsgs = (chatId: string) => useCollection<TeamMsg & Rec>(`jobchats/${chatId}/msgs`);
 

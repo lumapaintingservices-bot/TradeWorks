@@ -6,7 +6,8 @@ rules_version = '2';
 //   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
 //   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read),
 //          their own job photos (add, see, delete; jobphotos, file in Storage at companies/{cid}/jobphotos/{workerId}/{id}.jpg),
-//          the job chats they were added to (jobchats/{estId}.members): read, write messages as themselves, update the preview
+//          the job chats they were added to (jobchats/{estId}.members): read, write messages as themselves, update the preview,
+//          the jobs they are on the crew of (crewjobs/{estId}.crew): read, tick the checklist (done / doneBy only)
 // The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -165,7 +166,7 @@ service cloud.firestore {
         allow delete: if admin(cid) || (inChat() && resource.data.by == 'w:' + myWorkerId(cid));
       }
 
-      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos, jobchats ...
+      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos, jobchats, crewjobs ...
       // owners/admins everything. A worker only touches what is linked to their workerId (rules are not filters:
       // the app must query with the same filter, see src/lib/roles.ts workerScope()).
       match /{col}/{id} {
@@ -174,6 +175,7 @@ service cloud.firestore {
             ((col == 'tasks' || col == 'hours' || col == 'payouts' || col == 'jobphotos') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, hours, payments, photos
             || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
             || (col == 'jobchats' && myWorkerId(cid) in resource.data.get('members', []))                // job chats I was added to
+            || (col == 'crewjobs' && myWorkerId(cid) in resource.data.get('crew', []))                   // jobs I am on the crew of
           )));
 
         allow create: if col != 'members' && (admin(cid) || (
@@ -193,6 +195,11 @@ service cloud.firestore {
             || (col == 'jobchats' && myWorkerId(cid) in resource.data.get('members', []) && !resource.data.get('closed', false)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['last', 'updatedAt'])
                 && chatLastOk(request.resource.data.last, 'w:' + myWorkerId(cid)))
+            // a job I am on the crew of: only the checklist ticks (who / when)
+            || (col == 'crewjobs' && myWorkerId(cid) in resource.data.get('crew', [])
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'doneBy', 'updatedAt'])
+                && request.resource.data.get('done', {}) is map && request.resource.data.get('done', {}).size() <= 500
+                && request.resource.data.get('doneBy', {}) is map && request.resource.data.get('doneBy', {}).size() <= 500)
             // tick a task assigned to me as done (nothing else on it may change)
             || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))

@@ -334,6 +334,21 @@ await no("worker cannot post in a closed chat", () => setDoc(doc(wrk1, "companie
 await ok("worker deletes their own message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m1")));
 await no("worker deletes the boss's message", () => deleteDoc(doc(wrk1, "companies/c1/jobchats/e1/msgs/m8")));
 
+// ---------------------------------------------------------------- job crews (crewjobs: the crew's copy of a job)
+const cj = (crew, o = {}) => ({ estId: "e1", jobLabel: "EST-1 · Ana", crew, crewNames: [], start: "2026-10-02", days: 2, address: "12 Oak", client: "Ana", note: "", checklist: [{ key: "k1", day: 1, text: "Sand" }], titles: {}, colors: [], done: {}, doneBy: {}, ...o });
+await ok("admin writes a crew job", () => setDoc(doc(adm1, "companies/c1/crewjobs/e1"), cj(["w1"])));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "companies/c1/crewjobs/e2"), cj(["w2"], { estId: "e2" })); });
+await ok("worker lists the jobs they are on", () => getDocs(query(collection(wrk1, "companies/c1/crewjobs"), where("crew", "array-contains", "w1"))));
+await no("worker cannot list every crew job", () => getDocs(collection(wrk1, "companies/c1/crewjobs")));
+await no("worker cannot read a job they are not on", () => getDoc(doc(wrk1, "companies/c1/crewjobs/e2")));
+await ok("worker ticks the checklist", () => updateDoc(doc(wrk1, "companies/c1/crewjobs/e1"), { done: { k1: "2026-10-02T10:00:00Z" }, doneBy: { k1: "Carlos" } }));
+await no("worker adds themselves to another crew", () => updateDoc(doc(wrk1, "companies/c1/crewjobs/e2"), { crew: ["w2", "w1"] }));
+await no("worker changes the crew", () => updateDoc(doc(wrk1, "companies/c1/crewjobs/e1"), { crew: ["w1", "w9"] }));
+await no("worker edits the address", () => updateDoc(doc(wrk1, "companies/c1/crewjobs/e1"), { address: "elsewhere" }));
+await no("worker ticks with a non-map", () => updateDoc(doc(wrk1, "companies/c1/crewjobs/e1"), { done: "all" }));
+await no("worker deletes a crew job", () => deleteDoc(doc(wrk1, "companies/c1/crewjobs/e1")));
+await no("worker creates a crew job", () => setDoc(doc(wrk1, "companies/c1/crewjobs/e9"), cj(["w1"], { estId: "e9" })));
+
 // ---------------------------------------------------------------- billing fields and company shape
 await no("admin cannot flip the plan", () => updateDoc(doc(adm1, "companies/c1"), { plan: "pro" }));
 await no("admin cannot delete a billing field", () => updateDoc(doc(adm1, "companies/c1"), { trialEndsAt: deleteField() }));

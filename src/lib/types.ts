@@ -39,6 +39,8 @@ export type Estimate = {
   sentAt?: string;
   snooze?: Record<string, string>; reviewAsked?: boolean; warrantyChecked?: boolean;
   photos?: PhotoRef[]; showPhotos?: boolean; check?: Record<string, string>; jobTasks?: JobTask[]; colors?: ColorRow[];
+  /** The workers on this job (worker ids) and notes for them; their copy of the job is crewjobs/{id} (src/lib/crew.ts). */
+  crew?: string[]; crewNote?: string;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
 export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
@@ -60,6 +62,16 @@ export type Expense = { id: string; date: string; vendor: string; amount: number
 export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
 /** teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts). */
 export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string; teamId?: string; by?: string; at?: string };
+/**
+ * companies/{cid}/crewjobs/{estId}: what the crew of a job may see (workers cannot read estimates): dates, address, client
+ * name, notes, checklist, colors. No prices. Written by the owner's app; workers only tick the checklist (done / doneBy).
+ */
+export type CrewJob = {
+  id: string; estId: string; jobLabel: string; crew: string[]; crewNames: string[]; start: string; days: number;
+  address: string; client: string; note: string; checklist: CrewItem[]; titles: Record<string, string>; colors: ColorRow[];
+  done?: Record<string, string>; doneBy?: Record<string, string>; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+};
+export type CrewItem = { key: string; day: number; text: string };
 /** companies/{cid}/jobchats/{estId}: the team chat of one job: owners / admins + the workers in `members` (worker ids). */
 export type JobChat = { id: string; estId: string; jobLabel: string; members: string[]; closed?: boolean; last?: ChatLast; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** The latest message, kept on the chat for the list (preview, unread). */

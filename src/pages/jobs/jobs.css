@@ -1,0 +1,50 @@
+/* Worker "My jobs" (MyJobs.tsx). Tokens only. */
+.mj-sec{margin-bottom:20px}
+.mj-sec h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.mj-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.mj-card{display:grid;gap:6px;padding:14px 16px;color:var(--ink);text-decoration:none;border:1px solid var(--line)}
+.mj-card:hover{border-color:var(--acc)}
+.mj-card.today{border-color:var(--acc);box-shadow:inset 3px 0 0 var(--acc)}
+.mj-l1{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.mj-l1 b{font-size:15px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.mj-l2{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);min-width:0}
+.mj-l2 svg{color:var(--ink-3);flex:none}
+.mj-when{font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface-2);border-radius:999px;padding:2px 9px;white-space:nowrap;flex:none}
+.mj-when.on{background:var(--acc-soft);color:var(--acc-ink)}
+.mj-prog{position:relative;height:6px;border-radius:999px;background:var(--surface-2);margin-top:4px}
+.mj-prog i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--ok)}
+.mj-prog span{position:absolute;right:0;top:-18px;font-size:11px;color:var(--ink-3)}
+
+.mj-back{display:inline-block;margin-bottom:6px;font-size:13.5px;color:var(--ink-2);text-decoration:none}
+.mj-h h1{overflow-wrap:anywhere}
+.mj-h p{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mj-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.mj-actions .btn{height:44px;padding:0 16px;gap:8px}
+.mj-info{display:grid;gap:2px;padding:6px 18px;margin-bottom:16px}
+.mj-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.mj-row:last-child{border-bottom:0}
+.mj-row svg{color:var(--ink-3);flex:none;margin-top:2px}
+.mj-row small{display:block;font-size:12px;color:var(--ink-3)}
+.mj-row b{display:block;font-weight:500;overflow-wrap:anywhere}
+.mj-note,.mj-check,.mj-colors{margin-bottom:16px}
+.mj-note p{margin:0;padding:0 20px 16px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+.mj-days{padding:0 16px 12px;display:grid;gap:10px}
+.mj-day{border:1px solid var(--line);border-radius:var(--r-lg);padding:8px 10px}
+.mj-day.now{border-color:var(--acc)}
+.mj-dh{font-size:12.5px;font-weight:600;color:var(--ink-2);padding:2px 2px 6px;display:flex;align-items:center;gap:8px}
+.mj-dh em{font-style:normal;font-size:11px;font-weight:700;color:var(--acc-ink);background:var(--acc-soft);border-radius:999px;padding:0 8px}
+.mj-it{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--line-2);cursor:pointer;min-height:44px}
+.mj-it input{width:22px;height:22px;padding:0;flex:none;accent-color:var(--ok)}
+.mj-it span{flex:1;min-width:0;overflow-wrap:anywhere}
+.mj-it.on span{color:var(--ink-3);text-decoration:line-through}
+.mj-it em{font-style:normal;font-size:11.5px;color:var(--ink-3);flex:none;text-align:right}
+.mj-clist{padding:0 20px 14px;display:grid;gap:8px}
+.mj-color{display:flex;flex-direction:column;gap:1px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-md)}
+.mj-color span{font-size:13px;color:var(--ink-2)}
+@media(max-width:640px){
+  .mj-list{grid-template-columns:1fr}
+  .mj-actions .btn{flex:1 1 auto;justify-content:center}
+  .mj-info{padding:4px 14px}
+  .mj-days{padding:0 10px 10px}
+  .mj-it em{max-width:40%}
+}

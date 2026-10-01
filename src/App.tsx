@@ -31,6 +31,7 @@ import Reports from "./pages/Reports";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
 import Chats from "./pages/chat/Chats";
+import { JobDetail, MyJobs } from "./pages/jobs/MyJobs";
 import { applyTheme, useUi } from "./store/ui";
 import { LoadingScreen } from "./ui/LoadingScreen";
 
@@ -152,6 +153,8 @@ export default function App() {
         <Route path="/team" element={<Team />} />
         <Route path="/team/:workerId/timesheet" element={<OwnerWorkerTimesheet />} />
         <Route path="/timesheet" element={<WorkerTimesheet />} />
+        <Route path="/jobs" element={<MyJobs />} />
+        <Route path="/jobs/:id" element={<JobDetail />} />
         <Route path="/chats" element={<Chats />} />
         <Route path="/chats/:id" element={<Chats />} />
         <Route path="/settings" element={<Settings />} />

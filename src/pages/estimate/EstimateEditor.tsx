@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useJobExpenses } from "../../data/jobExpenses";
 import { nextEstimateNumber, useClients, useEstimates, useSettings } from "../../data/hooks";
@@ -12,6 +12,7 @@ import { useUi } from "../../store/ui";
 import { statusLabel } from "../../ui/StatusBadge";
 import { subscribeTop } from "../../data/repo";
 import { useTeamPhotosInto } from "../../data/teamPhotos";
+import { useCrewTicksInto } from "../../data/crew";
 import { portalApply, type PortalDoc } from "../../lib/portal";
 import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
@@ -39,7 +40,8 @@ export default function EstimateEditor() {
   const { rows, loading, save, remove } = useEstimates();
   const { rows: clients, save: saveClient } = useClients();
   const { settings: s, update } = useSettings();
-  const [tab, setTab] = useState<(typeof TABS)[number][0]>("pricing");
+  const [qs] = useSearchParams(); // ?tab=jobday opens a tab directly (e.g. the calendar's "assign crew")
+  const [tab, setTab] = useState<(typeof TABS)[number][0]>(() => TABS.find((x) => x[0] === qs.get("tab"))?.[0] || "pricing");
   const [e, setE] = useState<Estimate | null>(null);
   const [saved, setSaved] = useState<"saved" | "saving">("saved");
   const loadedId = useRef("");
@@ -89,6 +91,8 @@ export default function EstimateEditor() {
 
   // before / after photos workers take on their phones land on this job too (src/data/teamPhotos.ts)
   useTeamPhotosInto(e?.id, () => eRef.current?.photos, (photos) => set({ photos }));
+  // checklist lines the crew ticked on their phones (src/data/crew.ts)
+  useCrewTicksInto(e?.id, () => eRef.current?.check, (check) => set({ check }));
 
   // keep the client's copy in step with edits (owner-only fields are stripped in portalSnapshot)
   useEffect(() => {

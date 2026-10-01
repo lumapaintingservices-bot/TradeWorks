@@ -1,5 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
+import { tickCrew } from "../../data/crew";
+import { useCrewJobs } from "../../data/hooks";
+import { patchRec } from "../../data/repo";
 import { useT } from "../../i18n";
 import { jobTypeOf, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
@@ -7,6 +11,7 @@ import { checklistFor, itemsOfDay, newJobTask, progress, setChecked, shoppingTex
 import type { ColorRow } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import type { TabProps } from "./types";
+import { CrewCard } from "./CrewCard";
 import "./jobday.css";
 
 const COLOR_FIELDS = ["area", "brand", "color", "sheen", "code"] as const;
@@ -23,7 +28,14 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
   const shop = useMemo(() => shoppingText(e, s, lang), [e, s, lang]);
   const shopHasLines = shop.split("\n").length > 1;
 
-  const tick = (key: string, on: boolean) => set({ check: setChecked(e.check, key, on) });
+  // a job with a crew: their copy holds the ticks (they tick on their phones), so a tick here goes there too
+  const { company, user } = useAuth();
+  const { rows: crewDocs } = useCrewJobs();
+  const crewDoc = crewDocs.find((d) => d.id === e.id);
+  const tick = (key: string, on: boolean) => {
+    if (company && crewDoc?.checklist.some((x) => x.key === key)) tickCrew(company.id, crewDoc, key, on, user?.name || company.name || "").catch(() => toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")));
+    set({ check: setChecked(e.check, key, on) });
+  };
   const addTask = (day: number) => {
     const text = (drafts[day] || "").trim();
     if (!text) return;
@@ -31,7 +43,11 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
     setDrafts((d) => ({ ...d, [day]: "" }));
   };
   const delTask = (id: string) => set({ jobTasks: (e.jobTasks || []).filter((x) => x.id !== id) });
-  const resetChecks = () => { if (confirm(t("Clear all the ticks on this checklist?", "¿Quitar todas las marcas de esta lista?"))) set({ check: {} }); };
+  const resetChecks = () => {
+    if (!confirm(t("Clear all the ticks on this checklist?", "¿Quitar todas las marcas de esta lista?"))) return;
+    if (company && crewDoc) patchRec(company.id, "crewjobs", crewDoc.id, { done: {}, doneBy: {} }).catch(() => {});
+    set({ check: {} });
+  };
 
   const setColor = (i: number, f: keyof ColorRow, v: string) => set({ colors: colors.map((c, j) => (j === i ? { ...c, [f]: v } : c)) });
   const addColor = () => set({ colors: [...colors, { area: jobTypeOf(e) === "cabinets" ? t("Cabinets", "Gabinetes") : "", brand: "", color: "", sheen: "", code: "" }] });
@@ -48,6 +64,7 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
 
   return (
     <div className="stack">
+      <CrewCard e={e} set={set} />
       <div className="card">
         <div className="card-h"><h2>{t("Job day", "Día de trabajo")}</h2>
           <span className="muted" style={{ fontSize: 12 }}>{t("checklist · colors · shopping list", "lista · colores · compras")}</span></div>
@@ -67,7 +84,7 @@ export default function JobDayTab({ e, set, s, lang }: TabProps) {
                     <label key={x.key} className={"jd-it" + (at ? " on" : "")}>
                       <input type="checkbox" checked={!!at} onChange={(ev) => tick(x.key, ev.target.checked)} />
                       <span>{x.text}</span>
-                      {at && <em>{fmtDate(String(at).slice(0, 10), lang)}</em>}
+                      {at && <em>{fmtDate(String(at).slice(0, 10), lang)}{crewDoc?.doneBy?.[x.key] ? " · " + crewDoc.doneBy[x.key] : ""}</em>}
                       {x.custom && <button type="button" className="jd-x" title={t("Remove", "Quitar")} aria-label={t("Remove", "Quitar")} onClick={(ev) => { ev.preventDefault(); delTask(x.id!); }}>×</button>}
                     </label>
                   );

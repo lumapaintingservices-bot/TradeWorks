@@ -97,3 +97,21 @@ pre.jd-shop{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14
 .sheet.wo .wo-link{color:inherit}
 .sheet.wo .wo-notes-in{width:100%;background:#fff;color:#101a1f;border:1px solid #dde4e7;border-radius:6px;padding:8px 10px;font:inherit;font-size:12.5px}
 @media(max-width:640px){.sheet.wo .wo-ck{grid-template-columns:1fr}}
+/* ---- crew (CrewCard.tsx) ---- */
+.crew-card .card-h h2{display:flex;align-items:center;gap:8px}
+.crew-card .card-h .btn{gap:6px}
+.crew-b{display:grid;gap:12px}
+.crew-chips{display:flex;flex-wrap:wrap;gap:8px}
+.crew-chip{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 5px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font-weight:500;font-size:14px;cursor:pointer}
+.crew-chip:hover{border-color:var(--acc)}
+.crew-chip.on{border-color:var(--acc);background:var(--acc-soft);color:var(--acc-ink)}
+.crew-av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);color:var(--ink-2);font-size:11px;font-weight:700}
+.crew-chip.on .crew-av{background:var(--acc);color:#fff}
+.crew-when{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--ink-2)}
+.crew-when span{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.crew-when svg{color:var(--ink-3);flex:none}
+.crew-warn{color:var(--warn)!important}
+.crew-warn svg{color:var(--warn)!important}
+.crew-clash{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0;font-size:13px}
+.crew-note{margin:0}
+.crew-foot{margin:0;font-size:12.5px}

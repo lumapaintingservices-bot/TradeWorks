@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
-import { useClock, useHours, useTasks, useWorkers } from "../../data/hooks";
+import { useClock, useCrewJobs, useHours, useTasks, useWorkers } from "../../data/hooks";
+import { crewJobOptions, mergeJobOptions } from "../../lib/crew";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
@@ -58,8 +59,10 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const clock = clocks.find((c) => c.id === workerId);
 
   const [range, setRange] = useState<RangeKey>("week");
-  // the job for the next clock-in: from my tasks for today (one task: picked by itself)
-  const jobOpts = useMemo(() => clockJobOptions(tasks, todayISO()), [tasks]);
+  // the job for the next clock-in: the jobs I am on the crew of today, then my tasks' jobs for today (only one: picked by itself)
+  const { rows: crewJobs } = useCrewJobs();
+  const jobOpts = useMemo(() => mergeJobOptions(crewJobOptions(crewJobs, workerId, todayISO()), clockJobOptions(tasks, todayISO())), [crewJobs, tasks, workerId]);
+  const photoJobs = useMemo(() => crewJobOptions(crewJobs, workerId, todayISO(), "near"), [crewJobs, workerId]);
   const [jobPick, setJobPick] = useState("");
   const job = jobOpts.find((o) => o.estId === jobPick) || (jobPick === "none" ? undefined : jobOpts[0]);
   const [modal, setModal] = useState(false);
@@ -128,7 +131,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
           "Tu ubicación se guarda al marcar entrada y salida, y cada pocos minutos mientras TradeWorks esté abierto en tu turno, para que tu jefe vea que estás en el trabajo. No se guarda nada cuando no estás trabajando.")}</p>}
       </section>
 
-      <WorkerPhotos workerId={workerId} tasks={tasks} clock={clock} />
+      <WorkerPhotos workerId={workerId} tasks={tasks} clock={clock} extraJobs={photoJobs} />
 
       <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
         <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...RANGE_LABEL[k])}</button>))}</div></div>
