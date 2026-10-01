@@ -23,7 +23,7 @@
   --tile-teal:#EFFCF9; --icon-teal:#0E9384; --tile-amber:#FFFAEB; --icon-amber:#DC6803;
   --up-bg:#ECFDF3; --up-ink:#067647; --down-bg:#FEF3F2; --down-ink:#B42318;
   --chart-main:#1E6BFF; --chart-compare:#9097A3; --chart-grid:#E4E7EC;
-  --sidebar-w:260px; --content-max:1240px; --topbar-h:56px; --bottomnav-h:64px;
+  --sidebar-w:260px; --sidebar-mini:72px; --content-max:1240px; --topbar-h:56px; --bottomnav-h:64px;
 }
 html.tw-dark{
   --bg:#0B0D12; --surface:#14171E; --surface-2:#1A1E27;

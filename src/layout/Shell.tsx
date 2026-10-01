@@ -1,6 +1,6 @@
 import { normalizeTrade } from "../lib/trades";
 import BillingBanner from "../components/BillingBanner";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, forwardRef, useContext, useEffect, useRef, useState, type ButtonHTMLAttributes, type FocusEvent, type MouseEvent, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { InviteBanner } from "../auth/InviteBanner";
@@ -33,11 +33,20 @@ function LangSwitch() {
 }
 
 const Badges = createContext<Record<string, number>>({});
+/** Folded sidebar (icons only): names show as a tooltip beside the icon on hover / keyboard focus. */
+type Tip = (text: string | null, ev?: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) => void;
+const Mini = createContext<{ mini: boolean; tip: Tip }>({ mini: false, tip: () => {} });
+/** Props that give an element the folded-sidebar tooltip (and an accessible name, since its text is hidden). */
+function useTipProps(label: string) {
+  const { mini, tip } = useContext(Mini);
+  return mini ? { "aria-label": label, onMouseEnter: (e: MouseEvent<HTMLElement>) => tip(label, e), onMouseLeave: () => tip(null), onFocus: (e: FocusEvent<HTMLElement>) => tip(label, e), onBlur: () => tip(null) } : {};
+}
 const Item = ({ it, onClick }: { it: NavItem; onClick?: () => void }) => {
   const t = useT();
   const n = useContext(Badges)[it.to] || 0;
+  const tipProps = useTipProps(t(it.en, it.es) + (n > 0 ? " (" + n + ")" : ""));
   return (
-    <NavLink to={it.to} end={it.to === "/"} onClick={onClick} className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}>
+    <NavLink to={it.to} end={it.to === "/"} onClick={onClick} {...tipProps} className={({ isActive }) => "nav-item" + (isActive ? " on" : "")}>
       <Icon name={it.icon} /><span>{t(it.en, it.es)}</span>{n > 0 && <em className="nav-badge">{n}</em>}
     </NavLink>
   );
@@ -83,6 +92,12 @@ function WorkspaceList({ onDone, signOut }: { onDone(): void; signOut?: boolean 
   );
 }
 
+/** A sidebar button that, when the sidebar is folded, shows its label as a tooltip (and uses it as its accessible name). */
+const MiniBtn = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { label: string }>(function MiniBtn({ label, ...p }, ref) {
+  const tipProps = useTipProps(label);
+  return <button type="button" ref={ref} {...p} {...tipProps} />;
+});
+
 /** Badge counts read owner-only collections (invoices, estimates, clients...), so workers never mount this. */
 function AdminBadges({ children }: { children: ReactNode }) {
   usePayLinkSync(); // invoice payment links: keep the public copies fresh and pick up "I paid" claims
@@ -111,7 +126,24 @@ function ShellBody() {
   const [wsMore, setWsMore] = useState(false); // list inside the mobile More sheet
   const badges = useContext(Badges);
   const items = navFor(role);
-  useEffect(() => { setMore(false); setWs(false); }, [loc.pathname]);
+  // desktop sidebar folded to icons: the button at its top or Ctrl/Cmd+B (remembered on this device)
+  const mini = useUi((s) => s.sbMini), setMini = useUi((s) => s.setSbMini);
+  const [tipAt, setTipAt] = useState<{ text: string; top: number } | null>(null);
+  const tip: Tip = (text, ev) => {
+    const r = ev?.currentTarget.getBoundingClientRect();
+    setTipAt(text && r ? { text, top: r.top + r.height / 2 } : null);
+  };
+  const wsBtn = useRef<HTMLButtonElement>(null);
+  const [wsTop, setWsTop] = useState(0);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b" && window.innerWidth >= 900) { e.preventDefault(); setMini(!useUi.getState().sbMini); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [setMini]);
+  useEffect(() => { setTipAt(null); }, [mini]);
+  useEffect(() => { setMore(false); setWs(false); setTipAt(null); }, [loc.pathname]);
   useEffect(() => { if (!more) setWsMore(false); }, [more]);
   // public branding for the lead form (public/{companyId}); readable by anyone with the link, holds no private data.
   // Only owners/admins may write it (rules), so workers skip it.
@@ -123,36 +155,46 @@ function ShellBody() {
   const canNew = can(role, "data.all");
 
   return (
-    <div className="shell">
+    <div className={"shell" + (mini ? " sb-mini" : "")}>
+      <Mini.Provider value={{ mini, tip }}>
       <aside className="sb">
-        <div className="sb-top" onClick={() => nav(homeFor(role))}>
-          <Logo /><div><b>TradeWorks</b><span>{t("Field service suite", "Gestión de servicios")}</span></div>
+        <div className="sb-head">
+          <button type="button" className="sb-brand" onClick={() => nav(homeFor(role))} {...(mini ? { "aria-label": "TradeWorks" } : {})}>
+            <Logo /><div><b>TradeWorks</b><span>{t("Field service suite", "Gestión de servicios")}</span></div>
+          </button>
+          <MiniBtn className="sb-tog" label={mini ? t("Show menu (Ctrl+B)", "Mostrar menú (Ctrl+B)") : t("Hide menu (Ctrl+B)", "Esconder menú (Ctrl+B)")}
+            title={mini ? undefined : t("Hide menu (Ctrl+B)", "Esconder menú (Ctrl+B)")} aria-expanded={!mini} onClick={() => setMini(!mini)}><Icon name="sidebar" size={18} /></MiniBtn>
         </div>
         <div className="ws-wrap">
-          <button className="ws" aria-haspopup="listbox" aria-expanded={ws} title={t("Switch company", "Cambiar de empresa")} onClick={() => setWs((o) => !o)}>
+          <MiniBtn ref={wsBtn} className="ws" label={(company?.name || "") + " · " + t("Switch company", "Cambiar de empresa")} aria-haspopup="listbox" aria-expanded={ws}
+            title={mini ? undefined : t("Switch company", "Cambiar de empresa")} onClick={() => { setWsTop(wsBtn.current?.getBoundingClientRect().top || 0); setWs((o) => !o); }}>
             <CompanyLogo name={company?.name} logoUrl={company?.logoUrl} />
             <span className="ws-name">{company?.name}</span>
             <span className="ws-chev"><Chevron /></span>
-          </button>
+          </MiniBtn>
           {ws && <>
             <div className="ws-back" onClick={() => setWs(false)} />
-            <div className="ws-menu"><WorkspaceList onDone={() => setWs(false)} signOut /></div>
+            {/* folded: the list opens beside the rail (fixed, so the narrow sidebar does not clip it) */}
+            <div className="ws-menu" style={mini ? { position: "fixed", top: wsTop, left: "calc(var(--sidebar-mini) + 8px)", right: "auto", width: 260 } : undefined}>
+              <WorkspaceList onDone={() => setWs(false)} signOut /></div>
           </>}
         </div>
-        {canNew && <button className="btn pri sb-new" onClick={newEstimate}><Icon name="plus" />{t("New estimate", "Nuevo presupuesto")}</button>}
+        {canNew && <MiniBtn className="btn pri sb-new" label={t("New estimate", "Nuevo presupuesto")} onClick={newEstimate}><Icon name="plus" /><span>{t("New estimate", "Nuevo presupuesto")}</span></MiniBtn>}
         {items.work.length > 0 && <div className="sb-lbl">{t("Work", "Trabajo")}</div>}
         <nav>{items.work.map((it) => <Item key={it.to} it={it} />)}</nav>
         {items.business.length > 0 && <div className="sb-lbl">{t("Business", "Negocio")}</div>}
         <nav>{items.business.map((it) => <Item key={it.to} it={it} />)}</nav>
         <div className="sb-foot">
-          <div className="row"><span className="cloud" title={hasFirebase ? undefined : t("No Firebase keys: data stays in this browser only", "Sin claves de Firebase: los datos solo quedan en este navegador")}><i style={hasFirebase ? undefined : { background: "var(--warn, #F79009)" }} />{hasFirebase ? t("Cloud on", "Nube activa") : t("Demo mode", "Modo demo")}</span><LangSwitch /></div>
+          <div className="row"><span className="cloud" title={hasFirebase ? undefined : t("No Firebase keys: data stays in this browser only", "Sin claves de Firebase: los datos solo quedan en este navegador")}><i style={hasFirebase ? undefined : { background: "var(--warn, #F79009)" }} /><span>{hasFirebase ? t("Cloud on", "Nube activa") : t("Demo mode", "Modo demo")}</span></span><LangSwitch /></div>
           <div className="me">
-            <span className="av">{(user?.name || user?.email || "?").slice(0, 2).toUpperCase()}</span>
+            <span className="av" title={mini ? [user?.name, user?.email].filter(Boolean).join(" · ") : undefined}>{(user?.name || user?.email || "?").slice(0, 2).toUpperCase()}</span>
             <div><b>{user?.name || company?.name}</b><span>{role ? t(...roleLabel(role)) + " · " : ""}{user?.email}</span></div>
             <button className="btn sm" title={t("Sign out", "Salir")} onClick={() => backend.signOut()}>{t("Sign out", "Salir")}</button>
           </div>
         </div>
       </aside>
+      {mini && tipAt && <div className="sb-tip" style={{ top: tipAt.top }} aria-hidden>{tipAt.text}</div>}
+      </Mini.Provider>
 
       <header className="mtop">
         <div className="sb-top" onClick={() => nav(homeFor(role))}><Logo size={28} /><b>TradeWorks</b></div>

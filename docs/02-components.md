@@ -32,6 +32,10 @@ Workspace chip (company logo + name) → settings. "+ New estimate" black button
 Section labels WORK / BUSINESS. Items: icon 20 + label 14/500, radius 10, hover --surface-2.
 **Active item: black gradient block (--active-nav), white text/icon, shadow.** Count badges blue pills.
 Footer: cloud status chip, EN/ES switch, user avatar + name + email.
+**Fold to icons** (desktop, idea from shadcn/ui sidebar-07): panel button next to the logo, or Ctrl/Cmd+B. The sidebar
+becomes a 72px rail (--sidebar-mini): icons only, section labels turn into thin dividers, badges sit on the icon corner,
+names show as a dark tooltip beside the icon on hover / focus, the company list opens beside the rail. Remembered per
+device (localStorage tw.sbMini, useUi().sbMini). Phones keep the bottom bar.
 
 ## Mobile shell [.v4-mtop, .v4-bnav, .v4-more]
 Top bar 56: logo + name, cloud chip, EN/ES, "+ New". Bottom nav 64: Home, Pipeline, Calendar, Estimates,

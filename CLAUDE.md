@@ -115,6 +115,10 @@ pick job (clocked-in job + my tasks' jobs -14..+7 days), Before/After/Detail, ta
 and retry. Saved in jobphotos + Storage companies/{cid}/jobphotos/{workerId}/. Owner's app copies them onto the job
 (estimate.photos with teamId/by) in the Shell (useTeamPhotoSync) and in the open editor (useTeamPhotosInto); worker deletes ->
 taken off the job. Owner Photos tab uses the same upload cards and shows "Carlos · date" on team photos.
+Merged (PR #21) and Firestore + Storage rules published 2026-09-30.
+Sidebar fold-to-icons (owner picked only this idea from shadcn sidebar-07): button next to the logo or Ctrl/Cmd+B,
+72px rail with tooltips, remembered per device (useUi().sbMini). Other ideas offered and not chosen: account menu at the
+bottom, breadcrumb header, Settings submenu.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
