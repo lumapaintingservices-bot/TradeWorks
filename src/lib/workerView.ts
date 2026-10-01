@@ -3,7 +3,7 @@
  * a worker's app must issue exactly the queries the rules allow (see roles.ts workerScope()).
  */
 import { todayISO } from "./estimate";
-import { num, r2 } from "./money";
+import { num } from "./money";
 import { workerScope, type Role } from "./roles";
 import { clockCarry, clockHours, inBounds, type Bounds, type ClockTask } from "./team";
 import type { HourEntry, Task, Worker } from "./types";
@@ -72,7 +72,7 @@ export function workerClockEntry(clock: ClockTask, workerId: string, worker: Pic
 
 /** A manual hours entry logged by the worker (rate rule as above). */
 export function workerHoursEntry(id: string, workerId: string, worker: Pick<Worker, "rate"> | null | undefined, f: { date?: string; hours: number; note?: string }): Omit<HourEntry, "rate"> & { rate?: number } {
-  const e: Omit<HourEntry, "rate"> & { rate?: number } = { id, workerId, date: f.date || todayISO(), hours: r2(num(f.hours)), estId: "", note: (f.note || "").trim() };
+  const e: Omit<HourEntry, "rate"> & { rate?: number } = { id, workerId, date: f.date || todayISO(), hours: Math.round(num(f.hours) * 60) / 60, estId: "", note: (f.note || "").trim() };
   if (worker && (worker.rate as unknown) !== undefined && (worker.rate as unknown) !== "") e.rate = num(worker.rate);
   return e;
 }

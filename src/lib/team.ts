@@ -2,7 +2,20 @@
 import { addDaysISO, jobDates, jobStatus } from "./calendar";
 import { jobHours, todayISO } from "./estimate";
 import { num, r2 } from "./money";
+import type { TradeId } from "./trades";
 import type { Estimate, HourEntry, Invoice, Payout, Settings, Worker } from "./types";
+
+/** Quick picks for a worker's role on the Team page, by the company's trade ([English, Spanish]). Any text is fine too. */
+const ROLE_PICKS: Record<TradeId, [string, string][]> = {
+  painting: [["Painter", "Pintor"], ["Helper", "Ayudante"], ["Sprayer", "Sprayador"], ["Prep & sanding", "Preparación y lijado"], ["Crew lead", "Jefe de cuadrilla"]],
+  cleaning: [["Cleaner", "Limpieza"], ["Helper", "Ayudante"], ["Team lead", "Líder de equipo"]],
+  electrical: [["Electrician", "Electricista"], ["Apprentice", "Aprendiz"], ["Helper", "Ayudante"]],
+  plumbing: [["Plumber", "Plomero"], ["Apprentice", "Aprendiz"], ["Helper", "Ayudante"]],
+  handyman: [["Handyman", "Handyman"], ["Helper", "Ayudante"], ["Crew lead", "Jefe de cuadrilla"]],
+  landscaping: [["Landscaper", "Jardinero"], ["Helper", "Ayudante"], ["Crew lead", "Jefe de cuadrilla"]],
+  custom: [["Technician", "Técnico"], ["Helper", "Ayudante"], ["Crew lead", "Jefe de cuadrilla"]],
+};
+export const rolePicks = (trade: TradeId, lang: "en" | "es"): string[] => (ROLE_PICKS[trade] || ROLE_PICKS.custom).map(([en, es]) => (lang === "es" ? es : en));
 
 export type Bounds = { from: string; to: string };
 export type RangeKey = "week" | "month" | "lastMonth" | "ytd" | "lastYear" | "all";
@@ -97,9 +110,19 @@ export function jobOnSite(estimates: Estimate[], today: string = todayISO(), inv
   return estimates.find((e) => e.startDate && jobStatus(e, invoices) !== "Declined" && jobDates(e).includes(today));
 }
 
-/** Clock out: elapsed time rounded to the nearest 0.25 h, never less than 0.25 h. */
-export function clockHours(atISO: string, nowMs: number = Date.now()): number {
-  return Math.max(0.25, Math.round((nowMs - Date.parse(atISO)) / 3600000 * 4) / 4);
+/** Whole minutes on the clock (to the nearest minute; 0 for a bad time). */
+export function clockMinutes(atISO: string, nowMs: number = Date.now()): number {
+  const ms = nowMs - Date.parse(atISO);
+  return isNaN(ms) ? 0 : Math.max(0, Math.round(ms / 60000));
+}
+/** Clock out: exactly the time on the clock, to the minute (owner rule: no rounding to quarter hours, no 15 min minimum). */
+export const clockHours = (atISO: string, nowMs: number = Date.now()): number => clockMinutes(atISO, nowMs) / 60;
+/** Hours typed as hours + minutes (manual entries), kept to the minute. */
+export const hoursOf = (h: number, m: number): number => Math.max(0, Math.round(num(h) * 60 + num(m))) / 60;
+/** Hours split into whole hours and minutes, for the hours + minutes inputs. */
+export function hoursSplit(n: number): { h: number; m: number } {
+  const mins = Math.max(0, Math.round(num(n) * 60));
+  return { h: Math.floor(mins / 60), m: mins % 60 };
 }
 /** Hours as hours and minutes: 7.5 -> "7 h 30 min", 0.25 -> "15 min", 2 -> "2 h", 0 -> "0 min". */
 export function hoursText(n: number): string {

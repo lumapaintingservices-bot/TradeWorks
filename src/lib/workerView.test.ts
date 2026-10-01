@@ -59,21 +59,21 @@ describe("worker clock out / manual hours", () => {
     const mine = workerClockEntry({ at }, "w1", { rate: 22.5 }, "n", out);
     const owner = clockEntry({ at }, { id: "w1", name: "J", rate: 22.5 }, "n", out);
     expect(mine).toEqual(owner);
-    expect(mine.hours).toBe(2);
+    expect(mine.hours).toBe(2.1);   // 2 h 06 min exactly, not rounded to 2 h
   });
   it("omits the rate when the worker record is unavailable, so the owner's screens use the worker's current rate", () => {
     const e = workerClockEntry({ at }, "w1", null, "n", out);
     expect("rate" in e).toBe(false);
-    expect(hourAmount(e as HourEntry, { rate: 20 })).toBe(40);
+    expect(hourAmount(e as HourEntry, { rate: 20 })).toBe(42);
     expect(workerClockEntry({ at }, "w1", undefined, "n", out).rate).toBeUndefined();
   });
   it("keeps the job id of the running clock and never fills one in by itself", () => {
     expect(workerClockEntry({ at, estId: "e1" }, "w1", { rate: 1 }, "", out).estId).toBe("e1");
     expect(workerClockEntry({ at }, "w1", { rate: 1 }, "", out).estId).toBe("");
   });
-  it("manual entries are for the worker only, rounded to cents of an hour, trimmed", () => {
+  it("manual entries are for the worker only, kept to the minute, trimmed", () => {
     const e = workerHoursEntry("h1", "w1", { rate: 0 }, { date: "2026-05-04", hours: 7.256, note: "  prep " });
-    expect(e).toMatchObject({ id: "h1", workerId: "w1", date: "2026-05-04", hours: 7.26, note: "prep", estId: "", rate: 0 });
+    expect(e).toMatchObject({ id: "h1", workerId: "w1", date: "2026-05-04", hours: 435 / 60, note: "prep", estId: "", rate: 0 });
     expect(workerHoursEntry("h2", "w1", null, { hours: 1 }).rate).toBeUndefined();
   });
 });

@@ -34,8 +34,8 @@
 .mj-it{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--line-2);cursor:pointer;min-height:44px}
 .mj-it input{width:22px;height:22px;padding:0;flex:none;border-radius:6px;--chk:var(--ok);--chk-ink:#fff}
 .mj-it input::before{width:12px;height:12px}
-.mj-it span{flex:1;min-width:0;overflow-wrap:anywhere}
-.mj-it.on span{color:var(--ink-3);text-decoration:line-through}
+.mj-it>span:not(.mj-tag):not(.mj-who){flex:1;min-width:0;overflow-wrap:anywhere}
+.mj-it.on>span:not(.mj-tag):not(.mj-who){color:var(--ink-3);text-decoration:line-through}
 .mj-it em{font-style:normal;font-size:11.5px;color:var(--ink-3);flex:none;text-align:right}
 .mj-clist{padding:0 20px 14px;display:grid;gap:8px}
 .mj-color{display:flex;flex-direction:column;gap:1px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-md)}
@@ -49,3 +49,11 @@
 }
 .mj-row .mj-crew{margin-left:auto;align-self:center}
 .mj-row>div:not(.mj-crew){min-width:0}
+
+/* checklist: my tasks / whole job (shadcn tabs) */
+.mj-seg{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin:0 16px 10px}
+.mj-seg button{height:32px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--ink-2);font:inherit;font-size:13.5px;font-weight:500;cursor:pointer}
+.mj-seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-xs)}
+.mj-it.other>span:not(.mj-tag):not(.mj-who){color:var(--ink-3)}
+.mj-it>.mj-who{flex:none}
+.mj-it>.mj-tag{flex:none;font-size:11.5px;color:var(--ink-3);border:1px dashed var(--line);border-radius:999px;padding:1px 8px}

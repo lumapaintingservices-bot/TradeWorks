@@ -53,3 +53,54 @@
 .tm-card .tm-who>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .tm-photo{margin-bottom:14px}
 .tm-clk-pick{margin-bottom:14px}
+/* worker row: name opens the worker window; app badge; today's work */
+.tm-name{border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-name:hover{color:var(--acc-ink);text-decoration:underline;text-underline-offset:3px}
+.tm-acc{margin-left:8px;vertical-align:1px}
+.tm-card .tm-acc{margin-left:0;flex:none}
+.tm-today{display:flex;align-items:center;gap:5px;margin-top:4px;font-size:12.5px;color:var(--ink-2);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm-today svg{color:var(--ok);flex:none}
+.tm-today b{font-weight:500;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tm-today.none{color:var(--ink-3)}
+.tm-card .tm-today{margin-top:8px}
+/* worker window (WorkerModal) */
+.wm-role{margin-bottom:8px}
+.wm-picks{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.wm-picks .pill{height:30px;font-size:12.5px}
+.wm-access{border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;margin:0 0 14px;background:var(--surface-2)}
+.wm-ah{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;margin-bottom:6px}
+.wm-ah svg{color:var(--ink-3)}
+.wm-hint{font-size:12.5px;line-height:1.5;margin:0}
+.wm-email{margin:8px 0 6px}
+.wm-abtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.wm-sent{margin:0 0 8px;padding:10px 12px;border-radius:10px;background:var(--tile-green);color:var(--icon-green);font-weight:500;font-size:14px}
+.wm-msg{width:100%;margin:10px 0 4px;font-size:13px;line-height:1.5}
+/* assign work (AssignModal), shadcn tabs + checkable list */
+.as-tabs{display:inline-flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin:0 0 16px;max-width:100%;overflow-x:auto}
+.as-tabs button{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--ink-2);font:inherit;font-size:13.5px;font-weight:500;white-space:nowrap;cursor:pointer}
+.as-tabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-xs)}
+.as-tabs button:not(.on):hover{color:var(--ink)}
+.as-warn{display:flex;align-items:center;gap:8px;margin:-4px 0 12px;font-size:12.5px;color:var(--warn-ink,var(--ink-2))}
+.as-warn svg{color:var(--warn,#B7791F);flex:none}
+.as-crew{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:-4px 0 12px}
+.as-list{display:grid;gap:4px;max-height:min(46vh,440px);overflow:auto;padding:2px;margin:0 -2px}
+.as-day{display:grid;gap:4px;margin-bottom:8px}
+.as-dh{display:flex;align-items:center;gap:10px;padding:6px 4px 2px;font-size:11.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);cursor:pointer}
+.as-dh input{width:18px;height:18px;flex:none;padding:0}
+.as-it{display:flex;align-items:center;gap:10px;min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);cursor:pointer;font-size:14px}
+.as-it:hover{border-color:var(--ink-3)}
+.as-it.on{border-color:var(--acc);background:var(--acc-soft)}
+.as-it input{width:20px;height:20px;flex:none;padding:0}
+.as-tx{flex:1;min-width:0;line-height:1.35}
+.as-crewtag{flex:none;font-size:11.5px;color:var(--ink-3);border:1px dashed var(--line);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.as-add{display:flex;gap:6px;margin-top:10px}
+.as-add input{flex:1;min-width:0;height:38px;font-size:13.5px}
+.as-add select{width:auto;max-width:44%;height:38px;font-size:13px}
+.as-add .btn{flex:none}
+.as-foot{font-size:12px;margin:8px 0 0}
+.as-actions{align-items:center;margin-top:16px}
+.as-past{font-size:12.5px}
+@media(max-width:640px){.as-add{flex-wrap:wrap}.as-add input{flex-basis:100%}}
+.tm-who>div{min-width:0}
+.tm-tbl .tm-today{max-width:210px}
+.tm-tbl .tm-act{flex-wrap:wrap;max-width:300px;margin-left:auto}

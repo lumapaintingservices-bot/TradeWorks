@@ -140,6 +140,21 @@ On Estimates, Invoices, Clients and Expenses.
 "⋯" button with a row's other actions, floating, kept on screen; ↑ ↓ Esc. Invoices (page + estimate tab): "Mark paid" (unpaid only)
 and "Send" stay as buttons; See the invoice / Print / Open estimate / Mark unpaid / Delete go in the menu.
 
+## Popover [.pop] → /src/ui/Popover.tsx (idea from shadcn Popover)
+A button that opens a small floating panel next to it (kept on screen, above modals); Esc, a click away or a page scroll closes it.
+`children(close)`. Rows inside: .pop-h (title), .pop-it (checkable row, .pop-tick on the right), .pop-sep.
+Used by the Job day "who does it" picker (src/pages/estimate/AssignPicker.tsx): the button shows the people on a line, or a dashed
+"Whole crew" pill; "Assign day" does a whole day.
+
+## Hours + minutes [.dur] → /src/ui/DurationInput.tsx
+Two input groups ("8 h" "30 min") for time worked; the value is hours kept to the minute (team.ts hoursOf). Log hours windows.
+
+## Assign work (Team) → /src/pages/team/AssignModal.tsx
+Tabs (shadcn Tabs look: .as-tabs) "Tasks of a job" / "Other task"; job Combobox, start date + days, the job's checklist by day with a
+checkbox per line (= this worker does it) and the others' avatars or a "whole crew" tag, "+ A new task for X". Saving puts the
+worker on the crew. The worker window (src/pages/team/WorkerModal.tsx) has role quick picks (.wm-picks) and an app-access box
+(.wm-access: e-mail to invite / Invited + E-mail again / Uses the app).
+
 ## Drawer [.drawer] → /src/ui/Drawer.tsx
 Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a
 click on the backdrop closes it; the page behind does not scroll. Used by the invoice preview.

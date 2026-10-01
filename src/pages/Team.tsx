@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { useClients, useClock, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
+import { useClients, useClock, useCrewJobs, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
 import { useT } from "../i18n";
-import { clientNameOf, fmtTime, jobStatus } from "../lib/calendar";
-import { clockTaskOptions } from "../lib/workerView";
+import { addDaysISO, clientNameOf, fmtTime, jobDates, jobStatus } from "../lib/calendar";
+import { onSite } from "../lib/crew";
+import { workToday, type WorkItem } from "../lib/work";
 import { calcEstimate, todayISO, uid } from "../lib/estimate";
 import { fmtDate, waLink } from "../lib/format";
 import { money, num, r2 } from "../lib/money";
@@ -22,22 +23,24 @@ import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 import { Badge } from "../ui/Badge";
 import { Avatar } from "../ui/Avatar";
-import { AvatarPicker } from "../ui/AvatarPicker";
-import { workerAvatarPath } from "../lib/avatar";
-import { squareImage } from "../lib/image";
-import { deleteImage, putImage } from "../lib/storage";
+import { deleteImage } from "../lib/storage";
 import { ask } from "../ui/confirm";
-import { PhoneInput } from "../ui/PhoneInput";
 import { Combobox } from "../ui/Combobox";
-import { revokeWorkerAccess } from "../data/workers";
+import { revokeWorkerAccess, useTeamAccess } from "../data/workers";
 import { DatePicker } from "../ui/DatePicker";
+import { DurationInput } from "../ui/DurationInput";
+import { RowMenu } from "../ui/RowMenu";
+import { normEmail, workerAccessState } from "../lib/roles";
+import { WorkerModal } from "./team/WorkerModal";
+import { AssignModal } from "./team/AssignModal";
 
 type ModalState =
   | { kind: "worker"; id?: string }
   | { kind: "hours"; id?: string; workerId?: string }
   | { kind: "pay"; workerId?: string }
   | { kind: "task"; id?: string; workerId?: string; thenClock?: boolean }
-  | { kind: "clock"; workerId: string };
+  | { kind: "clock"; workerId: string }
+  | { kind: "assign"; workerId: string; estId?: string };
 
 const hrs = hoursText;
 
@@ -62,6 +65,7 @@ function OwnerTeam() {
   const { rows: invoices } = useInvoices();
   const { rows: clients } = useClients();
   const { rows: tasks, save: saveTask, remove: removeTask } = useTasks();
+  const { rows: crewJobs } = useCrewJobs();
   const { settings } = useSettings();
 
   const [range, setRange] = useState<RangeKey>("week");
@@ -70,6 +74,10 @@ function OwnerTeam() {
   const [now, setNow] = useState(Date.now());
   const { company } = useAuth();
   const tracking = !!company?.trackLocation;
+  // who can open the app (badges + the worker window)
+  const access = useTeamAccess(company?.id);
+  const accessOf = (id: string) => workerAccessState(id, access.members, access.invites);
+  const takenEmails = useMemo(() => [...access.members.map((m) => normEmail(m.email)), ...access.invites.map((i) => normEmail(i.email))].filter(Boolean), [access.members, access.invites]);
   useEffect(() => {
     if (!clocks.length && !tracking) return;
     setNow(Date.now());
@@ -91,6 +99,20 @@ function OwnerTeam() {
   const paysIn = useMemo(() => pays.filter((p) => inBounds(p.date, b)).sort((x, y) => String(y.date).localeCompare(String(x.date))), [pays, b]);
   const jobRows = useMemo(() => laborByJob(hoursIn, ests, settings, workers), [hoursIn, ests, settings, workers]);
   const openTasks = useMemo(() => tasks.filter((k) => !k.done && k.workerId).sort((x, y) => String(x.date).localeCompare(String(y.date))), [tasks]);
+  // today's work of each worker: their tasks + their lines of the jobs they are at today (the clock runs for one of them)
+  const today = todayISO();
+  const workOf = useCallback((id: string) => workToday(tasks, crewJobs, id, today), [tasks, crewJobs, today]);
+  // jobs to assign work on: sent / won ones and any job that already has a crew; on site or coming up first, then not scheduled, then past
+  const assignJobs = useMemo(() => {
+    const list = [...jobOptions(ests, invoices), ...ests.filter((e) => e.crew?.length)].filter((e, i, all) => all.findIndex((x) => x.id === e.id) === i && jobStatus(e, invoices) !== "Declined");
+    const end = (e: Estimate) => (e.startDate ? addDaysISO(e.startDate, Math.max(1, num(e.days) || 1) - 1) : "");
+    const group = (e: Estimate) => (!e.startDate ? 1 : end(e) >= today ? 0 : 2);
+    return list.sort((a, b) => group(a) - group(b) || (group(a) === 0 ? String(a.startDate).localeCompare(String(b.startDate)) : String(b.startDate || b.date || "").localeCompare(String(a.startDate || a.date || ""))));
+  }, [ests, invoices, today]);
+  // where "Assign work" starts: the job the worker is on today (or next), else the next job on the schedule
+  const upcomingJob = useMemo(() => assignJobs.find((e) => jobDates(e).some((d) => d >= today))?.id, [assignJobs, today]);
+  const nextJobOf = (id: string) => crewJobs.filter((j) => (j.crew || []).includes(id) && (!j.start || j.start >= today || onSite(j, today)))
+    .sort((a, b) => String(a.start || "9").localeCompare(String(b.start || "9")))[0]?.estId || upcomingJob;
 
   const rangeLabel: Record<RangeKey, [string, string]> = {
     week: ["This week", "Esta semana"], month: ["This month", "Este mes"], lastMonth: ["Last month", "Mes pasado"],
@@ -109,7 +131,7 @@ function OwnerTeam() {
   };
   // the clock always runs for one task (owner rule): pick which of the worker's tasks for today
   const clockIn = (w: Worker) => { if (!clocks.some((c) => c.id === w.id)) setModal({ kind: "clock", workerId: w.id }); };
-  const clockInTask = (w: Worker, k: Task) => guard("clk" + w.id, async () => {
+  const clockInTask = (w: Worker, k: WorkItem) => guard("clk" + w.id, async () => {
     if (clocks.some((c) => c.id === w.id)) return;
     const c = clockFor({ ...k, jobLabel: k.jobLabel || (k.estId ? jobLabel(estById(k.estId)) : "") }, new Date().toISOString());
     await saveClock({ id: w.id, ...c });
@@ -120,9 +142,10 @@ function OwnerTeam() {
     const c = clocks.find((x) => x.id === w.id);
     if (!c) return;
     const entry = clockEntry(c, w, t("Clock in/out", "Entrada/salida"));
-    await saveHours(entry);
+    // exactly the minutes on the clock (no rounding); under a minute nothing is saved
+    if (entry.hours > 0) await saveHours(entry);
     await removeClock(w.id);
-    toast(t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`));
+    toast(entry.hours > 0 ? t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`) : t("Less than a minute on the clock: nothing saved.", "Menos de un minuto en el reloj: no se guardó nada."));
   });
   const clockBtn = (w: Worker) => {
     const c = clocks.find((x) => x.id === w.id);
@@ -148,15 +171,31 @@ function OwnerTeam() {
     const st = stats.get(w.id)!;
     return (
       <div className="tm-act">
+        {w.active !== false && <button className="btn sm" aria-label={t("Assign work", "Asignar trabajo")} onClick={() => setModal({ kind: "assign", workerId: w.id, estId: nextJobOf(w.id) })}><Icon name="plus" size={14} />{t("Assign", "Asignar")}</button>}
         {w.active !== false && clockBtn(w)}
         {st.owed > 0.005 && <button className="btn sm pri" onClick={() => setModal({ kind: "pay", workerId: w.id })}>{t("Pay", "Pagar")}</button>}
-        <button className="btn sm" onClick={() => nav(`/team/${w.id}/timesheet`)}>{t("Timesheet", "Hoja de horas")}</button>
-        {w.phone && <a className="btn sm tm-wa" href={waLink(w.phone)} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
-        <button className="btn sm" onClick={() => setModal({ kind: "worker", id: w.id })}>{t("Edit", "Editar")}</button>
+        <RowMenu label={t(`More for ${w.name}`, `Más de ${w.name}`)} items={[
+          { label: t("Edit", "Editar"), icon: "user", onClick: () => setModal({ kind: "worker", id: w.id }) },
+          { label: t("Timesheet", "Hoja de horas"), icon: "clock", onClick: () => nav(`/team/${w.id}/timesheet`) },
+          { label: t("Log hours", "Anotar horas"), icon: "plus", onClick: () => openHours(w.id), hidden: w.active === false },
+          { label: "WhatsApp", icon: "chat", onClick: () => { window.open(waLink(w.phone || ""), "_blank", "noopener,noreferrer"); }, hidden: !w.phone },
+        ]} />
       </div>
     );
   };
   const sub = (w: Worker) => [w.role, w.phone].filter(Boolean).join(" · ") || "—";
+  const accessBadge = (w: Worker) => { const a = accessOf(w.id);
+    return a.state === "app" ? <Badge tone="green" size="sm" icon="check" className="tm-acc" title={a.email}>{t("App", "App")}</Badge>
+      : a.state === "invited" ? <Badge tone="amber" size="sm" icon="mail" className="tm-acc" title={a.email}>{t("Invited", "Invitado")}</Badge> : null; };
+  // "Today: Sand the doors +2 · EST-1001": what they have to do today
+  const todayLine = (w: Worker) => {
+    if (w.active === false) return null;
+    const list = workOf(w.id);
+    if (!list.length) return <div className="tm-today none">{t("Nothing assigned today", "Nada asignado hoy")}</div>;
+    const k = list[0];
+    return <div className="tm-today" title={list.map((x) => x.title).join("\n")}><Icon name="check" size={13} />{t("Today: ", "Hoy: ")}<b>{k.title}</b>{list.length > 1 ? ` +${list.length - 1}` : ""}{k.jobLabel ? " · " + k.jobLabel.split(" · ")[0] : ""}</div>;
+  };
+  const editBtn = (w: Worker, children: ReactNode) => <button type="button" className="tm-name" onClick={() => setModal({ kind: "worker", id: w.id })} title={t("Edit", "Editar")}>{children}</button>;
   // green dot = on the clock right now
   const face = (w: Worker, size?: "sm") => { const on = clocks.some((c) => c.id === w.id);
     return <Avatar name={w.name} src={w.photo?.url} size={size} badge={on ? "ok" : null} badgeLabel={on ? t("On the clock", "Trabajando ahora") : undefined} />; };
@@ -220,7 +259,7 @@ function OwnerTeam() {
               <thead><tr><th>{t("Name", "Nombre")}</th><th className="r">{t("Rate", "Tarifa")}</th><th className="r">{t("Hours", "Horas")}</th><th className="r">{t("Earned", "Ganado")}</th><th className="r">{t("Paid", "Pagado")}</th><th className="r">{t("Owed", "Se le debe")}</th><th /></tr></thead>
               <tbody>{workers.map((w) => { const st = stats.get(w.id)!; return (
                 <tr key={w.id} className={w.active === false ? "tm-off" : ""}>
-                  <td><div className="tm-who">{face(w)}<div><b>{w.name}</b>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}<div className="muted tm-sub">{sub(w)}</div></div></div></td>
+                  <td><div className="tm-who">{face(w)}<div>{editBtn(w, <b>{w.name}</b>)}{accessBadge(w)}{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}<div className="muted tm-sub">{sub(w)}</div>{todayLine(w)}</div></div></td>
                   <td className="r nw">{money(num(w.rate))}/h</td><td className="r nw">{hrs(st.h)}</td><td className="r nw">{money(st.earned)}</td><td className="r nw">{money(st.paid)}</td>
                   <td className="r nw">{owedCell(st.owed)}</td>
                   <td className="r">{workerActions(w)}</td>
@@ -228,8 +267,9 @@ function OwnerTeam() {
             </table>,
             workers.map((w) => { const st = stats.get(w.id)!; return (
               <div key={w.id} className={"tm-card" + (w.active === false ? " tm-off" : "")}>
-                <div className="l1"><span className="tm-who">{face(w, "sm")}<span>{w.name}</span>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}</span><span>{owedCell(st.owed)}</span></div>
+                <div className="l1"><span className="tm-who">{face(w, "sm")}{editBtn(w, <span>{w.name}</span>)}{accessBadge(w)}{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}</span><span>{owedCell(st.owed)}</span></div>
                 <div className="l2"><span>{sub(w)}</span><span>{t("owed", "se le debe")}</span></div>
+                {todayLine(w)}
                 <div className="tm-stats">
                   <div><span>{t("Rate", "Tarifa")}</span><b>{money(num(w.rate))}/h</b></div><div><span>{t("Hours", "Horas")}</span><b>{hrs(st.h)}</b></div>
                   <div><span>{t("Earned", "Ganado")}</span><b>{money(st.earned)}</b></div><div><span>{t("Paid", "Pagado")}</span><b>{money(st.paid)}</b></div>
@@ -264,7 +304,7 @@ function OwnerTeam() {
               <tbody>{jobRows.map((j) => { const e = estById(j.estId)!; return (
                 <tr key={j.estId} className="click" onClick={() => nav(`/estimates/${j.estId}`)}>
                   <td><b>{jobLabel(e)}</b></td><td className="r nw">{hrs(j.h)}</td><td className="r nw">{j.plan ? hrs(j.plan) : "—"}</td>
-                  <td className={"r nw " + diffCls(j.plan, j.diff)}>{j.plan ? (j.diff > 0 ? "+" : "") + hrs(j.diff) : "—"}</td>
+                  <td className={"r nw " + diffCls(j.plan, j.diff)}>{j.plan ? diffText(j.diff) : "—"}</td>
                   <td className="r nw">{money(j.cost)}</td><td className="r nw">{money(calcEstimate(e, settings).total)}</td>
                 </tr>); })}</tbody>
             </table>,
@@ -273,7 +313,7 @@ function OwnerTeam() {
                 <div className="l1"><span>{jobLabel(e)}</span><span>{money(j.cost)}</span></div>
                 <div className="tm-stats">
                   <div><span>{t("Logged", "Anotadas")}</span><b>{hrs(j.h)}</b></div><div><span>{t("Planned", "Planeadas")}</span><b>{j.plan ? hrs(j.plan) : "—"}</b></div>
-                  <div><span>{t("Difference", "Diferencia")}</span><b className={diffCls(j.plan, j.diff)}>{j.plan ? (j.diff > 0 ? "+" : "") + hrs(j.diff) : "—"}</b></div><div><span>{t("Job price", "Precio")}</span><b>{money(calcEstimate(e, settings).total)}</b></div>
+                  <div><span>{t("Difference", "Diferencia")}</span><b className={diffCls(j.plan, j.diff)}>{j.plan ? diffText(j.diff) : "—"}</b></div><div><span>{t("Job price", "Precio")}</span><b>{money(calcEstimate(e, settings).total)}</b></div>
                 </div>
               </div>); }),
             t("Hours logged in the period you picked, against the hours the estimate planned.", "Horas anotadas en el periodo que escogiste, contra las horas que planeó el estimado."))}
@@ -294,8 +334,8 @@ function OwnerTeam() {
                   <button className="btn sm danger" onClick={() => delPay(p.id)} aria-label={t("Delete", "Borrar")}>×</button></div>
               </div>)))}
 
-          {section(t("Assigned tasks", "Tareas asignadas"), <button className="btn sm" onClick={() => setModal({ kind: "task" })}>{t("+ Task", "+ Tarea")}</button>,
-            t("Tasks you assign to a worker show here and on the calendar.", "Las tareas que le asignas a un trabajador salen aquí y en el calendario."), openTasks.length > 0,
+          {section(t("Other tasks", "Otras tareas"), <button className="btn sm" onClick={() => setModal({ kind: "task" })}>{t("+ Task", "+ Tarea")}</button>,
+            t("One-off tasks on a day (buy materials, an estimate visit…). Work on a job: “Assign work” on the worker.", "Tareas sueltas en un día (comprar material, una visita…). El trabajo de un trabajo: “Asignar trabajo” en el trabajador."), openTasks.length > 0,
             <table className="tbl tm-tbl">
               <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("Worker", "Trabajador")}</th><th>{t("Task", "Tarea")}</th><th>{t("Job", "Trabajo")}</th><th /></tr></thead>
               <tbody>{openTasks.slice(0, 40).map((k) => (
@@ -314,17 +354,23 @@ function OwnerTeam() {
 
       {modal?.kind === "worker" && (
         <WorkerModal worker={workers.find((w) => w.id === modal.id)} onClose={() => setModal(null)}
+          access={modal.id ? accessOf(modal.id) : { state: "none" }} takenEmails={takenEmails} onInvited={() => access.reload()}
           hasRecords={(id) => hours.some((h) => h.workerId === id) || pays.some((p) => p.workerId === id)}
           onSave={async (w) => {
             const was = workers.find((x) => x.id === w.id);
-            await saveWorker(w); setModal(null);
+            await saveWorker(w);
             // marked inactive: their login loses access to the company (invite them again if they come back)
-            if (was && was.active !== false && w.active === false && company) lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1));
+            if (was && was.active !== false && w.active === false && company) { lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1)); access.reload(); }
           }}
           onDelete={async (w) => {
             await removeWorker(w.id); deleteImage(w.photo?.path); if (clocks.some((c) => c.id === w.id)) await removeClock(w.id); setModal(null);
-            if (company) lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1));
+            if (company) { lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1)); access.reload(); }
           }} />
+      )}
+      {modal?.kind === "assign" && wById(modal.workerId) && (
+        <AssignModal worker={wById(modal.workerId)!} workers={workers} jobs={assignJobs} settings={settings} jobLabel={jobLabel} startJob={modal.estId}
+          onSave={(id, p) => patchEst(id, p)} onClose={() => setModal(null)}
+          onOtherTask={() => setModal({ kind: "task", workerId: modal.workerId })} />
       )}
       {modal?.kind === "hours" && (
         <HoursModal entry={hours.find((h) => h.id === modal.id)} workers={modal.id ? workers : activeWorkers} startWorker={modal.workerId}
@@ -339,8 +385,9 @@ function OwnerTeam() {
           onSave={async (p) => { await savePay(p); setModal(null); toast(t("Payment saved.", "Pago guardado.")); }} />
       )}
       {modal?.kind === "clock" && wById(modal.workerId) && (
-        <ClockTaskModal worker={wById(modal.workerId)!} tasks={tasks.filter((k) => k.workerId === modal.workerId)} busy={!!busy["clk" + modal.workerId]}
-          onPick={(k) => clockInTask(wById(modal.workerId)!, k)} onNewTask={() => setModal({ kind: "task", workerId: modal.workerId, thenClock: true })} onClose={() => setModal(null)} />
+        <ClockTaskModal worker={wById(modal.workerId)!} opts={workOf(modal.workerId)} busy={!!busy["clk" + modal.workerId]}
+          onPick={(k) => clockInTask(wById(modal.workerId)!, k)} onNewTask={() => setModal({ kind: "task", workerId: modal.workerId, thenClock: true })}
+          onAssign={() => setModal({ kind: "assign", workerId: modal.workerId, estId: nextJobOf(modal.workerId) })} onClose={() => setModal(null)} />
       )}
       {modal?.kind === "task" && (
         <TaskModal task={tasks.find((k) => k.id === modal.id)} workers={activeWorkers} startWorker={modal.workerId}
@@ -353,6 +400,8 @@ function OwnerTeam() {
   );
 }
 
+/** "+2 h", "−34 h 56 min": logged minus planned (hoursText alone shows no sign). */
+const diffText = (d: number) => (Math.round(d * 60) > 0 ? "+" : Math.round(d * 60) < 0 ? "−" : "") + hoursText(Math.abs(d));
 const diffCls = (plan: number, diff: number) => (plan && diff > 0.5 ? "tm-over" : plan && diff < -0.5 ? "tm-under" : "");
 const methodLabel = (m: string | undefined, t: (en: string, es: string) => string) =>
   m === "Cash" ? t("Cash", "Efectivo") : m === "Check" ? t("Check", "Cheque") : m === "Transfer" ? t("Transfer", "Transferencia") : m || "";
@@ -374,19 +423,19 @@ function JobSelect({ value, jobs, onChange, label }: { value: string; jobs: Job[
   );
 }
 
-/** Clock a worker in: always for one of their open tasks for today (owner rule). */
-function ClockTaskModal({ worker, tasks, busy, onPick, onNewTask, onClose }: {
-  worker: Worker; tasks: Task[]; busy: boolean; onPick(k: Task): void; onNewTask(): void; onClose(): void;
+/** Clock a worker in: always for one of their open tasks for today, or a line of the job they are at today (owner rule). */
+function ClockTaskModal({ worker, opts, busy, onPick, onNewTask, onAssign, onClose }: {
+  worker: Worker; opts: WorkItem[]; busy: boolean; onPick(k: WorkItem): void; onNewTask(): void; onAssign(): void; onClose(): void;
 }) {
   const t = useT();
-  const opts = clockTaskOptions(tasks, todayISO());
   const [pick, setPick] = useState(opts.length === 1 ? opts[0].id : "");
   const k = opts.find((x) => x.id === pick);
   return (
     <Modal title={t(`Clock in ${worker.name}`, `Entrada de ${worker.name}`)} onClose={onClose}>
       {opts.length === 0 ? <>
-        <p className="muted" style={{ marginTop: 0 }}>{t(`${worker.name} has no open tasks for today. The clock always runs for a task: add one first.`, `${worker.name} no tiene tareas abiertas para hoy. El reloj siempre corre para una tarea: agrega una primero.`)}</p>
-        <div className="tm-actions"><button className="btn pri" onClick={onNewTask}><Icon name="plus" size={16} />{t("New task", "Nueva tarea")}</button></div>
+        <p className="muted" style={{ marginTop: 0 }}>{t(`${worker.name} has no open tasks for today. The clock always runs for a task: assign work on a job, or add a quick task.`, `${worker.name} no tiene tareas abiertas para hoy. El reloj siempre corre para una tarea: asígnale trabajo de un trabajo o agrega una tarea rápida.`)}</p>
+        <div className="tm-actions"><button className="btn pri" onClick={onAssign}><Icon name="briefcase" size={16} />{t("Assign work", "Asignar trabajo")}</button>
+          <button className="btn" onClick={onNewTask}><Icon name="plus" size={16} />{t("New task", "Nueva tarea")}</button></div>
       </> : <>
         <p className="muted" style={{ marginTop: 0 }}>{t("Which task is the time for?", "¿Para qué tarea es el tiempo?")}</p>
         <div className="wk-pick tm-clk-pick" role="radiogroup" aria-label={t("Task", "Tarea")}>
@@ -398,58 +447,6 @@ function ClockTaskModal({ worker, tasks, busy, onPick, onNewTask, onClose }: {
         </div>
         <div className="tm-actions"><button className="btn pri" disabled={!k || busy} onClick={() => k && onPick(k)}><Icon name="clock" size={16} />{t("Clock in", "Entrada")}</button></div>
       </>}
-    </Modal>
-  );
-}
-
-function WorkerModal({ worker, hasRecords, onSave, onDelete, onClose }: {
-  worker?: Worker; hasRecords(id: string): boolean; onSave(w: Worker): Promise<void>; onDelete(w: Worker): Promise<void>; onClose(): void;
-}) {
-  const t = useT(), toast = useUi((s) => s.toast);
-  const { company } = useAuth();
-  const isNew = !worker;
-  const [w, setW] = useState<Worker>(() => worker || { id: uid("w"), name: "", phone: "", role: "", rate: 0, active: true });
-  const [saving, setSaving] = useState(false);
-  // the photo is only stored when Save is pressed: a new one (square JPEG) or "remove"
-  const [newPhoto, setNewPhoto] = useState<string | "remove" | null>(null);
-  const shown = newPhoto === "remove" ? null : newPhoto || w.photo?.url || null;
-  const run = async (fn: () => Promise<void>) => { if (saving) return; setSaving(true); try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); setSaving(false); } };
-  const save = () => {
-    const name = w.name.trim();
-    if (!name) { toast(t("Write the name.", "Escribe el nombre.")); return; }
-    return run(async () => {
-      const next: Worker = { ...w, name, phone: (w.phone || "").trim(), role: (w.role || "").trim(), rate: num(w.rate) };
-      const old = worker?.photo;
-      if (newPhoto === "remove") next.photo = null;
-      else if (newPhoto && company) next.photo = await putImage(workerAvatarPath(company.id, w.id, uid("a")), newPhoto);
-      await onSave(next);
-      if (newPhoto && old?.path && old.path !== next.photo?.path) deleteImage(old.path);
-    });
-  };
-  const del = () => run(async () => {
-    if (hasRecords(w.id)) {
-      if (!await ask(t("This worker has hours or payments. Mark as inactive instead? They lose access to the app. (Cancel keeps everything as is.)", "Este trabajador tiene horas o pagos. ¿Marcarlo como inactivo? Pierde el acceso a la app. (Cancelar deja todo igual.)"), { ok: t("Mark inactive", "Marcar inactivo") })) { setSaving(false); return; }
-      await onSave({ ...w, active: false });
-      return;
-    }
-    if (!await ask(t("Delete this worker? If they use the app, they lose access right away.", "¿Borrar este trabajador? Si usa la app, pierde el acceso de inmediato."))) { setSaving(false); return; }
-    await onDelete(w);
-  });
-  return (
-    <Modal title={isNew ? t("New worker", "Trabajador nuevo") : t("Edit worker", "Editar trabajador")} onClose={onClose}>
-      <div className="tm-photo"><AvatarPicker name={w.name || "?"} src={shown} confirmRemove={false} disabled={saving}
-        onFile={async (f) => setNewPhoto(await squareImage(f))} onRemove={() => setNewPhoto("remove")} /></div>
-      <label className="f">{t("Name", "Nombre")}<input autoFocus={!w.name} value={w.name} onChange={(e) => setW({ ...w, name: e.target.value })} /></label>
-      <div className="grid2">
-        <label className="f">{t("Phone", "Teléfono")}<PhoneInput value={w.phone || ""} onChange={(v) => setW({ ...w, phone: v })} /></label>
-        <label className="f">{t("Pay per hour ($)", "Pago por hora ($)")}<NumInput step="0.5" value={num(w.rate)} onChange={(n) => setW({ ...w, rate: n })} /></label>
-      </div>
-      <label className="f">{t("Role", "Rol")}<input value={w.role || ""} onChange={(e) => setW({ ...w, role: e.target.value })} placeholder={t("Painter, helper, sprayer…", "Pintor, ayudante, sprayador…")} /></label>
-      {!isNew && <label className="tm-check"><input type="checkbox" checked={w.active !== false} onChange={(e) => setW({ ...w, active: e.target.checked })} /> {t("Active (shows when logging hours)", "Activo (sale al anotar horas)")}</label>}
-      <div className="tm-actions">
-        <button className="btn pri" disabled={saving} onClick={save}>{t("Save", "Guardar")}</button>
-        {!isNew && <button className="btn danger" disabled={saving} onClick={del}>{t("Delete", "Borrar")}</button>}
-      </div>
     </Modal>
   );
 }
@@ -470,7 +467,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
   const pickWorker = (id: string) => setH({ ...h, workerId: id, rate: num(workers.find((x) => x.id === id)?.rate) });
   const run = async (fn: () => Promise<void>) => { if (saving) return; setSaving(true); try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); setSaving(false); } };
   const save = () => {
-    if (!(num(h.hours) > 0)) { toast(t("Write the hours.", "Escribe las horas.")); return; }
+    if (!(num(h.hours) > 0)) { toast(t("Write the time worked.", "Escribe el tiempo trabajado.")); return; }
     if (!h.workerId) { toast(t("Pick a worker.", "Escoge un trabajador.")); return; }
     return run(() => onSave({ ...h, hours: num(h.hours), rate: num(h.rate), date: h.date || todayISO(), estId: h.estId || "", note: (h.note || "").trim() }));
   };
@@ -486,7 +483,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
         <label className="f">{t("Date", "Fecha")}<DatePicker value={h.date} onChange={(v) => setH({ ...h, date: v })} /></label>
       </div>
       <div className="grid2">
-        <label className="f">{t("Hours", "Horas")}<NumInput step="0.25" placeholder="8" value={num(h.hours)} onChange={(n) => setH({ ...h, hours: n })} /></label>
+        <DurationInput label={t("Time worked", "Tiempo trabajado")} value={num(h.hours)} onChange={(n) => setH({ ...h, hours: n })} />
         <label className="f">{t("Pay per hour ($)", "Pago por hora ($)")}<NumInput step="0.5" value={num(h.rate)} onChange={(n) => setH({ ...h, rate: n })} /></label>
       </div>
       <JobSelect label={t("Job", "Trabajo")} value={h.estId || ""} jobs={jobs} onChange={(v) => setH({ ...h, estId: v })} />

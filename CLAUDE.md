@@ -53,7 +53,7 @@ Rebuild it in React with the same look and behavior, as a multi-tenant product.
 
 ## Current status (update this at the end of each work session)
 **Owner:** non-technical, writes Spanish, Windows/PowerShell. Explain in plain Spanish, step by step. UI stays bilingual EN/ES.
-E2E tests on this Windows PC: `E2E_CHANNEL=msedge npx.cmd playwright test` (uses the installed Edge, no browser download). All 23 passed 2026-10-01.
+E2E tests on this Windows PC: `E2E_CHANNEL=msedge npx.cmd playwright test` (uses the installed Edge, no browser download). All 24 passed 2026-10-01.
 
 **Live:** https://tradeworks-app.pages.dev (Cloudflare Pages). Firebase project `tradeworks-99ba7`
 (the old prototype project `luma-painting-estimate` is separate). Always use the main URL, not
@@ -211,6 +211,24 @@ Merged (PR #35). Invitation e-mails (owner 2026-10-01): functions/api/invite/sen
 of the invite's company (platform admin for owner / admin invites); 1 per minute, 5 per invite (invite.emailedAt / emailCount, server-written);
 Resend from "<Company>" <invites@lumapaintingservices.com>, reply-to the inviter; EN / ES by the inviter's language; link /signup?email= (prefilled).
 MembersCard e-mails on create + "E-mail again"; copy-the-message box stays. Needs Pages secret RESEND_API_KEY (owner adds it). Members card stacks when narrow.
+Merged (PR #36).
+Simpler team + tasks (owner 2026-10-01; backup tag backup-2026-10-01-before-team-assign):
+- Team page is the one place: the worker window has name, phone, pay, role quick picks by trade (team.ts rolePicks) and the app access
+  (an e-mail invites them as a worker linked to the record: data/workers.ts inviteWorker; badges App / Invited; E-mail again, Cancel).
+  Each worker row: "Assign" (AssignModal: job, start date, days, which lines of its checklist this worker does, new lines), Clock in,
+  Pay, "⋯" (Edit, Timesheet, Log hours, WhatsApp); "Today: <first task> +N"; the name opens the worker window. "Assigned tasks" section
+  is now "Other tasks" (one-off tasks).
+- Who does what: estimate.assign { line key: [workerId] }, copied to crewjobs.assign; a line nobody has = whole crew. Job day tab: a
+  "Whole crew" / avatars picker on every line and "Assign day" per day (Popover), filter pills per worker, taking someone off the crew
+  frees their lines. The Job day checklist now uses settings.crewLang (default Spanish), the same list the crew sees (it used the app
+  language before, so an English-UI owner and the crew had different lines: the owner's "doesn't match" report).
+- A worker's work = their tasks + their lines (src/lib/work.ts): the clock offers today's (plus left-overs of earlier days of the same job),
+  Team "My tasks" lists Today / Coming up / Done, Calendar shows them by day, My jobs has "My tasks / Whole job". New-work notices also
+  for lines given by name and new jobs (localStorage key tw.seenWork.*).
+- Time clock counts exact minutes (no quarter hours, no 15 min minimum; under a minute nothing is saved); manual hours as hours + minutes.
+  Old clock entries keep their rounded hours (start / end are stored, so they could be recomputed if the owner wants).
+- Fixed: the invitation link's prefilled e-mail failed for addresses with an "s" (broken regex from PR #36); a date picker / combobox
+  open while the window resized crashed. No rules change.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
