@@ -81,6 +81,11 @@ const okImg = (v: unknown) => typeof v === "string" && v.length > 0 && v.length 
 const clipMsg = (m: ChatMsg): ChatMsg => ({ from: m && m.from === "owner" ? "owner" : "client", text: clip(m && m.text, MAX_TEXT), at: clip(m && m.at, 40) });
 
 const nowISO = () => new Date().toISOString();
+/** The calendar day of a time where this app runs (a 7 pm signature on Sep 30 stays Sep 30, not Oct 1 in UTC). */
+const localDate = (iso: unknown) => {
+  const d = new Date(String(iso || "")), x = isNaN(d.getTime()) ? new Date() : d;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+};
 const logAct = (e: Estimate, text: string) => { e.activity = [...(e.activity || []), { at: nowISO(), text }].slice(-100); };
 
 /**
@@ -132,7 +137,7 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
   if (c.sign && okImg(c.sign.img) && !seen.sign) {
     seen.sign = true; changed = true;
     if (!e.signature) {
-      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: String(c.sign.at || nowISO()).slice(0, 10), via: "link", at: clip(c.sign.at, 40) };
+      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: localDate(c.sign.at), via: "link", at: clip(c.sign.at, 40) };
       if (e.status === "Draft" || e.status === "Sent" || e.status === "Viewed") e.status = "Accepted";
       logAct(e, TT(`Signed and accepted from the link ($${clip(c.sign.total, 20)})`, `Firmó y aceptó desde el enlace ($${clip(c.sign.total, 20)})`));
       news = TT(`${who} signed the estimate!`, `¡${who} firmó el presupuesto!`);

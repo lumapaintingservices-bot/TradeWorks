@@ -6,6 +6,8 @@ import { calcEstimate, uid } from "../../lib/estimate";
 import { waLink } from "../../lib/format";
 import { money } from "../../lib/money";
 import { brandOf, newToken, portalSnapshot, sendLinkMessage } from "../../lib/portal";
+import { safeImgSrc } from "../../lib/safeUrl";
+import { fmtDate } from "../../lib/format";
 import type { Estimate, Settings } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
@@ -48,6 +50,27 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
   const sendReply = async () => { const x = reply.trim(); if (!x || !e.portal) return; setReply(""); await patchTop("portal", e.portal.token, { append: { "client.chat": { from: "owner", text: x, at: new Date().toISOString() } } }); };
   const confirmDeposit = () => set({ status: "Deposit Paid", payClaim: undefined, activity: [...(e.activity || []), { at: new Date().toISOString(), text: t("Deposit confirmed", "Depósito confirmado") }] });
   const signed = !!e.signature;
+  const now = () => new Date().toISOString();
+  // remove the client's signature: off the client link first (else the link would sign it again), then off the estimate
+  const removeSig = async () => {
+    if (!confirm(t("Remove the client's signature? The estimate goes back to waiting for a signature and the client can sign the link again.",
+      "¿Quitar la firma del cliente? El presupuesto vuelve a quedar esperando firma y el cliente puede firmar el enlace otra vez."))) return;
+    try {
+      if (e.portal) await patchTop("portal", e.portal.token, { remove: ["client.sign"] });
+      set({ signature: null, portalSeen: { ...(e.portalSeen || { views: 0, picks: "{}", sign: false }), sign: false },
+        status: e.status === "Accepted" ? "Sent" : e.status, activity: [...(e.activity || []), { at: now(), text: t("Signature removed", "Firma quitada") }] });
+      toast(t("Signature removed.", "Firma quitada."));
+    } catch { toast(t("Couldn't remove it. Check your connection and try again.", "No se pudo quitar. Revisa tu conexión e inténtalo de nuevo.")); }
+  };
+  const clearActivity = () => {
+    if (confirm(t("Clear the whole activity log of this estimate? This can't be undone.", "¿Borrar todo el registro de actividad de este presupuesto? No se puede deshacer."))) {
+      set({ activity: [] }); toast(t("Activity cleared.", "Actividad borrada."));
+    }
+  };
+  const sig = e.signature;
+  const sigSrc = sig ? safeImgSrc(sig.img) : "";
+  // older signatures kept the UTC day; the time it was signed gives the real local day
+  const sigDay = sig?.at && !isNaN(new Date(sig.at).getTime()) ? new Date(sig.at).toLocaleDateString("en-CA") : sig?.date || "";
 
   if (!e.portal) return (
     <div className="card"><div className="card-b">
@@ -58,6 +81,22 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
 
   return (
     <div className="stack">
+      {sig && (
+        <div className="card sig-card" id="signature"><div className="card-h"><h2>✍ {t("Signed by the client", "Firmado por el cliente")}</h2>
+          <span className="badge b-green"><i />{t("Signed", "Firmado")}</span></div>
+          <div className="card-b sig-b">
+            <div className="sig-img">{sigSrc ? <img src={sigSrc} alt={t("Client signature", "Firma del cliente")} /> : <span className="muted">—</span>}</div>
+            <div className="sig-info">
+              <b>{sig.name || e.clientName}</b>
+              <span className="muted">{fmtDate(sigDay, lang)}{sig.at && !isNaN(new Date(sig.at).getTime()) ? " · " + new Date(sig.at).toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" }) : ""}
+                {" · "}{sig.via === "link" ? t("on the client link", "en el enlace del cliente") : t("in person", "en persona")}</span>
+              <div className="pills sig-acts">
+                <a className="btn sm" href={`/estimates/${e.id}/doc`} target="_blank" rel="noreferrer">{t("See it on the document", "Verla en el documento")}</a>
+                <button className="btn sm danger" onClick={removeSig}>{t("Remove signature", "Quitar firma")}</button>
+              </div>
+            </div>
+          </div></div>)}
+
       <div className="card"><div className="card-h"><h2>{t("Client link", "Enlace del cliente")}</h2>{signed && <span className="badge b-green"><i />{t("Signed", "Firmado")}</span>}</div><div className="card-b">
         <div className="linkbox">{link}</div>
         <div className="pills" style={{ marginTop: 12 }}>
@@ -79,7 +118,8 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}><input value={reply} onChange={(ev) => setReply(ev.target.value)} onKeyDown={(ev) => ev.key === "Enter" && sendReply()} placeholder={t("Reply to the client…", "Responder al cliente…")} /><button className="btn pri" onClick={sendReply}>{t("Send", "Enviar")}</button></div>
       </div></div>
 
-      <div className="card"><div className="card-h"><h2>{t("Activity", "Actividad")}</h2></div><div className="card-b">
+      <div className="card"><div className="card-h"><h2>{t("Activity", "Actividad")}</h2>
+        {(e.activity || []).length > 0 && <button className="btn sm" onClick={clearActivity}>{t("Clear", "Borrar")}</button>}</div><div className="card-b">
         {(e.activity || []).length === 0 && <p className="muted">{t("Nothing yet.", "Aún nada.")}</p>}
         {[...(e.activity || [])].reverse().map((a, i) => <div className="totline dim" key={i}><span>{a.text}</span><b>{new Date(a.at).toLocaleString(lang, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</b></div>)}
       </div></div>

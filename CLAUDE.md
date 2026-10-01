@@ -135,6 +135,10 @@ demo). Calendar month cells: task = worker initials + title + "worker · client"
 private on the client link / documents until the owner ticks "Show to the client" (PhotoRef.toClient, clientCanSee). Client
 profile photos have a delete (deleteJobPhoto). Chat: photos (camera button, upload cards, lightbox), a worker's job photo is
 also posted to the job chat; only owners / admins delete a message or a whole chat (rules: workers can't delete).
+Signature: chip "✍ Signed by X · date" under the estimate number (opens Link & chat) + a Signed card there with the image,
+name, date/time, "See it on the document" and "Remove signature" (deletes portal client.sign first via patchTop remove, then
+estimate.signature, portalSeen.sign=false, Accepted -> Sent). Activity card has "Clear". Signature date now stored as the local
+day (was the UTC day: a 7 pm signature showed the next day).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

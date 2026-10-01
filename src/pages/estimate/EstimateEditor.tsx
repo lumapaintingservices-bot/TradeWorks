@@ -7,6 +7,7 @@ import { useT } from "../../i18n";
 import { calcEstimate, jobEconomics, uid } from "../../lib/estimate";
 import { leadSourceList } from "../../lib/leadSources";
 import { money } from "../../lib/money";
+import { fmtDate } from "../../lib/format";
 import { STATUSES, type Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { statusLabel } from "../../ui/StatusBadge";
@@ -135,6 +136,8 @@ export default function EstimateEditor() {
           <Link to="/estimates" className="back">← {t("All estimates", "Todos los presupuestos")}</Link>
           <h1>{e.number}</h1>
           <p>{saved === "saving" ? t("Saving…", "Guardando…") : t("Saved", "Guardado")} · {company?.name}</p>
+          {e.signature && <button type="button" className="sig-chip" onClick={() => setTab("link")} title={t("See the signature", "Ver la firma")}>
+            ✍ {t("Signed by", "Firmado por")} <b>{e.signature.name || e.clientName}</b> · {fmtDate(e.signature.at && !isNaN(new Date(e.signature.at).getTime()) ? new Date(e.signature.at).toLocaleDateString("en-CA") : e.signature.date, lang)}</button>}
         </div>
         <div className="actions">
           <select value={e.status} onChange={(ev) => set({ status: ev.target.value as Estimate["status"] })} aria-label="Status">
