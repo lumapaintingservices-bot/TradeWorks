@@ -1,7 +1,9 @@
 /** Client link (portal) logic — port of portalSnapshot / portalApply from the prototype. */
 import { calcEstimate, findDiscount, servicesLine } from "./estimate";
+import { clientCanSee } from "./jobPhotos";
 import { num } from "./money";
 import type { ChatMsg, Estimate, Settings } from "./types";
+import type { DepositPay } from "./deposit";
 
 /** Fields that must never reach the client's phone. */
 export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "actualMaterialCost", "activity", "snooze", "portalSeen",
@@ -17,7 +19,9 @@ export type PortalModel = {
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
        showcase?: { id: string; url: string; caption: string }[];
        services?: { en: string; es: string };
-       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string; payMethods?: string[] };
+       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string; payMethods?: string[];
+       /** Deposit at signing (src/lib/deposit.ts): absent on links published before it existed = no deposit box. */
+       deposit?: { atSign: boolean; pay: DepositPay | null } };
 };
 export type ClientState = {
   views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
@@ -34,12 +38,12 @@ export function newToken(): string {
   return Array.from(arr, (n) => a.charAt(n % a.length)).join("");
 }
 
-export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { reviewUrl?: string; websiteUrl?: string; instagramUrl?: string } = {}): PortalModel {
+export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { reviewUrl?: string; websiteUrl?: string; instagramUrl?: string; deposit?: { atSign: boolean; pay: DepositPay | null } } = {}): PortalModel {
   const x = JSON.parse(JSON.stringify(e)) as Estimate;
   PORTAL_STRIP.forEach((k) => delete (x as unknown as Record<string, unknown>)[k]);
   if (!x.showMaterials) x.materialsList = [];
   // job photos travel only when shown on the link, and only what the client needs (no storage paths, no showcase flags)
-  x.photos = e.showPhotos ? (e.photos || []).filter((ph) => ph.url).map((ph) => ({ id: ph.id, kind: ph.kind || "", caption: ph.caption || "", url: ph.url })) : [];
+  x.photos = e.showPhotos ? (e.photos || []).filter((ph) => ph.url && clientCanSee(ph)).map((ph) => ({ id: ph.id, kind: ph.kind || "", caption: ph.caption || "", url: ph.url })) : [];
   x.showPhotos = !!(e.showPhotos && x.photos.length);
   // job-day work data (checklist ticks, crew tasks, paint colors) stays with the contractor
   delete x.check; delete x.jobTasks; delete x.colors;
@@ -55,7 +59,8 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
     services: { en: servicesLine(e, s, "en"), es: servicesLine(e, s, "es") },
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
     showcase: (s.showcase || []).filter((x) => x.url).map((x) => ({ id: x.id, url: x.url, caption: x.caption || "" })),
-    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "", ...(s.payMethods ? { payMethods: s.payMethods } : {}) } };
+    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "", ...(s.payMethods ? { payMethods: s.payMethods } : {}),
+    deposit: extra.deposit || { atSign: false, pay: null } } };
 }
 
 /** Settings shaped for calcEstimate, using only what the snapshot carries. */
@@ -80,6 +85,11 @@ const okImg = (v: unknown) => typeof v === "string" && v.length > 0 && v.length 
 const clipMsg = (m: ChatMsg): ChatMsg => ({ from: m && m.from === "owner" ? "owner" : "client", text: clip(m && m.text, MAX_TEXT), at: clip(m && m.at, 40) });
 
 const nowISO = () => new Date().toISOString();
+/** The calendar day of a time where this app runs (a 7 pm signature on Sep 30 stays Sep 30, not Oct 1 in UTC). */
+const localDate = (iso: unknown) => {
+  const d = new Date(String(iso || "")), x = isNaN(d.getTime()) ? new Date() : d;
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+};
 const logAct = (e: Estimate, text: string) => { e.activity = [...(e.activity || []), { at: nowISO(), text }].slice(-100); };
 
 /**
@@ -131,7 +141,7 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
   if (c.sign && okImg(c.sign.img) && !seen.sign) {
     seen.sign = true; changed = true;
     if (!e.signature) {
-      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: String(c.sign.at || nowISO()).slice(0, 10), via: "link", at: clip(c.sign.at, 40) };
+      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: localDate(c.sign.at), via: "link", at: clip(c.sign.at, 40) };
       if (e.status === "Draft" || e.status === "Sent" || e.status === "Viewed") e.status = "Accepted";
       logAct(e, TT(`Signed and accepted from the link ($${clip(c.sign.total, 20)})`, `Firmó y aceptó desde el enlace ($${clip(c.sign.total, 20)})`));
       news = TT(`${who} signed the estimate!`, `¡${who} firmó el presupuesto!`);

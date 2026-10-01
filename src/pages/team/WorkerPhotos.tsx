@@ -3,12 +3,14 @@ import { useAuth } from "../../auth/AuthProvider";
 import { Attachment, AttachmentAction, AttachmentActions, AttachmentContent, AttachmentDescription, AttachmentGroup, AttachmentMedia, AttachmentTitle, AttachmentTrigger } from "../../components/Attachment";
 import { Lightbox } from "../../components/Lightbox";
 import { UploadList, useUploadQueue } from "../../components/UploadQueue";
-import { useJobPhotos } from "../../data/hooks";
+import { useJobChats, useJobPhotos } from "../../data/hooks";
+import { sendTeamMsg, useChatMe } from "../../data/teamChat";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { shrinkImage } from "../../lib/image";
 import { PHOTO_KINDS, dataUrlSize, fmtSize, photoJobOptions, type PhotoKind } from "../../lib/jobPhotos";
+import { mergeJobOptions } from "../../lib/crew";
 import { putImage } from "../../lib/storage";
 import type { ClockRec, JobPhoto, Task } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -19,15 +21,19 @@ type Meta = { estId: string; jobLabel: string; kind: PhotoKind };
 
 /**
  * Worker page: take before / after photos of a job. Photos go to the worker's own folder (jobphotos) and the owner's app
- * puts them on the job (src/data/teamPhotos.ts). Jobs = the one I'm clocked in to + my tasks' jobs around today.
+ * puts them on the job (src/data/teamPhotos.ts). Jobs = the one I'm clocked in to + my crew jobs (extraJobs) + my tasks' jobs
+ * around today; on a job's own page (My jobs) only that job (fixedJob).
  */
-export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tasks: Task[]; clock?: ClockRec }) {
+export function WorkerPhotos({ workerId, tasks, clock, extraJobs, fixedJob }: { workerId: string; tasks: Task[]; clock?: ClockRec; extraJobs?: { estId: string; label: string }[]; fixedJob?: { estId: string; label: string } }) {
   const t = useT();
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const { company } = useAuth();
   const { rows, save, remove } = useJobPhotos();
+  const { rows: chats } = useJobChats(); // the job chats I am in: a new job photo is posted there too
+  const me = useChatMe();
   const today = todayISO();
-  const opts = useMemo(() => photoJobOptions(tasks, today, clock), [tasks, today, clock]);
+  const opts = useMemo(() => fixedJob ? [fixedJob] : mergeJobOptions(photoJobOptions([], today, clock), extraJobs || [], photoJobOptions(tasks, today, null)),
+    [tasks, today, clock, extraJobs, fixedJob]);
   const [pick, setPick] = useState("");
   const job = opts.find((o) => o.estId === pick) || opts[0];
   const mine = useMemo(() => rows.filter((p) => p.workerId === workerId && job && p.estId === job.estId)
@@ -53,6 +59,8 @@ export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tas
     const { url, path } = await putImage(`companies/${company.id}/jobphotos/${workerId}/${id}.jpg`, data, onProgress);
     const now = new Date().toISOString();
     await save({ id, workerId, estId: m.estId, jobLabel: m.jobLabel.slice(0, 120), kind: m.kind, caption: "", url, path, date: todayISO(), at: now, size: dataUrlSize(data) } as JobPhoto);
+    const chat = chats.find((c) => c.id === m.estId);
+    if (chat && !chat.closed) await sendTeamMsg(company.id, chat.id, me, "", { url, path, kind: m.kind }).catch(() => { /* the photo is saved on the job anyway */ });
   });
   const add = (files: FileList | null) => {
     if (!job) return;
@@ -74,7 +82,7 @@ export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tas
           "Cuando tu jefe te dé una tarea vinculada a un trabajo, aquí podrás tomar fotos de antes y después.")}</p>
       ) : (
         <div className="wk-ph-b">
-          {opts.length > 1
+          {fixedJob ? null : opts.length > 1
             ? <label className="f wk-ph-job">{t("Job", "Trabajo")}
                 <select value={job.estId} onChange={(e) => setPick(e.target.value)}>{opts.map((o) => <option key={o.estId} value={o.estId}>{o.label}</option>)}</select></label>
             : <p className="wk-ph-one"><span className="muted">{t("Job: ", "Trabajo: ")}</span>{job.label}</p>}
@@ -111,7 +119,7 @@ export function WorkerPhotos({ workerId, tasks, clock }: { workerId: string; tas
                   </Attachment>);
               })}</AttachmentGroup>
             </div>))}
-          <p className="muted wk-ph-note">{t("Your boss sees these photos on the job.", "Tu jefe ve estas fotos en el trabajo.")}</p>
+          <p className="muted wk-ph-note">{t("Your boss sees these photos on the job (and in the job's team chat).", "Tu jefe ve estas fotos en el trabajo (y en el chat del equipo del trabajo).")}</p>
         </div>
       )}
       <Lightbox index={zoom} onIndex={setZoom} onClose={() => setZoom(-1)}

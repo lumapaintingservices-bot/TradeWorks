@@ -46,20 +46,20 @@ test("owner invites a worker who only sees Calendar, Team and Settings", async (
   await signUp(w, "Sam Worker", email, PW);
   await expect(w.getByRole("heading", { name: "You have been invited" })).toBeVisible();
   await w.getByRole("button", { name: /^Join / }).click();
-  await w.waitForURL((u) => u.pathname === "/calendar");
+  await w.waitForURL((u) => u.pathname === "/jobs");
 
-  // navigation: only Calendar, Team, Settings
-  for (const name of ["Calendar", "Team", "Settings"]) await expect(w.getByRole("link", { name, exact: true }).first()).toBeVisible();
+  // navigation: only Jobs, Calendar, Team, Settings (+ Chats, My pay)
+  for (const name of ["Jobs", "Calendar", "Team", "Settings"]) await expect(w.getByRole("link", { name, exact: true }).first()).toBeVisible();
   for (const name of ["Dashboard", "Pipeline", "Estimates", "Invoices", "Clients", "Expenses", "Reports"]) await expect(w.getByRole("link", { name, exact: true })).toHaveCount(0);
   await expect(w.getByRole("button", { name: "New estimate" })).toHaveCount(0);
 
-  // routes the role may not open bounce back to the calendar
+  // routes the role may not open bounce back to My jobs
   for (const path of ["/", "/estimates", "/clients", "/invoices", "/expenses", "/reports", "/pipeline"]) {
     await w.goto(path);
-    await w.waitForURL((u) => u.pathname === "/calendar");
+    await w.waitForURL((u) => u.pathname === "/jobs");
   }
   await w.goto("/estimates/anything/doc");
-  await w.waitForURL((u) => u.pathname === "/calendar");
+  await w.waitForURL((u) => u.pathname === "/jobs");
 
   // calendar shows only Sam's task
   await w.goto("/calendar");

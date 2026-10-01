@@ -137,13 +137,17 @@ export async function listOwned<T>(col: string, owner: string): Promise<T[]> {
   return topIndex(col).map((id) => ({ ...readTop<Record<string, unknown>>(col, id), id }) as T).filter((r) => (r as { owner?: string }).owner === owner);
 }
 
-/** Atomic nested edits for portal docs: `set` uses dot paths ("client.picks.up1"), `append` pushes onto an array (arrayUnion). */
-export async function patchTop(col: string, id: string, ops: { set?: Record<string, unknown>; append?: Record<string, unknown> }): Promise<void> {
+/**
+ * Atomic nested edits for portal docs: `set` uses dot paths ("client.picks.up1"), `append` pushes onto an array (arrayUnion),
+ * `remove` deletes fields ("client.sign").
+ */
+export async function patchTop(col: string, id: string, ops: { set?: Record<string, unknown>; append?: Record<string, unknown>; remove?: string[] }): Promise<void> {
   if (hasFirebase) {
-    const { arrayUnion } = await import("firebase/firestore");
+    const { arrayUnion, deleteField } = await import("firebase/firestore");
     const data: Record<string, unknown> = {}; // portal rules let the client change only the `client` key, so no updatedAt here
     for (const [k, v] of Object.entries(ops.set || {})) data[k] = JSON.parse(JSON.stringify(v));
     for (const [k, v] of Object.entries(ops.append || {})) data[k] = arrayUnion(JSON.parse(JSON.stringify(v)));
+    for (const k of ops.remove || []) data[k] = deleteField();
     await updateDoc(doc(db, col, id), data);
     return;
   }
@@ -155,5 +159,10 @@ export async function patchTop(col: string, id: string, ops: { set?: Record<stri
   };
   for (const [k, v] of Object.entries(ops.set || {})) put(k, () => JSON.parse(JSON.stringify(v)));
   for (const [k, v] of Object.entries(ops.append || {})) put(k, (p) => [...(Array.isArray(p) ? p : []), JSON.parse(JSON.stringify(v))]);
+  for (const k of ops.remove || []) {
+    const ks = k.split("."); let o: any = cur;
+    for (let i = 0; i < ks.length - 1 && o; i++) o = o[ks[i]];
+    if (o && typeof o === "object") delete o[ks[ks.length - 1]];
+  }
   await setTop(col, id, cur, false);
 }

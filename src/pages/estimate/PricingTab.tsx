@@ -1,5 +1,6 @@
 import { useT } from "../../i18n";
 import { applyTypePreset, defaultPlan, jobTypesOf, uid } from "../../lib/estimate";
+import { depositAtSignOf } from "../../lib/deposit";
 import { catalogLine, catalogOf, usesCabinetTools } from "../../lib/trades";
 import { money, num } from "../../lib/money";
 import type { Estimate, Item, JobType, PayStep, Upgrade } from "../../lib/types";
@@ -121,6 +122,9 @@ export default function PricingTab({ e, set, s, lang }: TabProps) {
         <div className="grid4">
           <label className="f">{t("Deposit %", "Depósito %")}<NumInput value={e.depositPct} onChange={(n) => set({ depositPct: n })} /></label>
           <label className="f chk2"><span><input type="checkbox" checked={e.payPlanOn} onChange={(ev) => set({ payPlanOn: ev.target.checked, payPlan: ev.target.checked && plan.length < 2 ? defaultPlan() : plan })} /> {t("Use payment stages", "Usar etapas de pago")}</span></label>
+          <label className="f chk2" title={t("When on, the client is asked to pay the first payment right after signing (same payment page as an invoice).", "Si está activo, al firmar se le pide al cliente el primer pago (la misma página de pago que una factura).")}>
+            <span><input type="checkbox" checked={depositAtSignOf(e, s)} onChange={(ev) => set({ depositAtSign: ev.target.checked })} /> {t("Ask for the deposit when the client signs", "Pedir depósito al firmar")}</span>
+            <small className="muted">{typeof e.depositAtSign === "boolean" ? t("Set for this estimate", "Elegido para este presupuesto") : t("Company default (Settings)", "Predeterminado de la empresa (Ajustes)")}</small></label>
         </div>
         {e.payPlanOn && <>
           {plan.map((p, i) => (

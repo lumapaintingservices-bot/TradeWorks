@@ -24,6 +24,8 @@ export type Estimate = {
   manualType: "percent" | "fixed"; manualValue: number; manualLabel: string; manualLabelEs: string;
   taxEnabled: boolean; taxRate: number;
   depositPct: number; payPlanOn: boolean; payPlan: PayStep[];
+  /** Ask for the deposit as soon as the client signs (src/lib/deposit.ts). Unset = the company default (settings.depositAtSign). */
+  depositAtSign?: boolean | null;
   days: number; startDate: string; leadSource: string;
   scopeEn: string; scopeEs: string; termsEn: string; termsEs: string; notes: string; crewNotes: string;
   showMaterials: boolean; materialsMode: "included" | "added"; materialsList: MatRow[]; matBuyer: "me" | "paint" | "client";
@@ -39,6 +41,8 @@ export type Estimate = {
   sentAt?: string;
   snooze?: Record<string, string>; reviewAsked?: boolean; warrantyChecked?: boolean;
   photos?: PhotoRef[]; showPhotos?: boolean; check?: Record<string, string>; jobTasks?: JobTask[]; colors?: ColorRow[];
+  /** The workers on this job (worker ids) and notes for them; their copy of the job is crewjobs/{id} (src/lib/crew.ts). */
+  crew?: string[]; crewNote?: string;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
 export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
@@ -58,14 +62,29 @@ export type Payout = { id: string; workerId: string; date: string; amount: numbe
 export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** A running clock. loc = where the worker clocked in; last = latest position while the app was open (src/lib/geo.ts). */
 export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
-/** teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts). */
-export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string; teamId?: string; by?: string; at?: string };
+/**
+ * teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts).
+ * A worker's photo is private: the client sees it only when the owner ticks toClient (clientCanSee).
+ */
+export type PhotoRef = { id: string; kind: "before" | "after" | "detail" | string; caption: string; inWork?: boolean; url?: string; path?: string; teamId?: string; by?: string; at?: string; toClient?: boolean };
+/**
+ * companies/{cid}/crewjobs/{estId}: what the crew of a job may see (workers cannot read estimates): dates, address, client
+ * name, notes, checklist, colors. No prices. Written by the owner's app; workers only tick the checklist (done / doneBy).
+ */
+export type CrewJob = {
+  id: string; estId: string; jobLabel: string; crew: string[]; crewNames: string[]; start: string; days: number;
+  address: string; client: string; note: string; checklist: CrewItem[]; titles: Record<string, string>; colors: ColorRow[];
+  done?: Record<string, string>; doneBy?: Record<string, string>; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+};
+export type CrewItem = { key: string; day: number; text: string };
 /** companies/{cid}/jobchats/{estId}: the team chat of one job: owners / admins + the workers in `members` (worker ids). */
 export type JobChat = { id: string; estId: string; jobLabel: string; members: string[]; closed?: boolean; last?: ChatLast; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** The latest message, kept on the chat for the list (preview, unread). */
 export type ChatLast = { by: string; name: string; text: string; at: string };
 /** companies/{cid}/jobchats/{chatId}/msgs/{id}. by = "u:{uid}" (owner / admin) or "w:{workerId}" (worker). */
-export type TeamMsg = { id: string; by: string; name: string; text: string; at: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+export type TeamMsg = { id: string; by: string; name: string; text: string; at: string; photo?: ChatPhoto; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
+/** A photo in a chat message (kind = before / after / detail when it came from the worker's job photos). */
+export type ChatPhoto = { url: string; path: string; kind?: string };
 /** companies/{cid}/jobphotos/{id}: a before / after photo a worker took for a job. The file is at companies/{cid}/jobphotos/{workerId}/{id}.jpg. */
 export type JobPhoto = { id: string; workerId: string; estId: string; jobLabel?: string; kind: "before" | "after" | "detail" | ""; caption?: string; url: string; path: string; date: string; at: string; size?: number; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type ColorRow = { area: string; brand: string; color: string; sheen: string; code: string };
@@ -126,6 +145,10 @@ export type Settings = {
   referral?: { on?: boolean; amount?: number; rewardEn?: string; rewardEs?: string };
   /** "Pay by card or bank" on invoice payment links, once the company's Stripe account is connected (on unless switched off). */
   cardPay?: { on?: boolean };
+  /** Company default: ask for a deposit as soon as the client signs the estimate (off: bill with invoices later). */
+  depositAtSign?: boolean;
+  /** When the company default was switched on: only signatures after it get an automatic deposit invoice. */
+  depositAtSignSince?: string;
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];

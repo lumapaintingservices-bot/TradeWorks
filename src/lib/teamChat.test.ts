@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanText, defaultMembers, isUnread, lastOf, latestAt, meKey, msgDays, previewOf, sortChats, unreadCount } from "./teamChat";
+import { chatPhotoPath, cleanText, defaultMembers, isUnread, lastOf, latestAt, meKey, msgDays, previewOf, sortChats, unreadCount } from "./teamChat";
 import { matchFilter, subscriptionPlan } from "./workerView";
 
 describe("team chat", () => {
@@ -15,6 +15,9 @@ describe("team chat", () => {
     expect(cleanText("x".repeat(2500)).length).toBe(2000);
     expect(previewOf("línea 1\n  línea 2")).toBe("línea 1 línea 2");
     expect(lastOf({ by: "w:w1", name: "Carlos", text: "a\nb", at: "2026-09-30T10:00:00Z" })).toEqual({ by: "w:w1", name: "Carlos", text: "a b", at: "2026-09-30T10:00:00Z" });
+    expect(lastOf({ by: "w:w1", name: "Carlos", text: "", at: "t", photo: { url: "u", path: "p" } }).text).toBe("📷");
+    expect(chatPhotoPath("c1", "e1", "w:w9", "m1")).toBe("companies/c1/jobphotos/w9/m1.jpg");
+    expect(chatPhotoPath("c1", "e1", "u:u1", "m1")).toBe("companies/c1/chats/e1/m1.jpg");
   });
   it("unread: someone else's newer message", () => {
     const c = { id: "e1", last: { by: "w:w1", name: "Carlos", text: "hi", at: "2026-09-30T10:00:00Z" } };

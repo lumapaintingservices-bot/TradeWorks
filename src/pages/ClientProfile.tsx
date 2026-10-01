@@ -13,6 +13,7 @@ import { fmtDate, initials } from "../lib/format";
 import { digitsOnly, waUrl } from "../lib/messages";
 import { money } from "../lib/money";
 import { useUi } from "../store/ui";
+import { deleteJobPhoto } from "../data/teamPhotos";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
@@ -50,6 +51,12 @@ export default function ClientProfile() {
   };
   const colors = useMemo(() => colorsUsed(jobs), [jobs]);
   const photos = useMemo(() => clientPhotos(jobs), [jobs]);
+  const delPhoto = async (p: (typeof photos)[number]) => {
+    const e = ests.find((x) => x.id === p.estId);
+    if (!e || !company || !confirm(t("Delete this photo? It is removed from the job too.", "¿Borrar esta foto? También se quita del trabajo."))) return;
+    try { await deleteJobPhoto(company.id, e, p); toast(t("Photo deleted.", "Foto borrada.")); }
+    catch { toast(t("Couldn't delete. Try again.", "No se pudo borrar. Intenta otra vez.")); }
+  };
   const referrer = client?.referredBy ? clients.find((c) => c.id === client.referredBy) : undefined;
 
   /* ---- notes: autosave (debounced), flushed when leaving the page ---- */
@@ -185,8 +192,12 @@ export default function ClientProfile() {
         <section className="card cp-sec">
           <div className="card-h"><h2>{t("Photos", "Fotos")}</h2></div>
           <div className="card-b"><div className="cp-ph">{photos.slice(0, 24).map((p) => (
-            <button key={p.estId + p.id} className="cp-phb" onClick={() => setZoom(p.url)} title={p.caption || p.number}>
-              <img src={p.url} alt={p.caption || p.number} loading="lazy" /></button>))}
+            <div key={p.estId + p.id} className="cp-phw">
+              <button className="cp-phb" onClick={() => setZoom(p.url)} title={[p.number, p.by ? "📷 " + p.by : "", p.caption].filter(Boolean).join(" · ")}>
+                <img src={p.url} alt={p.caption || p.number} loading="lazy" /></button>
+              <button className="cp-phx" aria-label={t("Delete photo", "Borrar foto")} title={t("Delete photo", "Borrar foto")} onClick={() => delPhoto(p)}>×</button>
+              {p.by && <span className="cp-phby">{p.by}</span>}
+            </div>))}
           </div></div>
         </section>
       )}

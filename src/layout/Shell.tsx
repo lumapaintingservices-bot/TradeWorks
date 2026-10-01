@@ -17,10 +17,13 @@ import { useInvoices } from "../data/hooks";
 import { usePayLinkSync } from "../data/paylinks";
 import { useTeamPhotoSync } from "../data/teamPhotos";
 import { useChatInbox } from "../data/teamChat";
+import { useCrewSync } from "../data/crew";
+import { useDepositOnSign } from "../data/deposit";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
 import LocationPing from "../pages/team/LocationPing";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 
 function LangSwitch() {
   const { lang, setLang } = useUi();
@@ -103,6 +106,8 @@ const MiniBtn = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonEle
 function AdminBadges({ children }: { children: ReactNode }) {
   usePayLinkSync(); // invoice payment links: keep the public copies fresh and pick up "I paid" claims
   useTeamPhotoSync(); // before / after photos workers take land on their jobs
+  useCrewSync(); // each job's crew gets its copy of the job (My jobs) and their checklist ticks come back
+  useDepositOnSign(); // deposit at signing: invoices + payment link as soon as the client signs
   const nb = useNavBadges();
   const { rows: invs } = useInvoices();
   const chats = useChatInbox(); // job team chats with news (and a toast when a message comes in)
@@ -210,7 +215,8 @@ function ShellBody() {
         {canNew && <button className="btn pri sm" onClick={newEstimate}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
       </header>
 
-      <main className="main"><InviteBanner /><BillingBanner /><Outlet /></main>
+      {/* a crashing screen shows a message inside the app (menu still works); it resets when you go to another page */}
+      <main className="main"><InviteBanner /><BillingBanner /><ErrorBoundary key={loc.pathname}><Outlet /></ErrorBoundary></main>
 
       {more && <div className="more-back" onClick={() => setMore(false)} />}
       {more && (

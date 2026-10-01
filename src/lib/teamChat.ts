@@ -16,7 +16,10 @@ export const isWorkerKey = (by: string) => by.startsWith("w:");
 export const cleanText = (s: string): string => String(s || "").replace(/\r\n?/g, "\n").replace(/[ \t]+\n/g, "\n").replace(/\n{4,}/g, "\n\n\n").trim().slice(0, MSG_MAX);
 /** One line for the chat list. */
 export const previewOf = (text: string): string => String(text || "").replace(/\s+/g, " ").trim().slice(0, PREVIEW_MAX);
-export const lastOf = (m: Pick<TeamMsg, "by" | "name" | "text" | "at">): ChatLast => ({ by: m.by, name: String(m.name || "").slice(0, 80), text: previewOf(m.text), at: m.at });
+export const lastOf = (m: Pick<TeamMsg, "by" | "name" | "text" | "at" | "photo">): ChatLast => ({ by: m.by, name: String(m.name || "").slice(0, 80), text: previewOf(m.text) || (m.photo ? "📷" : ""), at: m.at });
+/** Where a chat photo is stored: a worker in their own folder (the only place they may upload), owners / admins per chat. */
+export const chatPhotoPath = (cid: string, chatId: string, me: string, id: string) =>
+  me.startsWith("w:") ? `companies/${cid}/jobphotos/${me.slice(2)}/${id}.jpg` : `companies/${cid}/chats/${chatId}/${id}.jpg`;
 
 /** New for me: the latest message is someone else's and newer than when I last opened the chat. */
 export function isUnread(chat: Pick<JobChat, "last">, seenAt: string | undefined, me: string): boolean {

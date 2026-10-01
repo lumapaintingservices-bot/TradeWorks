@@ -51,6 +51,10 @@ function OwnerCalendar() {
   const startPad = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate();
   const title = (es ? MONTH_ES[m] : MONTH_EN[m]) + " " + y;
   const nameOf = (e: Estimate) => clientNameOf(e, clients, lang);
+  // little avatars in the month grid: who does a task, who is on a job's crew
+  const workerOf = (id?: string) => (id ? workers.find((w) => w.id === id) : undefined);
+  const ini = (name: string) => (name.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2) || "?").toUpperCase();
+  const taskClient = (k: Task) => { const est = k.estId ? estimates.find((x) => x.id === k.estId) : undefined; return est ? nameOf(est) : String(k.jobLabel || "").split(" · ").slice(1).join(" · "); };
   const stOf = (e: Estimate) => jobStatus(e, invoices);
   const ctx = { invoices, clients, settings, lang };
 
@@ -131,14 +135,19 @@ function OwnerCalendar() {
                 <div className="cal-chips">
                   {c.jobs.map((e) => {
                     const st = stOf(e), n = Math.max(1, Math.round(num(e.days) || 1));
-                    return <button key={e.id} className={"cal-chip " + stClass(st) + (st === "Draft" ? " draft" : "")} title={`${nameOf(e)} · ${e.number} · ${st}`}
-                      onClick={(ev) => { ev.stopPropagation(); nav(`/estimates/${e.id}`); }}>{nameOf(e)} <span className="d">{jobDates(e).indexOf(c.iso) + 1}/{n}</span></button>;
+                    const crew = (e.crew || []).map((id) => workerOf(id)?.name || "").filter(Boolean);
+                    return <button key={e.id} className={"cal-chip " + stClass(st) + (st === "Draft" ? " draft" : "")} title={`${nameOf(e)} · ${e.number} · ${st}${crew.length ? " · 👷 " + crew.join(", ") : ""}`}
+                      onClick={(ev) => { ev.stopPropagation(); nav(`/estimates/${e.id}`); }}><span className="nm">{nameOf(e)}</span> <span className="d">{jobDates(e).indexOf(c.iso) + 1}/{n}</span>
+                      {crew.length > 0 && <span className="cal-avs">{crew.slice(0, 3).map((nm, j) => <i key={j}>{ini(nm)}</i>)}{crew.length > 3 && <i>+{crew.length - 3}</i>}</span>}</button>;
                   })}
-                  {c.tasks.map((k) => (
-                    <button key={k.id} className={"cal-task" + (k.done ? " done" : "")} title={k.title}
-                      onClick={(ev) => { ev.stopPropagation(); setDraft({ ...k }); }}>
-                      {k.time && <span className="tm">{fmtTime(k.time)}</span>}<span>{k.title}</span></button>
-                  ))}
+                  {c.tasks.map((k) => {
+                    const w = workerOf(k.workerId), cl = taskClient(k);
+                    return (
+                      <button key={k.id} className={"cal-task" + (k.done ? " done" : "")} title={[k.title, w ? "👷 " + w.name : "", cl].filter(Boolean).join(" · ")}
+                        onClick={(ev) => { ev.stopPropagation(); setDraft({ ...k }); }}>
+                        <span className="l1">{w && <i className="cal-av">{ini(w.name)}</i>}{k.time && <span className="tm">{fmtTime(k.time)}</span>}<span className="tt">{k.title}</span></span>
+                        {(cl || w) && <span className="l2">{[w?.name.split(" ")[0], cl].filter(Boolean).join(" · ")}</span>}</button>);
+                  })}
                 </div>
                 {(c.jobs.length + c.tasks.length > 0) && <div className="cal-dots" aria-hidden>
                   {c.jobs.slice(0, 4).map((e) => { const st = stOf(e); return <i key={e.id} className={"dot " + stClass(st) + (st === "Draft" ? " draft" : "")} />; })}
@@ -168,6 +177,8 @@ function OwnerCalendar() {
                   <div className="info">
                     <div className="nm"><b>{nameOf(e)}</b> <StatusBadge status={stOf(e)} /></div>
                     <div className="muted sm">{e.number}{e.address ? " · " + e.address : ""} · {jobWhat(e, lang)}</div>
+                    <div className="muted sm">👷 {e.crew?.length ? e.crew.map((id) => workers.find((w) => w.id === id)?.name || "?").join(", ")
+                      : <button className="linkish" onClick={() => nav(`/estimates/${e.id}?tab=jobday`)}>{t("No crew yet — assign", "Sin equipo — asignar")}</button>}</div>
                   </div>
                   <b className="tot">{money(calcEstimate(e, settings).total)}</b>
                   <div className="acts">

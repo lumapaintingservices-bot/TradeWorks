@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { useAuth } from "../auth/AuthProvider";
 import { uid } from "../lib/estimate";
 import { cleanText, lastOf, meKey, unreadCount } from "../lib/teamChat";
-import type { TeamMsg } from "../lib/types";
+import type { ChatPhoto, TeamMsg } from "../lib/types";
 import { useUi } from "../store/ui";
 import { useJobChats, useWorkers } from "./hooks";
 import { patchRec, saveRec, type Rec } from "./repo";
@@ -42,11 +42,11 @@ export function useChatMe() {
   return { key, name: name.slice(0, 80), isBoss: role === "owner" || role === "admin" };
 }
 
-/** Sends one message and puts it on the chat as the latest (list preview, unread). */
-export async function sendTeamMsg(cid: string, chatId: string, me: { key: string; name: string }, text: string): Promise<void> {
+/** Sends one message (text and / or a photo) and puts it on the chat as the latest (list preview, unread). */
+export async function sendTeamMsg(cid: string, chatId: string, me: { key: string; name: string }, text: string, photo?: ChatPhoto, id = uid("m")): Promise<void> {
   const clean = cleanText(text);
-  if (!clean || !me.key) return;
-  const msg: TeamMsg = { id: uid("m"), by: me.key, name: me.name, text: clean, at: new Date().toISOString() };
+  if ((!clean && !photo) || !me.key) return;
+  const msg: TeamMsg = { id, by: me.key, name: me.name, text: clean, at: new Date().toISOString(), ...(photo ? { photo } : {}) };
   await saveRec(cid, `jobchats/${chatId}/msgs`, msg as TeamMsg & Rec);
   await patchRec(cid, "jobchats", chatId, { last: lastOf(msg) }).catch(() => { /* the message is saved; the preview catches up on the next one */ });
 }
@@ -75,7 +75,7 @@ export function useChatInbox(): number {
       const l = c.last;
       if (!l || l.by === me.key || !l.at || l.at <= (prev[c.id] || "")) continue;
       if (loc.pathname === "/chats/" + c.id) continue;
-      toast("💬 " + l.name + " · " + c.jobLabel + ": " + l.text.slice(0, 80));
+      toast("💬 " + l.name + " · " + c.jobLabel + ": " + (l.text || "📷").slice(0, 80));
     }
   }, [chats, loading]); // eslint-disable-line react-hooks/exhaustive-deps
   return me.key ? unreadCount(chats, seen, me.key) : 0;

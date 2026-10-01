@@ -43,9 +43,16 @@ companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }
 companies/{cid}/clock/{workerId}     { at, estId, jobLabel?, loc?, last? }   loc/last = { lat, lng, acc(m), at } from the worker's phone
+companies/{cid}/crewjobs/{estId}     { estId, jobLabel, crew: [workerId], crewNames, start, days, address, client, note,
+                                       checklist: [{ key, day, text }], titles, colors, done: { key: ISO }, doneBy: { key: name } }
+                                     the crew's copy of a job (no prices), written by the owner's app from estimate.crew /
+                                     crewNote (src/data/crew.ts useCrewSync); workers tick done/doneBy, mirrored into estimate.check.
+                                     Checklist = checklistFor(e, "es") (work-order language) so keys stay stable.
 companies/{cid}/jobchats/{estId}     { estId, jobLabel, members: [workerId], closed?, last?: { by, name, text, at } }
                                      team chat of one job: owners / admins + the workers in members (src/lib/teamChat.ts)
-companies/{cid}/jobchats/{estId}/msgs/{id}  { by ("u:{uid}" owner/admin | "w:{workerId}"), name, text (<= 2000), at }
+companies/{cid}/jobchats/{estId}/msgs/{id}  { by ("u:{uid}" owner/admin | "w:{workerId}"), name, text (<= 2000), at, photo?: { url, path, kind? } }
+                                     chat photos: workers in companies/{cid}/jobphotos/{workerId}/, owners in companies/{cid}/chats/{chatId}/;
+                                     a worker's new job photo is also posted to the job chat (kind = before/after/detail)
                                      read state is per device and person (localStorage tw.chatSeen.{cid}.{me})
 companies/{cid}/jobphotos/{id}       { workerId, estId, jobLabel, kind (before|after|detail), caption, url, path, date, at, size }
                                      a photo a worker took (Team > Job photos); file at companies/{cid}/jobphotos/{workerId}/{id}.jpg.
