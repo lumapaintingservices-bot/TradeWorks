@@ -118,7 +118,11 @@ taken off the job. Owner Photos tab uses the same upload cards and shows "Carlos
 Merged (PR #21) and Firestore + Storage rules published 2026-09-30.
 Sidebar fold-to-icons (owner picked only this idea from shadcn sidebar-07): button next to the logo or Ctrl/Cmd+B,
 72px rail with tooltips, remembered per device (useUi().sbMini). Other ideas offered and not chosen: account menu at the
-bottom, breadcrumb header, Settings submenu.
+bottom, breadcrumb header, Settings submenu. Merged (PR #22).
+Job team chats: /chats and /chats/:estId (worker bottom bar "Chats"; owner sidebar + More; "Team chat" button on each
+estimate). One group chat per job: owner starts it (workers with tasks on the job pre-ticked), adds / removes workers,
+closes / reopens. jobchats/{estId} (members, last) + msgs subcollection; unread badge + toast (useChatInbox in the Shell);
+read state per device + person. Text only for now. Rules: see docs/06.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

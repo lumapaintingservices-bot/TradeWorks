@@ -11,7 +11,7 @@ import type { HourEntry, Task, Worker } from "./types";
 /** How useCollection() must read a collection for a given login. */
 export type SubPlan =
   | { kind: "all" }                                   // owner / admin: the whole collection
-  | { kind: "filter"; field: string; value: string }  // worker: where(field == workerId)
+  | { kind: "filter"; field: string; value: string; op?: "array-contains" }  // worker: where(field == workerId) (or array-contains)
   | { kind: "doc"; id: string }                       // worker: only the doc whose id is their workerId
   | { kind: "none" };                                 // worker: not allowed (or not linked yet) -> [] and no subscription
 
@@ -19,11 +19,13 @@ export function subscriptionPlan(role: Role | null | undefined, workerId: string
   if (role !== "worker") return { kind: "all" };
   const scope = workerScope(col);
   if (!scope || !workerId) return { kind: "none" };
-  return "field" in scope ? { kind: "filter", field: scope.field, value: workerId } : { kind: "doc", id: workerId };
+  if ("member" in scope) return { kind: "all" }; // a chat's messages: the rules check I am in that chat
+  return "field" in scope ? { kind: "filter", field: scope.field, value: workerId, ...(scope.op ? { op: scope.op } : {}) } : { kind: "doc", id: workerId };
 }
 
 /** Equality filter used by the demo (localStorage) path, same meaning as Firestore where(field,'==',value). */
-export const matchFilter = (row: Record<string, unknown>, f?: { field: string; value: unknown }): boolean => !f || row[f.field] === f.value;
+export const matchFilter = (row: Record<string, unknown>, f?: { field: string; value: unknown; op?: string }): boolean =>
+  !f || (f.op === "array-contains" ? Array.isArray(row[f.field]) && (row[f.field] as unknown[]).includes(f.value) : row[f.field] === f.value);
 
 /** Task ownership exactly as the rules check it: the task is assigned to my (non-empty) worker id. */
 export const isMyTask = (task: Pick<Task, "workerId">, workerId: string | null | undefined): boolean => !!workerId && (task.workerId || "") === workerId;

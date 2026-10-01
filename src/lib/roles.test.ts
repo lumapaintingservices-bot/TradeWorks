@@ -125,6 +125,9 @@ describe("worker data scope", () => {
     expect(workerScope("tasks")).toEqual({ field: "workerId" });
     expect(workerScope("hours")).toEqual({ field: "workerId" });
     expect(workerScope("jobphotos")).toEqual({ field: "workerId" });
+    expect(workerScope("jobchats")).toEqual({ field: "members", op: "array-contains" });
+    expect(workerScope("jobchats/e1/msgs")).toEqual({ member: true });
+    expect(workerScope("jobchats/e1/other")).toBeNull();
     expect(workerScope("clock")).toEqual({ docId: true });
     expect(workerScope("workers")).toEqual({ docId: true });
     expect(workerScope("expenses")).toBeNull();

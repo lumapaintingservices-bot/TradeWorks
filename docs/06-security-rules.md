@@ -69,5 +69,9 @@ Storage: companies/{cid}/** read/write for owners/admins (images < 5 MB). Worker
 jobphotos (Firestore): a worker reads / creates / deletes only their own (workerId == theirs); create checks the shape
 (jobPhotoOk: known keys, kind in before|after|detail|'', path = their own folder + doc id, url = the Firebase Storage URL of
 exactly that file). No worker updates. The owner's app deletes the file when a photo is taken off the job.
+Job chats: jobchats/{estId} readable by a worker only when members contains their worker id (the app queries
+where members array-contains workerId); a worker may update only `last` (as themselves) while the chat is open.
+jobchats/{estId}/msgs: read by admins and chat members; created as 'u:'+uid (admins) or 'w:'+workerId (members, chat
+open), shape checked (teamMsgOk); nobody edits; admins delete any, workers their own.
 Add App Check and rate limiting (Cloud Functions) before public launch; move lead photos to Storage via a
 signed-upload Cloud Function to avoid anonymous writes.

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { defaultSettings } from "../lib/settings";
 import { normalizeTrade } from "../lib/trades";
-import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, JobPhoto, Payout, Settings, Task, Worker } from "../lib/types";
+import type { ClockRec, Client, Estimate, Expense, HourEntry, Invoice, JobChat, JobPhoto, Payout, Settings, Task, TeamMsg, Worker } from "../lib/types";
 import { subscriptionPlan } from "../lib/workerView";
 import { patchRec, removeRec, saveRec, subscribe, subscribeDoc, type Rec } from "./repo";
 
@@ -24,7 +24,7 @@ export function useCollection<T extends Rec>(col: string) {
     if (plan.kind === "none") { setRows([]); setLoading(false); return; }
     setLoading(true);
     if (plan.kind === "doc") return subscribeDoc<T>(cid, col, plan.id, (r) => { setRows(r ? [r] : []); setLoading(false); });
-    return subscribe<T>(cid, col, (r) => { setRows(r); setLoading(false); }, plan.kind === "filter" ? { field: plan.field, value: plan.value } : undefined);
+    return subscribe<T>(cid, col, (r) => { setRows(r); setLoading(false); }, plan.kind === "filter" ? { field: plan.field, value: plan.value, op: plan.op } : undefined);
   }, [cid, col, role, workerId]);
   const save = useCallback((r: T) => saveRec(cid!, col, r), [cid, col]);
   const remove = useCallback((id: string) => removeRec(cid!, col, id), [cid, col]);
@@ -41,6 +41,9 @@ export const usePayouts = () => useCollection<Payout & Rec>("payouts");
 export const useClock = () => useCollection<ClockRec & Rec>("clock");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");
 export const useJobPhotos = () => useCollection<JobPhoto & Rec>("jobphotos");
+export const useJobChats = () => useCollection<JobChat & Rec>("jobchats");
+/** Messages of one job chat (jobchats/{chatId}/msgs). */
+export const useTeamMsgs = (chatId: string) => useCollection<TeamMsg & Rec>(`jobchats/${chatId}/msgs`);
 
 /** Company settings live in a single doc: settings/main. Missing fields fall back to defaults. */
 export function useSettings() {

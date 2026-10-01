@@ -5,7 +5,8 @@ rules_version = '2';
 //   owner  everything, incl. members and roles
 //   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
 //   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read),
-//          their own job photos (add, see, delete; jobphotos, file in Storage at companies/{cid}/jobphotos/{workerId}/{id}.jpg)
+//          their own job photos (add, see, delete; jobphotos, file in Storage at companies/{cid}/jobphotos/{workerId}/{id}.jpg),
+//          the job chats they were added to (jobchats/{estId}.members): read, write messages as themselves, update the preview
 // The company creator (companies/{cid}.ownerUid) can never be removed or demoted, so a company always keeps an owner.
 service cloud.firestore {
   match /databases/{db}/documents {
@@ -57,6 +58,19 @@ service cloud.firestore {
         && d.date is string && d.date.size() <= 10
         && d.at is string && d.at.size() <= 40
         && (!('size' in d) || (d.size is number && d.size >= 0 && d.size <= 20000000));
+    }
+    // job team chat: latest-message preview { by, name, text, at } written by the sender
+    function chatLastOk(l, by) {
+      return l is map && l.keys().hasOnly(['by', 'name', 'text', 'at']) && l.by == by
+        && l.name is string && l.name.size() <= 80 && l.text is string && l.text.size() <= 200 && l.at is string && l.at.size() <= 40;
+    }
+    // one chat message { by, name, text, at }; by = 'u:' + uid (owner / admin) or 'w:' + workerId (worker), checked by the caller
+    function teamMsgOk() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['by', 'name', 'text', 'at', 'companyId', 'createdAt', 'updatedAt'])
+        && d.by is string && d.name is string && d.name.size() <= 80
+        && d.text is string && d.text.size() > 0 && d.text.size() <= 2000
+        && d.at is string && d.at.size() <= 40;
     }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
@@ -138,7 +152,20 @@ service cloud.firestore {
         );
       }
 
-      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos ...
+      // ---- job team chats: messages live in jobchats/{chatId}/msgs ----
+      // owners / admins: everything. A worker: only chats whose members list holds their worker id; they post as themselves
+      // ('w:' + workerId) while the chat is open, and may delete their own messages. Nobody edits a message.
+      match /jobchats/{chatId}/msgs/{mid} {
+        function chat() { return get(/databases/$(db)/documents/companies/$(cid)/jobchats/$(chatId)).data; }
+        function inChat() { return isWorker(cid) && myWorkerId(cid) != '' && myWorkerId(cid) in chat().get('members', []); }
+        allow read: if admin(cid) || inChat();
+        allow create: if teamMsgOk() && (
+          (admin(cid) && request.resource.data.by == 'u:' + request.auth.uid)
+          || (inChat() && request.resource.data.by == 'w:' + myWorkerId(cid) && !chat().get('closed', false)));
+        allow delete: if admin(cid) || (inChat() && resource.data.by == 'w:' + myWorkerId(cid));
+      }
+
+      // ---- all other company data: clients, estimates, invoices, expenses, settings, workers, payouts, tasks, hours, clock, jobphotos, jobchats ...
       // owners/admins everything. A worker only touches what is linked to their workerId (rules are not filters:
       // the app must query with the same filter, see src/lib/roles.ts workerScope()).
       match /{col}/{id} {
@@ -146,6 +173,7 @@ service cloud.firestore {
           isWorker(cid) && myWorkerId(cid) != '' && (
             ((col == 'tasks' || col == 'hours' || col == 'payouts' || col == 'jobphotos') && resource.data.get('workerId', '') == myWorkerId(cid))   // my tasks, hours, payments, photos
             || ((col == 'clock' || col == 'workers') && id == myWorkerId(cid))                            // my clock, my worker record
+            || (col == 'jobchats' && myWorkerId(cid) in resource.data.get('members', []))                // job chats I was added to
           )));
 
         allow create: if col != 'members' && (admin(cid) || (
@@ -161,6 +189,10 @@ service cloud.firestore {
             (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
               && (request.resource.data.get('rate', null) == resource.data.get('rate', null) || request.resource.data.rate == workerRate(cid)))
             || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
+            // a job chat I am in (and open): only the latest-message preview, as myself
+            || (col == 'jobchats' && myWorkerId(cid) in resource.data.get('members', []) && !resource.data.get('closed', false)
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['last', 'updatedAt'])
+                && chatLastOk(request.resource.data.last, 'w:' + myWorkerId(cid)))
             // tick a task assigned to me as done (nothing else on it may change)
             || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))

@@ -16,6 +16,7 @@ import { useNavBadges } from "../pages/FollowUps";
 import { useInvoices } from "../data/hooks";
 import { usePayLinkSync } from "../data/paylinks";
 import { useTeamPhotoSync } from "../data/teamPhotos";
+import { useChatInbox } from "../data/teamChat";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
@@ -104,15 +105,22 @@ function AdminBadges({ children }: { children: ReactNode }) {
   useTeamPhotoSync(); // before / after photos workers take land on their jobs
   const nb = useNavBadges();
   const { rows: invs } = useInvoices();
-  const badges = { "/": nb.dashboard, "/pipeline": nb.pipeline, "/invoices": invs.filter((v) => v.status !== "Paid").length };
+  const chats = useChatInbox(); // job team chats with news (and a toast when a message comes in)
+  const badges = { "/": nb.dashboard, "/pipeline": nb.pipeline, "/invoices": invs.filter((v) => v.status !== "Paid").length, "/chats": chats };
   return <Badges.Provider value={badges}>{children}</Badges.Provider>;
+}
+
+/** Workers: only the Chats badge (their job chats with news). */
+function WorkerBadges({ children }: { children: ReactNode }) {
+  const chats = useChatInbox();
+  return <Badges.Provider value={{ "/chats": chats }}>{children}</Badges.Provider>;
 }
 
 export default function Shell() {
   const { role } = useAuth();
   const body = <ShellBody />;
   // workers: keep their position fresh on the running clock (team map), only while clocked in and the app is open
-  return role === "worker" ? <Badges.Provider value={{}}><LocationPing />{body}</Badges.Provider> : <AdminBadges>{body}</AdminBadges>;
+  return role === "worker" ? <WorkerBadges><LocationPing />{body}</WorkerBadges> : <AdminBadges>{body}</AdminBadges>;
 }
 
 function ShellBody() {
