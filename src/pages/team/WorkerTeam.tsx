@@ -21,6 +21,7 @@ import { NumInput } from "../../ui/NumInput";
 import { ask } from "../../ui/confirm";
 import "../Team.css";
 import "./worker.css";
+import { DatePicker } from "../../ui/DatePicker";
 
 const hrs = hoursText;
 const RANGE_LABEL: Record<RangeKey, [string, string]> = {
@@ -214,7 +215,7 @@ function WorkerHoursModal({ onSave, onClose }: { onSave(f: { date: string; hours
   return (
     <Modal title={t("Log hours", "Anotar horas")} onClose={onClose}>
       <div className="grid2">
-        <label className="f">{t("Date", "Fecha")}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="f">{t("Date", "Fecha")}<DatePicker value={date} onChange={(v) => setDate(v)} /></label>
         <label className="f">{t("Hours", "Horas")}<NumInput step="0.25" placeholder="8" value={num(h)} onChange={setH} /></label>
       </div>
       <label className="f">{t("Note (optional)", "Nota (opcional)")}<input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("Sanding, priming, spraying…", "Lijado, primer, sprayado…")} /></label>

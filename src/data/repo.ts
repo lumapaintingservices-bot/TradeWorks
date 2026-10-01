@@ -28,8 +28,10 @@ export function subscribe<T extends Rec>(cid: string, col: string, cb: Cb<T>, fi
   }
   const fire = () => cb(readLocal<T>(cid, col).filter((r) => matchFilter(r as unknown as Record<string, unknown>, filter)));
   const h = (ev: Event) => { if ((ev as CustomEvent).detail === key(cid, col)) fire(); };
-  bus.addEventListener("change", h); fire();
-  return () => bus.removeEventListener("change", h);
+  // another tab of the demo changed it (like Firestore pushing someone else's change)
+  const other = (ev: StorageEvent) => { if (ev.key === key(cid, col)) fire(); };
+  bus.addEventListener("change", h); window.addEventListener("storage", other); fire();
+  return () => { bus.removeEventListener("change", h); window.removeEventListener("storage", other); };
 }
 
 /** Live single document companies/{cid}/{col}/{id} (null when it does not exist or cannot be read). */

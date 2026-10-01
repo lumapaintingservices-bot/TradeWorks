@@ -88,3 +88,11 @@ export function splitTasks<T extends Pick<Task, "date" | "time" | "title" | "don
   const s = sortTasks(tasks);
   return { open: s.filter((k) => !k.done), done: s.filter((k) => k.done).reverse() };
 }
+
+/**
+ * A worker's new-task notices (src/data/taskInbox.ts): their open tasks they have not seen yet on this device.
+ * `seen` = task ids already shown; done tasks never count.
+ */
+export function unseenTasks<T extends Pick<Task, "id" | "done" | "workerId">>(tasks: T[], seen: Set<string>, workerId: string | null | undefined): T[] {
+  return tasks.filter((k) => isMyTask(k, workerId) && !k.done && !seen.has(k.id));
+}

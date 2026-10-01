@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byJob, paymentsIn, paySummary, periodSeries, timesheetDays, weekStart } from "./timesheet";
-import { clockJobOptions, clockTaskOptions } from "./workerView";
+import { clockJobOptions, clockTaskOptions, unseenTasks } from "./workerView";
 import type { HourEntry, Payout, Worker } from "./types";
 
 const w: Worker = { id: "w1", name: "Carlos", rate: 20 };
@@ -66,5 +66,15 @@ describe("clock-in tasks", () => {
     const tasks = [k("late", "2026-09-30", "14:00"), k("old", "2026-09-29"), k("done", "2026-09-30", "08:00", true), k("b", "2026-09-30", "08:00"), k("a", "2026-09-30", "08:00"), k("tomorrow", "2026-10-01")];
     expect(clockTaskOptions(tasks, "2026-09-30").map((x) => x.id)).toEqual(["a", "b", "late"]);
     expect(clockTaskOptions([], "2026-09-30")).toEqual([]);
+  });
+});
+
+describe("new task notices", () => {
+  it("my open tasks I have not seen yet", () => {
+    const k = (id: string, workerId: string, done = false) => ({ id, workerId, done });
+    const tasks = [k("t1", "w1"), k("t2", "w1", true), k("t3", "w2"), k("t4", "w1")];
+    expect(unseenTasks(tasks, new Set(["t1"]), "w1").map((x) => x.id)).toEqual(["t4"]);
+    expect(unseenTasks(tasks, new Set(), "w1").map((x) => x.id)).toEqual(["t1", "t4"]);
+    expect(unseenTasks(tasks, new Set(), null)).toEqual([]);
   });
 });

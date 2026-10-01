@@ -23,6 +23,7 @@ import { useUrlFlag } from "../ui/useUrlFlag";
 import { ask } from "../ui/confirm";
 import { Combobox } from "../ui/Combobox";
 import "./Calendar.css";
+import { DatePicker } from "../ui/DatePicker";
 
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
 const LS_VIEW = "tw.calView";
@@ -239,7 +240,7 @@ function OwnerCalendar() {
                   <b className="tot">{money(calcEstimate(e, settings).total)}</b>
                   <div className="acts">
                     <label className="mv"><span className="muted">{t("Move to…", "Mover a…")}</span>
-                      <input type="date" value={e.startDate || ""} onChange={(x) => moveJob(e, x.target.value)} /></label>
+                      <DatePicker value={e.startDate || ""} onChange={(v) => moveJob(e, v)} /></label>
                     <button className="btn sm" onClick={() => takeOff(e)}>{t("Take off", "Quitar")}</button>
                     <button className="btn sm" onClick={() => window.open(gcalLink(ev), "_blank", "noopener")}>+ Google</button>
                     <button className="btn sm" onClick={() => downloadICS(ev)}>+ Outlook/Apple</button>
@@ -277,7 +278,7 @@ function OwnerCalendar() {
           <label className="f">{t("What do you need to do?", "¿Qué necesitas hacer?")}
             <input autoFocus value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} placeholder={t("Buy paint, call the client, pick up materials…", "Comprar pintura, llamar al cliente, recoger materiales…")} /></label>
           <div className="grid2">
-            <label className="f">{t("Date", "Fecha")}<input type="date" value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} /></label>
+            <label className="f">{t("Date", "Fecha")}<DatePicker value={draft.date} onChange={(v) => setDraft({ ...draft, date: v })} /></label>
             <label className="f">{t("Time (optional)", "Hora (opcional)")}<input type="time" value={draft.time || ""} onChange={(e) => setDraft({ ...draft, time: e.target.value })} /></label>
           </div>
           <label className="f">{t("Note (optional)", "Nota (opcional)")}<textarea rows={3} value={draft.note || ""} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>

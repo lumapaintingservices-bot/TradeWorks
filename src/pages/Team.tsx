@@ -29,6 +29,8 @@ import { deleteImage, putImage } from "../lib/storage";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
 import { Combobox } from "../ui/Combobox";
+import { revokeWorkerAccess } from "../data/workers";
+import { DatePicker } from "../ui/DatePicker";
 
 type ModalState =
   | { kind: "worker"; id?: string }
@@ -66,7 +68,8 @@ function OwnerTeam() {
   const [modal, setModal] = useState<ModalState | null>(null);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(Date.now());
-  const tracking = !!useAuth().company?.trackLocation;
+  const { company } = useAuth();
+  const tracking = !!company?.trackLocation;
   useEffect(() => {
     if (!clocks.length && !tracking) return;
     setNow(Date.now());
@@ -99,6 +102,10 @@ function OwnerTeam() {
     if (busy[key]) return;
     setBusy((x) => ({ ...x, [key]: true }));
     try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); } finally { setBusy((x) => ({ ...x, [key]: false })); }
+  };
+  const lostAccess = (w: Worker, n: number) => {
+    if (n > 0) toast(t(`${w.name} can no longer open the app. Invite them again if they come back.`, `${w.name} ya no puede entrar a la app. Invítalo otra vez si regresa.`));
+    else if (n < 0) toast(t("The worker was saved, but their app access could not be removed. Remove it in Settings → Team & access.", "El trabajador se guardó, pero no se pudo quitar su acceso. Quítalo en Ajustes → Equipo y acceso."));
   };
   // the clock always runs for one task (owner rule): pick which of the worker's tasks for today
   const clockIn = (w: Worker) => { if (!clocks.some((c) => c.id === w.id)) setModal({ kind: "clock", workerId: w.id }); };
@@ -308,8 +315,16 @@ function OwnerTeam() {
       {modal?.kind === "worker" && (
         <WorkerModal worker={workers.find((w) => w.id === modal.id)} onClose={() => setModal(null)}
           hasRecords={(id) => hours.some((h) => h.workerId === id) || pays.some((p) => p.workerId === id)}
-          onSave={async (w) => { await saveWorker(w); setModal(null); }}
-          onDelete={async (w) => { await removeWorker(w.id); deleteImage(w.photo?.path); if (clocks.some((c) => c.id === w.id)) await removeClock(w.id); setModal(null); }} />
+          onSave={async (w) => {
+            const was = workers.find((x) => x.id === w.id);
+            await saveWorker(w); setModal(null);
+            // marked inactive: their login loses access to the company (invite them again if they come back)
+            if (was && was.active !== false && w.active === false && company) lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1));
+          }}
+          onDelete={async (w) => {
+            await removeWorker(w.id); deleteImage(w.photo?.path); if (clocks.some((c) => c.id === w.id)) await removeClock(w.id); setModal(null);
+            if (company) lostAccess(w, await revokeWorkerAccess(company.id, w.id).catch(() => -1));
+          }} />
       )}
       {modal?.kind === "hours" && (
         <HoursModal entry={hours.find((h) => h.id === modal.id)} workers={modal.id ? workers : activeWorkers} startWorker={modal.workerId}
@@ -413,11 +428,11 @@ function WorkerModal({ worker, hasRecords, onSave, onDelete, onClose }: {
   };
   const del = () => run(async () => {
     if (hasRecords(w.id)) {
-      if (!await ask(t("This worker has hours or payments. Mark as inactive instead? (Cancel keeps everything as is.)", "Este trabajador tiene horas o pagos. ¿Marcarlo como inactivo? (Cancelar deja todo igual.)"), { ok: t("Mark inactive", "Marcar inactivo") })) { setSaving(false); return; }
+      if (!await ask(t("This worker has hours or payments. Mark as inactive instead? They lose access to the app. (Cancel keeps everything as is.)", "Este trabajador tiene horas o pagos. ¿Marcarlo como inactivo? Pierde el acceso a la app. (Cancelar deja todo igual.)"), { ok: t("Mark inactive", "Marcar inactivo") })) { setSaving(false); return; }
       await onSave({ ...w, active: false });
       return;
     }
-    if (!await ask(t("Delete this worker?", "¿Borrar este trabajador?"))) { setSaving(false); return; }
+    if (!await ask(t("Delete this worker? If they use the app, they lose access right away.", "¿Borrar este trabajador? Si usa la app, pierde el acceso de inmediato."))) { setSaving(false); return; }
     await onDelete(w);
   });
   return (
@@ -468,7 +483,7 @@ function HoursModal({ entry, workers, startWorker, jobs, onSite, onSave, onDelet
             {workers.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
             {!w && h.workerId && <option value={h.workerId}>—</option>}
           </select></label>
-        <label className="f">{t("Date", "Fecha")}<input type="date" value={h.date} onChange={(e) => setH({ ...h, date: e.target.value })} /></label>
+        <label className="f">{t("Date", "Fecha")}<DatePicker value={h.date} onChange={(v) => setH({ ...h, date: v })} /></label>
       </div>
       <div className="grid2">
         <label className="f">{t("Hours", "Horas")}<NumInput step="0.25" placeholder="8" value={num(h.hours)} onChange={(n) => setH({ ...h, hours: n })} /></label>
@@ -509,7 +524,7 @@ function PayModal({ workers, startWorker, owedOf, onSave, onClose }: {
     <Modal title={t("Payment to a worker", "Pago a un trabajador")} onClose={onClose}>
       <div className="grid2">
         <label className="f">{t("Worker", "Trabajador")}<select value={wid} onChange={(e) => pick(e.target.value)}>{workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
-        <label className="f">{t("Date", "Fecha")}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="f">{t("Date", "Fecha")}<DatePicker value={date} onChange={(v) => setDate(v)} /></label>
       </div>
       <div className="grid2">
         <label className="f">{t("Amount ($)", "Monto ($)")}<NumInput step="0.01" value={amount} onChange={setAmount} /></label>
@@ -539,7 +554,7 @@ function TaskModal({ task, workers, jobs, startWorker, onSave, onDelete, onClose
     <Modal title={isNew ? t("New task", "Nueva tarea") : t("Edit task", "Editar tarea")} onClose={onClose}>
       <label className="f">{t("What needs to be done?", "¿Qué hay que hacer?")}<input autoFocus value={k.title} onChange={(e) => setK({ ...k, title: e.target.value })} /></label>
       <div className="grid2">
-        <label className="f">{t("Date", "Fecha")}<input type="date" value={k.date} onChange={(e) => setK({ ...k, date: e.target.value })} /></label>
+        <label className="f">{t("Date", "Fecha")}<DatePicker value={k.date} onChange={(v) => setK({ ...k, date: v })} /></label>
         <label className="f">{t("Time (optional)", "Hora (opcional)")}<input type="time" value={k.time || ""} onChange={(e) => setK({ ...k, time: e.target.value })} /></label>
       </div>
       <label className="f">{t("Assign to", "Asignar a")}

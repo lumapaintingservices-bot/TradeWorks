@@ -82,6 +82,26 @@ test("owner invites a worker who only sees Calendar, Team and Settings", async (
   await expect(w.getByRole("heading", { name: "Appearance & language" })).toBeVisible();
   for (const section of ["Prices", "Costs & profit", "Job types", "Client link & payments", "Team & plan", "Backup & storage"]) await expect(w.getByRole("button", { name: section })).toHaveCount(0);
   await expect(w.getByText("Team & access")).toHaveCount(0);
+
+  // a task assigned while the worker has the app open shows up live: a notice + the Calendar badge, no reload
+  // (demo mode: another tab writing the shared storage stands in for Firestore pushing the boss's change)
+  await w.goto("/jobs");
+  await w.waitForURL((u) => u.pathname === "/jobs");
+  const other = await seeded.newPage();
+  await other.goto("/jobs");
+  await other.evaluate(() => {
+    const k = Object.keys(localStorage).find((x) => /^tw\.demo\.[^.]+\.tasks$/.test(x))!;
+    const rows = JSON.parse(localStorage.getItem(k) || "[]");
+    const sam = rows.find((r: { title: string }) => r.title === "Prep the kitchen");
+    rows.push({ ...sam, id: "t-live", title: "Spray the doors", done: false });
+    localStorage.setItem(k, JSON.stringify(rows));
+  });
+  await other.close();
+  await expect(w.getByText(/New task: Spray the doors/)).toBeVisible();
+  const calLink = w.getByRole("link", { name: /^Calendar/ }).first();
+  await expect(calLink.locator(".nav-badge")).toHaveText("1");
+  await w.goto("/calendar");   // looking at the calendar = seen
+  await expect(calLink.locator(".nav-badge")).toHaveCount(0);
   expect(errors, "worker console errors").toEqual([]);
   await seeded.close();
 

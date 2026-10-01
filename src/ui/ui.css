@@ -197,3 +197,29 @@ html.tw-dark .thsw button.on{background:var(--surface-2)}
 .ig-btn{flex:none;align-self:stretch;width:40px;display:grid;place-items:center;border:0;background:none;color:var(--ink-3);cursor:pointer}
 .ig-btn:hover{color:var(--ink)}
 .ig-btn:focus-visible{outline:2px solid var(--acc);outline-offset:-4px;color:var(--ink);border-radius:8px}
+/* Date picker (DatePicker.tsx), idea from shadcn's Date Picker: button + popover calendar */
+.dtp{display:block;margin-top:6px}
+label.f>.dtp{font-weight:400}
+.dtp-btn{display:flex;align-items:center;gap:8px;width:100%;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:400;text-align:left;cursor:pointer;box-shadow:var(--shadow-xs)}
+.dtp-btn svg{color:var(--ink-3);flex:none}
+.dtp-btn:hover{background:var(--surface-2)}
+.dtp-btn:focus-visible,.dtp-btn[aria-expanded=true]{outline:0;border-color:#9DBBFF;box-shadow:var(--focus-ring)}
+.dtp-btn.empty .dtp-v{color:var(--ink-3)}
+.dtp-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dtp-pop{z-index:95;width:300px;max-width:calc(100vw - 16px);background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-pop);padding:12px;color:var(--ink);font-weight:400}
+.dtp-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dtp-head b{font-size:14px;font-weight:600;text-transform:capitalize}
+.dtp-nav{width:32px;height:32px;display:grid;place-items:center;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.dtp-nav:hover{background:var(--surface-2);color:var(--ink)}
+.dtp-nav:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+.dtp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.dtp-wd{font-size:11.5px;font-weight:500;color:var(--ink-3);text-align:center;padding:4px 0 6px;text-transform:capitalize}
+.dtp-day{height:36px;border:0;border-radius:9px;background:none;color:var(--ink);font:inherit;font-size:13.5px;font-variant-numeric:tabular-nums;cursor:pointer}
+.dtp-day:hover:not(:disabled){background:var(--surface-2)}
+.dtp-day:focus-visible{outline:0;box-shadow:inset 0 0 0 2px var(--acc)}
+.dtp-day.out{color:var(--ink-3)}
+.dtp-day.today{background:var(--surface-2);font-weight:600}
+.dtp-day.sel,.dtp-day.sel:hover{background:var(--ink);color:var(--bg);font-weight:600}
+.dtp-day:disabled{color:var(--ink-3);opacity:.4;cursor:not-allowed;text-decoration:line-through}
+.dtp-foot{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2)}
+.dtp-clear{color:var(--ink-2)}

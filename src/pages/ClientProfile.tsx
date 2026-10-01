@@ -22,6 +22,7 @@ import "./ClientProfile.css";
 import { Badge } from "../ui/Badge";
 import { ask } from "../ui/confirm";
 import { Avatar } from "../ui/Avatar";
+import { DatePicker } from "../ui/DatePicker";
 
 export default function ClientProfile() {
   const t = useT();
@@ -246,7 +247,7 @@ function RewardModal({ referrer, friend, amount, onClose, onSave }: {
       <p className="muted" style={{ marginTop: 0 }}>{t(`${referrer.name} referred ${friend.name}, whose job is paid in full.`, `${referrer.name} recomendó a ${friend.name}, cuyo trabajo ya está pagado.`)}</p>
       <div className="grid2">
         <label className="f">{t("Value ($)", "Valor ($)")}<input type="number" min={0} step={5} inputMode="decimal" value={amt} onChange={(e) => setAmt(e.target.value)} /></label>
-        <label className="f">{t("Date", "Fecha")}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="f">{t("Date", "Fecha")}<DatePicker value={date} onChange={(v) => setDate(v)} /></label>
       </div>
       <label className="f">{t("How it was given", "Cómo se entregó")}
         <select value={method} onChange={(e) => setMethod(e.target.value)}>

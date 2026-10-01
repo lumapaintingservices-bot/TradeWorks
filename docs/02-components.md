@@ -48,6 +48,12 @@ Big avatar (click = pick a photo, camera badge) + "Upload photo" / "Change photo
 320px square JPEG (squareImage in src/lib/image.ts). Settings > General > Your profile (everyone; workers change the photo on their worker
 record, src/data/avatar.ts useMyPhoto) and Team > Edit worker (saved with Save). User menu: "Profile & photo".
 
+## Date picker [.dtp] → /src/ui/DatePicker.tsx (idea from shadcn Date Picker)
+Button (calendar icon + "Thu, Oct 1, 2026") that opens a month calendar (Popover style, position fixed like the Combobox): ‹ month ›,
+Su–Sa, today ring, picked day filled, other months dim, min / max days disabled; Today + Clear (`clearable`). Keys: arrows, PageUp / PageDown,
+Home, Enter, Esc. Replaces every browser date input (estimate, calendar, tasks, hours, payments, expenses, notes, client profile, lead form).
+Helpers in src/lib/datepick.ts. Radios: global shadcn-style circle (base.css).
+
 ## Input group [.ig] (idea from shadcn Input Group)
 A box with text addons inside the border: `<div className="ig"><span className="ig-a">$</span><NumInput/><span className="ig-a ig-u">/sq ft</span></div>`.
 Focus ring on the whole box; `.off` = disabled look. Used by the Measurements card and Settings > Job types.

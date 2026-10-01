@@ -7,6 +7,7 @@ import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
 import { ask } from "../../ui/confirm";
 import { Combobox } from "../../ui/Combobox";
+import { DatePicker } from "../../ui/DatePicker";
 
 /** Write or edit one note: title, text, column, priority, due date, linked job, person in charge. */
 export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onSave, onDelete, onClose }: {
@@ -29,7 +30,7 @@ export function NoteEditor({ note, isNew, cols, estimates, clients, workers, onS
         <label className="f">{t("Note", "Nota")}<textarea rows={6} value={d.text} maxLength={5000} placeholder={t("Write anything…", "Escribe lo que quieras…")} onChange={(e) => set({ text: e.target.value })} /></label>
         <div className="grid2">
           <label className="f">{t("Column", "Columna")}<select value={d.col} onChange={(e) => set({ col: e.target.value })}>{cols.map((c) => <option key={c.id} value={c.id}>{colName(c, es)}</option>)}</select></label>
-          <label className="f">{t("Due date", "Fecha límite")}<input type="date" value={d.due || ""} onChange={(e) => set({ due: e.target.value })} /></label>
+          <label className="f">{t("Due date", "Fecha límite")}<DatePicker value={d.due || ""} clearable onChange={(v) => set({ due: v })} /></label>
         </div>
         <div className="f nb-prio-f">{t("Priority", "Prioridad")}
           <div className="seg nb-prio">

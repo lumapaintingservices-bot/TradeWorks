@@ -104,6 +104,18 @@ export function decideInvite(a: { invite: InviteLite | null; docEmail: string; u
   return { kind: "accept" };
 }
 
+/**
+ * Who loses access when a worker record is deleted or marked inactive: the WORKER logins linked to it (never an owner /
+ * admin) and the worker invitations still waiting for it.
+ */
+export function workerAccess(members: { uid: string; role: string; workerId?: string }[], invites: { email: string; role: string; workerId?: string }[], workerId: string): { uids: string[]; emails: string[] } {
+  if (!workerId) return { uids: [], emails: [] };
+  return {
+    uids: members.filter((m) => m.role === "worker" && m.workerId === workerId).map((m) => m.uid),
+    emails: invites.filter((i) => i.role === "worker" && i.workerId === workerId).map((i) => i.email),
+  };
+}
+
 /* ---------- role-change rules ---------- */
 export type MemberLite = { uid: string; role: Role };
 export type Denial = "not-allowed" | "primary-owner" | "last-owner" | "admin-workers-only" | "same-role" | "not-a-member" | "platform-only";
