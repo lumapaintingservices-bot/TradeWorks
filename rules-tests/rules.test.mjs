@@ -119,21 +119,26 @@ await no("other-company admin deletes invite", () => deleteDoc(doc(as("adm2", "a
 await no("other-company admin reads company", () => getDoc(doc(as("adm2", "a2@x.com"), C)));
 await no("other-company admin reads estimates", () => getDocs(collection(as("adm2", "a2@x.com"), C + "/estimates")));
 
-// ---- owner
-await ok("owner promotes worker", () => updateDoc(doc(own, C + "/members/wnolink"), { role: "admin" }));
+// ---- owner (making owners / admins and inviting them: only the TradeWorks platform admin)
+await no("owner who is not a platform admin promotes worker", () => updateDoc(doc(own, C + "/members/wnolink"), { role: "admin" }));
+await no("owner who is not a platform admin invites an admin", () => setDoc(doc(own2, "invites/nope@x.com"), { companyId: "c1", companyName: "A", role: "admin", invitedBy: "own2" }));
+await ok("owner who is not a platform admin invites a worker", () => setDoc(doc(own2, "invites/wk2@x.com"), { companyId: "c1", companyName: "A", role: "worker", invitedBy: "own2" }));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "admins/own"), { note: "test" }); });
+await ok("platform admin (owner) promotes worker", () => updateDoc(doc(own, C + "/members/wnolink"), { role: "admin" }));
 await ok("owner demotes admin", () => updateDoc(doc(own, C + "/members/wnolink"), { role: "worker" }));
 await no("owner sets bogus role", () => updateDoc(doc(own, C + "/members/wnolink"), { role: "god" }));
 await no("owner edits member email", () => updateDoc(doc(own, C + "/members/wnolink"), { email: "x@x.com" }));
 await ok("2nd owner demotes self", () => updateDoc(doc(own2, C + "/members/own2"), { role: "admin" }));
-await ok("owner re-promotes 2nd", () => updateDoc(doc(own, C + "/members/own2"), { role: "owner" }));
+await no("2nd owner cannot promote themselves back", () => updateDoc(doc(own2, C + "/members/own2"), { role: "owner" }));
+await ok("platform admin re-promotes 2nd", () => updateDoc(doc(own, C + "/members/own2"), { role: "owner" }));
 await no("2nd owner demotes creator", () => updateDoc(doc(own2, C + "/members/own"), { role: "admin" }));
 await no("2nd owner deletes creator", () => deleteDoc(doc(own2, C + "/members/own")));
 await no("creator cannot leave", () => deleteDoc(doc(own, C + "/members/own")));
 await ok("owner removes admin", () => deleteDoc(doc(own, C + "/members/adm")));
 await setDoc(doc(env.authenticatedContext("x").firestore(), "x/y"), { a: 1 }).catch(() => {}); // noop
 await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), C + "/members/adm"), { role: "admin" }); });
-await ok("owner invites admin", () => setDoc(doc(own, "invites/newadm@x.com"), { companyId: "c1", companyName: "A", role: "admin", invitedBy: "own", invitedByName: "O", createdAt: serverTimestamp() }));
-await ok("owner invites owner", () => setDoc(doc(own, "invites/newown@x.com"), { companyId: "c1", companyName: "A", role: "owner", invitedBy: "own" }));
+await ok("platform admin (owner) invites admin", () => setDoc(doc(own, "invites/newadm@x.com"), { companyId: "c1", companyName: "A", role: "admin", invitedBy: "own", invitedByName: "O", createdAt: serverTimestamp() }));
+await ok("platform admin (owner) invites owner", () => setDoc(doc(own, "invites/newown@x.com"), { companyId: "c1", companyName: "A", role: "owner", invitedBy: "own" }));
 await ok("owner overwrites invite", () => setDoc(doc(own, "invites/boss@x.com"), { companyId: "c1", companyName: "A", role: "worker", invitedBy: "own" }));
 await no("owner invites into other company", () => setDoc(doc(own, "invites/q2@x.com"), { companyId: "c2", companyName: "B", role: "worker", invitedBy: "own" }));
 await ok("member leaves (worker)", () => deleteDoc(doc(wrk2, C + "/members/wrk2")));

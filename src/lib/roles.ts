@@ -76,9 +76,12 @@ export type InviteLite = { companyId: string; role: string; email?: string };
 export const normEmail = (e: string | null | undefined): string => (e || "").trim().toLowerCase();
 export const isEmail = (e: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e.trim());
 
-/** Which roles may this actor invite? Owners any role, admins workers only, workers nobody. */
-export const canInviteRole = (actor: Role | null | undefined, invited: Role): boolean =>
-  actor === "owner" ? true : actor === "admin" ? invited === "worker" : false;
+/**
+ * Which roles may this actor invite? Owners and admins invite WORKERS to their company; owners and admins are invited
+ * only by the TradeWorks platform admin (owner rule 2026-10-01), who is the owner of the companies they set up.
+ */
+export const canInviteRole = (actor: Role | null | undefined, invited: Role, isPlatformAdmin = false): boolean =>
+  invited === "worker" ? actor === "owner" || actor === "admin" : actor === "owner" && isPlatformAdmin;
 
 export type InviteDecision =
   | { kind: "none" }                 // no invite for this user
@@ -103,18 +106,19 @@ export function decideInvite(a: { invite: InviteLite | null; docEmail: string; u
 
 /* ---------- role-change rules ---------- */
 export type MemberLite = { uid: string; role: Role };
-export type Denial = "not-allowed" | "primary-owner" | "last-owner" | "admin-workers-only" | "same-role" | "not-a-member";
+export type Denial = "not-allowed" | "primary-owner" | "last-owner" | "admin-workers-only" | "same-role" | "not-a-member" | "platform-only";
 export type Verdict = { ok: true } | { ok: false; reason: Denial };
 const ok: Verdict = { ok: true };
 const no = (reason: Denial): Verdict => ({ ok: false, reason });
 const ownerCount = (ms: MemberLite[]) => ms.filter((m) => m.role === "owner").length;
 
-type Ctx = { actor: MemberLite; members: MemberLite[]; primaryOwnerUid?: string };
+type Ctx = { actor: MemberLite; members: MemberLite[]; primaryOwnerUid?: string; isPlatformAdmin?: boolean };
 
 /**
  * May `actor` set `targetUid`'s role to `newRole`?
  *  - the company creator (primary owner) and the last owner can never be demoted
  *  - owners can change anyone else; admins may not change roles at all (workers only stay workers: "same-role" no-op)
+ *  - making someone an owner or admin: only the TradeWorks platform admin (owners can only make people workers)
  *  - workers can change nothing
  */
 export function canChangeRole(c: Ctx & { targetUid: string; newRole: Role }): Verdict {
@@ -126,6 +130,7 @@ export function canChangeRole(c: Ctx & { targetUid: string; newRole: Role }): Ve
     if (c.primaryOwnerUid && target.uid === c.primaryOwnerUid) return no("primary-owner");
     if (ownerCount(c.members) <= 1) return no("last-owner");
   }
+  if (c.newRole !== "worker" && !c.isPlatformAdmin) return no("platform-only");
   return ok;
 }
 
@@ -175,6 +180,7 @@ export const denialText = (d: Denial): [string, string] => {
     case "last-owner": return ["A company needs at least one owner.", "La empresa necesita al menos un dueño."];
     case "admin-workers-only": return ["Admins can only manage workers.", "Los administradores solo pueden gestionar trabajadores."];
     case "same-role": return ["Already has that role.", "Ya tiene ese rol."];
+    case "platform-only": return ["Only TradeWorks can make someone an owner or admin.", "Solo TradeWorks puede hacer a alguien dueño o administrador."];
     case "not-a-member": return ["That person is not a member.", "Esa persona no es miembro."];
     default: return ["You are not allowed to do that.", "No tienes permiso para hacerlo."];
   }

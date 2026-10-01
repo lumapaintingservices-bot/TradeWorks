@@ -189,7 +189,8 @@ Settings > Job types: per type, Cabinet prices (moved from Prices) + measurement
 add from services or create a new service). The Prices card no longer writes the cabinet prices. Owner rule: build new UI the shadcn way. Merged (PR #33).
 Access control + clock by task (owner 2026-10-01; backup tag backup-2026-10-01-before-access-control):
 - Accounts are by invitation: only a TradeWorks platform admin (admins/{uid}, added by hand in the Firebase console; rules isPlatformAdmin())
-  creates companies; the owner sets up each client company (onboarding) and invites its people (an "Owner" invite for the contractor).
+  creates companies; the owner sets up each client company (onboarding) and invites its owner. Invitations: owners / admins invite
+  WORKERS only; owner / admin invites and promotions to owner / admin only by the platform admin (canInviteRole, canChangeRole, rules).
   Anyone else who signs up sees "You need an invitation" (App.tsx NoAccess, roles.ts onboardingView). Demo mode: everyone may create.
 - Login / sign-up: PasswordInput with show / hide (src/ui/PasswordInput.tsx); sign-up says it is for invited people.
 - Time clock always runs for ONE task of today (clockTaskOptions, clockFor): worker picks it (radio cards), owner's Team "Clock in" opens a

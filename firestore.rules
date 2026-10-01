@@ -168,6 +168,8 @@ service cloud.firestore {
         allow update: if
           (isOwner(cid) && uid != companyOwnerUid(cid)
             && request.resource.data.role in ['owner', 'admin', 'worker']
+            // making someone an owner or admin: only the TradeWorks platform admin
+            && (request.resource.data.role == resource.data.role || request.resource.data.role == 'worker' || isPlatformAdmin())
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role', 'workerId']))
           || (admin(cid) && uid != request.auth.uid
             && resource.data.role == 'worker' && request.resource.data.role == 'worker'
@@ -258,9 +260,10 @@ service cloud.firestore {
         && d.invitedBy == request.auth.uid;
     }
     // owners invite any role; admins invite workers only
-    function mayInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    // owners / admins invite WORKERS; an owner or admin is invited only by the TradeWorks platform admin (as owner of that company)
+    function mayInvite(d) { return (admin(d.companyId) && d.role == 'worker') || (isOwner(d.companyId) && isPlatformAdmin()); }
     // same limits for changing / revoking an existing invite
-    function mayManageInvite(d) { return isOwner(d.companyId) || (admin(d.companyId) && d.role == 'worker'); }
+    function mayManageInvite(d) { return (admin(d.companyId) && d.role == 'worker') || (isOwner(d.companyId) && (d.role == 'worker' || isPlatformAdmin())); }
     match /invites/{email} {
       // the invited person reads their own; owners/admins list their company's (query where companyId == cid)
       allow read: if isInvitee(email) || (resource != null && admin(resource.data.companyId));

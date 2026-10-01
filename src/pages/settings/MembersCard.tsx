@@ -26,7 +26,7 @@ export default function MembersCard() {
   const t = useT();
   const lang = useUi((s) => s.lang);
   const toast = useUi((s) => s.toast);
-  const { user, company, role } = useAuth();
+  const { user, company, role, isPlatformAdmin } = useAuth();
   const { rows: workerRows } = useWorkers();
   const myPhoto = useMyPhoto().url;
   const [members, setMembers] = useState<Member[] | null>(null);
@@ -55,7 +55,7 @@ export default function MembersCard() {
 
   const me = { uid: user.uid, role: role as Role };
   const lite = (members || []).map((m) => ({ uid: m.uid, role: m.role }));
-  const invitable = ROLES.filter((r) => canInviteRole(role, r));
+  const invitable = ROLES.filter((r) => canInviteRole(role, r, isPlatformAdmin));
   const tellDenied = (r: Parameters<typeof denialText>[0]) => toast(t(...denialText(r)));
 
   const message = (inv: Invite) => {
@@ -74,7 +74,7 @@ export default function MembersCard() {
     setErr("");
     const e = normEmail(email);
     if (!isEmail(e)) { setErr(t("Type a valid email address.", "Escribe un correo válido.")); return; }
-    if (!canInviteRole(role, inviteRole)) { setErr(t("You cannot invite that role.", "No puedes invitar a ese rol.")); return; }
+    if (!canInviteRole(role, inviteRole, isPlatformAdmin)) { setErr(t("You cannot invite that role.", "No puedes invitar a ese rol.")); return; }
     if ((members || []).some((m) => normEmail(m.email) === e)) { setErr(t("That person is already in your team.", "Esa persona ya está en tu equipo.")); return; }
     setBusy(true);
     try {
@@ -94,7 +94,7 @@ export default function MembersCard() {
     catch { toast(t("Could not cancel the invite.", "No se pudo cancelar la invitación.")); }
   };
   const changeRole = async (m: Member, newRole: Role) => {
-    const v = canChangeRole({ actor: me, members: lite, targetUid: m.uid, newRole, primaryOwnerUid: company.ownerUid });
+    const v = canChangeRole({ actor: me, members: lite, targetUid: m.uid, newRole, primaryOwnerUid: company.ownerUid, isPlatformAdmin });
     if (!v.ok) return tellDenied(v.reason);
     try { await backend.updateMember(company.id, m.uid, { role: newRole, ...(newRole !== "worker" ? { workerId: null } : {}) }); await load(); toast(t("Role updated", "Rol actualizado")); }
     catch { toast(t("Could not change the role.", "No se pudo cambiar el rol.")); }
