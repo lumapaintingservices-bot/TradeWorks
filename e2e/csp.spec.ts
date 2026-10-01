@@ -38,7 +38,7 @@ test("security headers are served on every page, the client link cannot be frame
 });
 
 test("the CSP is really enforced: an inline script and a foreign image are blocked", async ({ page, watch }) => {
-  watch.allow(/Refused to (execute|load)/);   // the two blocked things below are the point of this test
+  watch.allow(/Refused to (execute|load)|violates the following Content Security Policy/);   // the two blocked things below are the point of this test (older / newer Chromium wording)
   await page.addInitScript(() => { (window as unknown as { __v: string[] }).__v = []; document.addEventListener("securitypolicyviolation", (e) => (window as unknown as { __v: string[] }).__v.push(e.violatedDirective + " " + e.blockedURI)); });
   await page.goto("/login");
   await page.evaluate(() => {

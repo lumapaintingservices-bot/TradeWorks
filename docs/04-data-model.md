@@ -12,7 +12,7 @@ companies/{companyId}                { name, legalName, phone, email, website, a
                                        trackLocation }   save workers' phone location at clock-in/out (team map, src/lib/geo.ts)
 companies/{cid}/members/{uid}        { role:'owner'|'admin'|'worker', workerId? }
 companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbering{nextEst,nextInv},
-                                       processDays, scope{en[],es[]}, terms{en[],es[]}, typePresets{interior,exterior,other},
+                                       processDays, scope{en[],es[]}, terms{en[],es[]}, typePresets{interior,exterior,other}, measures{[jobType]: serviceId[]} (src/lib/measures.ts),
                                        templates[], jobTemplates[], leadSources[], production, services[],
                                        followUpDays, websiteUrl, instagramUrl, reviewUrl, portalUrl,
                                        payZelle, payZelleName, payNote, payMethods[] (chips), payHandles{venmo,cashapp,paypal,checkTo},

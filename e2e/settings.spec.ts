@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { demoCompanyId, demoRows, expect, newCabinetEstimate, signUpAndSkip, test } from "./helpers";
 
-/** (f) settings: a new door price is what the next estimate starts with; backup -> damage -> restore brings everything back. */
+/** (f) settings: a new door price (Settings > Job types > Kitchen cabinets) is what the next estimate starts with; backup -> damage -> restore brings everything back. */
 test("door rate flows into new estimates", async ({ page }) => {
   await signUpAndSkip(page);
-  await page.goto("/settings?section=pricing");
+  await page.goto("/settings?section=jobtypes");
   await page.getByLabel("Price per door ($)").fill("95");
   await page.getByLabel("Price per drawer front ($)").fill("60");
-  await page.locator(".card", { hasText: "Prices & estimate defaults" }).getByRole("button", { name: "Save", exact: true }).click();
+  await page.locator("#jobtypes").getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved").first()).toBeVisible();
 
   await newCabinetEstimate(page);
@@ -21,9 +21,9 @@ test("door rate flows into new estimates", async ({ page }) => {
   expect((await demoRows<{ doorRate: number }>(page, cid, "estimates"))[0].doorRate).toBe(95);
 
   // an estimate that already exists keeps its own price when the default changes later
-  await page.goto("/settings?section=pricing");
+  await page.goto("/settings?section=jobtypes");
   await page.getByLabel("Price per door ($)").fill("120");
-  await page.locator(".card", { hasText: "Prices & estimate defaults" }).getByRole("button", { name: "Save", exact: true }).click();
+  await page.locator("#jobtypes").getByRole("button", { name: "Save", exact: true }).click();
   await expect(page.getByText("Saved").first()).toBeVisible();
   await page.goto("/estimates");
   await expect(page.locator("table tbody tr").first()).toContainText("$1,070.00");

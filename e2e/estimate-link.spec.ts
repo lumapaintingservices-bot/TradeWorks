@@ -1,7 +1,7 @@
 import { expect, newCabinetEstimate, sign, signUpAndSkip, test } from "./helpers";
 
-/** (a) the whole selling loop: estimate -> client link -> options, signature, Zelle, chat -> owner confirms the deposit. */
-test("estimate to client link to signed, deposit claimed, confirmed and invoiced", async ({ page, context }) => {
+/** (a) the whole selling loop: estimate -> client link -> options, signature, payment schedule, chat -> owner invoices, deposit paid. */
+test("estimate to client link to signed, invoiced and deposit paid", async ({ page, context }) => {
   await signUpAndSkip(page);
 
   // the owner's Zelle details (the client sees them after signing)
@@ -51,11 +51,10 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   await client.getByRole("button", { name: /^Accept estimate/ }).click();
   await expect(client.getByText(/Thank you! Your project is confirmed/).first()).toBeVisible();
 
-  // Zelle box: details visible, deposit is 50% of $1,275
-  await expect(client.locator(".pt-pm").getByText(/pay@luma\.example/)).toBeVisible();
-  await expect(client.locator(".pt-amt b")).toHaveText("$637.50");
-  await client.getByRole("button", { name: "I sent the Zelle" }).click();
-  await expect(client.getByText(/We'll confirm your payment shortly/)).toBeVisible();
+  // deposit at signing is off by default (PR #24): nothing to pay now, the client sees the payment schedule (50% of $1,275 first)
+  await expect(client.getByRole("heading", { name: "Your payments" })).toBeVisible();
+  await expect(client.locator(".pt-amt b").first()).toHaveText("$637.50");
+  await expect(client.getByRole("button", { name: "I sent the Zelle" })).toHaveCount(0);
 
   // chat
   await client.getByPlaceholder("Write a message").fill("When can you start?");
@@ -63,8 +62,7 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   await expect(client.locator(".pt-msg", { hasText: "When can you start?" })).toBeVisible();
   await client.close();
 
-  // ---- back on the owner's screen: Accepted + deposit claim + the chat message
-  await expect(page.getByText("Confirm the deposit")).toBeVisible();
+  // ---- back on the owner's screen: Accepted + the chat message
   await expect(page.locator(".owner-chat", { hasText: "When can you start?" })).toBeVisible();
   await expect(page.locator("select").first()).toHaveValue("Accepted");
   await expect(page.locator(".totline.big", { hasText: "Total" }).first()).toContainText("$1,275.00");
@@ -72,9 +70,6 @@ test("estimate to client link to signed, deposit claimed, confirmed and invoiced
   // owner replies; the client sees it
   await page.getByPlaceholder("Reply to the client…").fill("Next Monday!");
   await page.getByRole("button", { name: "Send", exact: true }).click();
-
-  await page.getByRole("button", { name: "Deposit received" }).click();
-  await expect(page.locator("select").first()).toHaveValue("Deposit Paid");
 
   // invoices: one click builds deposit + balance from the estimate, then the deposit is marked paid
   await page.getByRole("button", { name: "Invoices", exact: true }).click();

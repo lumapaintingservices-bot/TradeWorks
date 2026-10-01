@@ -1,4 +1,5 @@
 import { expect, test as base, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 
 /** Console messages that are not the app's fault (fonts come from Google; the sandbox may have no internet). */
 const IGNORED = [/fonts\.(googleapis|gstatic)\.com/i, /ERR_(CERT|NAME|INTERNET|CONNECTION|PROXY|TUNNEL)/i];
@@ -92,7 +93,8 @@ export async function newCabinetEstimate(page: Page) {
 
 /** The bank-statement fixtures are dated September 2026, so the browser clock is pinned to that month (deterministic on any day). */
 export const freezeToday = (context: BrowserContext, iso = "2026-09-29T12:00:00") => context.clock.setFixedTime(new Date(iso));
-export const FIXTURES = new URL("../src/lib/fixtures/", import.meta.url).pathname;
+// fileURLToPath (not .pathname): a Windows path keeps its drive letter and spaces
+export const FIXTURES = fileURLToPath(new URL("../src/lib/fixtures/", import.meta.url));
 
 /** Says yes to every app confirm window ("Delete this…?") that shows up in this page (src/ui/confirm.tsx). */
 export async function acceptConfirms(page: Page) {

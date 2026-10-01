@@ -37,3 +37,25 @@
 .sig-info .muted{font-size:13px}
 .sig-acts{margin-top:8px}
 @media(max-width:640px){.sig-img{flex-basis:100%}}
+
+/* Measurements card (MeasuresCard.tsx) */
+.ms-sub{font-size:12.5px}
+.ms-card .card-b{container-type:inline-size}
+.ms-none{margin:-4px 2px 0;font-size:13px}
+.ms-head,.ms-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(120px,1fr) minmax(140px,1fr) 96px;gap:10px;align-items:center}
+.ms-head{font-size:12px;font-weight:600;color:var(--ink-3);padding:0 0 6px}
+.ms-head span:last-child,.ms-amt{text-align:right}
+.ms-row{padding:8px 0;border-top:1px solid var(--line-2)}
+.ms-name{font-size:14px;font-weight:500;color:var(--ink);min-width:0;overflow-wrap:anywhere;display:flex;flex-direction:column;gap:1px}
+.ms-name small{font-size:11.5px;font-weight:500;color:var(--warn)}
+.ms-row:not(.on) .ms-name{color:var(--ink-2)}
+.ms-amt{font-variant-numeric:tabular-nums;font-weight:600}
+.ms-row:not(.on) .ms-amt{color:var(--ink-3);font-weight:500}
+.ms-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;font-size:14px}
+.ms-foot b{font-size:16px;font-variant-numeric:tabular-nums}
+@container (max-width:560px){
+  .ms-head{display:none}
+  .ms-row{grid-template-columns:1fr 1fr;gap:8px 10px;padding:12px 0}
+  .ms-name{grid-column:1/-1}
+  .ms-amt{grid-column:1/-1;text-align:right}
+}

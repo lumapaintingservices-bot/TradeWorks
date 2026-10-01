@@ -144,6 +144,8 @@ export type Settings = {
   processDays: number;
   scope: { en: string[]; es: string[] }; terms: { en: string[]; es: string[] };
   typePresets: Partial<Record<string, TypePreset>>;
+  /** Measurements per job type (src/lib/measures.ts): catalog service ids counted on the estimate; missing = defaults. */
+  measures?: Record<string, string[]>;
   services: string; servicesEs: string;
   jobTemplates: { id: string; name: string; data: Partial<Estimate> }[];
   numbering: { nextEst: number; nextInv?: number };

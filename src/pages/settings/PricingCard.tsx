@@ -4,7 +4,7 @@ import { invNumberText, nextInvNumber, asInv } from "../../lib/invoices";
 import { counter, firstBadNumber } from "../../lib/settingsForm";
 import { usesCabinetTools } from "../../lib/trades";
 import type { Settings } from "../../lib/types";
-import { Check, Fold, Grid, Help, Num, Pills, SaveCard, Sub, Txt, useDraft } from "./parts";
+import { Check, Fold, Grid, Help, Num, SaveCard, Sub, Txt, useDraft } from "./parts";
 
 const pick = (s: Settings) => ({
   pricing: { ...s.pricing }, processDays: s.processDays, services: s.services || "", servicesEs: s.servicesEs || "",
@@ -19,9 +19,8 @@ export default function PricingCard() {
   const { rows: invs } = useInvoices();
   const { draft: d, setDraft, dirty } = useDraft(pick(settings));
   const p = d.pricing;
-  const painting = usesCabinetTools(settings.trade); // door / drawer / frame / box prices are for painting & cabinets only
+  const painting = usesCabinetTools(settings.trade); // cabinet wording is for painting & cabinets only
   const setP = (patch: Partial<Settings["pricing"]>) => setDraft({ ...d, pricing: { ...p, ...patch } });
-  const modeOpts = (none: string): [string, string][] => [["included", t("Included in the door price", "Incluido en el precio de la puerta")], ["separate", t("Charged separately", "Cobrado aparte")], ["none", none]];
 
   async function save() {
     const bad = firstBadNumber(d);
@@ -29,8 +28,9 @@ export default function PricingCard() {
     if (d.pricing.depositPct > 100) return t("The deposit can't be more than 100%.", "El depósito no puede pasar de 100%.");
     if (d.tax.rate > 100) return t("The tax rate can't be more than 100%.", "El impuesto no puede pasar de 100%.");
     if (d.processDays < 1) return t("Days on site must be at least 1.", "Los días en sitio deben ser al menos 1.");
+    const { doorRate: _d, drawerRate: _w, frameMode: _fm, frameRate: _fr, boxMode: _bm, boxRate: _br, ...own } = d.pricing;
     await update({
-      pricing: { ...settings.pricing, ...d.pricing }, processDays: Math.round(d.processDays),
+      pricing: { ...settings.pricing, ...own }, processDays: Math.round(d.processDays),
       services: d.services.trim(), servicesEs: d.servicesEs.trim(),
       tax: { ...settings.tax, ...d.tax, label: d.tax.label.trim(), labelEs: d.tax.labelEs.trim() },
       numbering: { ...settings.numbering, nextEst: counter(d.nextEst), nextInv: counter(d.nextInv) },
@@ -44,26 +44,8 @@ export default function PricingCard() {
     <SaveCard title={t("Prices & estimate defaults", "Precios y valores de los presupuestos")} hint={t("what every NEW estimate starts with", "con lo que empieza cada presupuesto NUEVO")} dirty={dirty} save={save} id="pricing">
       <Help>{t("These are your starting prices. You can still change them on each estimate; estimates you already wrote keep their own numbers.", "Estos son tus precios de partida. Los puedes cambiar en cada presupuesto; los que ya escribiste conservan sus números.")}</Help>
 
-      {painting && <>
-      <Sub>{t("Cabinets", "Gabinetes")}</Sub>
-      <Grid>
-        <Num label={t("Price per door ($)", "Precio por puerta ($)")} value={p.doorRate} onChange={(n) => setP({ doorRate: n })} step="1" />
-        <Num label={t("Price per drawer front ($)", "Precio por cajón ($)")} value={p.drawerRate} onChange={(n) => setP({ drawerRate: n })} step="1" />
-      </Grid>
-      <div className="st-two">
-        <div>
-          <div className="st-lbl">{t("Frames (the cabinet face frame)", "Marcos (el marco del gabinete)")}</div>
-          <Pills value={p.frameMode} options={modeOpts(t("Frames not painted", "Marcos no se pintan")) as [Settings["pricing"]["frameMode"], string][]} onChange={(v) => setP({ frameMode: v })} />
-          {p.frameMode === "separate" && <Num label={t("Price per frame ($)", "Precio por marco ($)")} value={p.frameRate} onChange={(n) => setP({ frameRate: n })} step="1" style={{ marginTop: 12, maxWidth: 200 }} />}
-        </div>
-        <div>
-          <div className="st-lbl">{t("Boxes (the cabinet body)", "Cajas (el cuerpo del gabinete)")}</div>
-          <Pills value={p.boxMode} options={modeOpts(t("Boxes not painted", "Cajas no se pintan")) as [Settings["pricing"]["boxMode"], string][]} onChange={(v) => setP({ boxMode: v })} />
-          {p.boxMode === "separate" && <Num label={t("Price per box ($)", "Precio por caja ($)")} value={p.boxRate} onChange={(n) => setP({ boxRate: n })} step="1" style={{ marginTop: 12, maxWidth: 200 }} />}
-        </div>
-      </div>
-      <Help>{t("“Included” means the door price already covers painting it. Choose “Charged separately” to add a line with its own price.", "“Incluido” significa que el precio de la puerta ya cubre pintarlo. Elige “Cobrado aparte” para agregar una línea con su propio precio.")}</Help>
-      </>}
+      <Help>{t("The prices of what you measure (doors, sq ft of walls, hours…) are now in Settings → Job types, for each job type.", "Los precios de lo que mides (puertas, pie² de paredes, horas…) ahora están en Ajustes → Tipos de trabajo, para cada tipo de trabajo.")}</Help>
+
 
       <Sub>{t("Deposit, validity and schedule", "Depósito, vigencia y calendario")}</Sub>
       <Grid>
