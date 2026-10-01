@@ -168,6 +168,11 @@ shadcn studio components (owner said "hazlo" 2026-10-01; backup tag backup-2026-
 browser confirm() (src/ui/confirm.tsx); toasts with icon + Undo (src/ui/Toaster.tsx, toast(text, { undo })); on/off settings are switches
 (input.sw); PhoneInput formats US numbers; Combobox for client / job pickers; sortable table headers (useTableSort); "⋯" RowMenu on invoice rows.
 See docs/02-components.md. Not done (offered, lower value): date picker, skeletons, drag to reorder line items.
+Same PR (#30), owner request 2026-10-01: theme switcher like Vercel Geist (src/ui/ThemeSwitcher.tsx: match device / light / dark) in
+Settings > General and the user menu; sidebar bottom like shadcn dashboard-01 (Settings + NavUser: avatar, name, e-mail, menu with
+Settings, Language & appearance, theme, Sign out; src/layout/NavUser.tsx; footer sticky). The EN/ES button is gone from the sidebar and
+the phone top bar: app language only in Settings (login, onboarding and client pages keep their own). Phone More sheet ends with the
+user, theme and Sign out. Workers: Settings shows only language & appearance (no section menu).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

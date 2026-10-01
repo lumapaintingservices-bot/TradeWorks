@@ -7,7 +7,7 @@ import { InviteBanner } from "../auth/InviteBanner";
 import { RoleBadge } from "../auth/RoleBadge";
 import { setTop } from "../data/repo";
 import { backend } from "../auth/backend";
-import { can, canCreateCompany, homeFor, roleLabel, type Role } from "../lib/roles";
+import { can, canCreateCompany, homeFor, type Role } from "../lib/roles";
 import { useT } from "../i18n";
 import { useUi } from "../store/ui";
 import { Icon } from "../ui/Icon";
@@ -21,22 +21,13 @@ import { useCrewSync } from "../data/crew";
 import { useDepositOnSign } from "../data/deposit";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
-import { hasFirebase } from "../lib/firebase";
 import LocationPing from "../pages/team/LocationPing";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { Toaster } from "../ui/Toaster";
 import { modKey, QuickMenu, SearchPalette } from "./QuickActions";
+import { NavUser, UserHead } from "./NavUser";
+import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
-function LangSwitch() {
-  const { lang, setLang } = useUi();
-  return (
-    <div className="seg" role="group" aria-label="Language">
-      {(["en", "es"] as const).map((l) => (
-        <button key={l} className={lang === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>
-      ))}
-    </div>
-  );
-}
 
 const Badges = createContext<Record<string, number>>({});
 /** Folded sidebar (icons only): names show as a tooltip beside the icon on hover / keyboard focus. */
@@ -134,7 +125,7 @@ function ShellBody() {
   const t = useT();
   const nav = useNavigate();
   const loc = useLocation();
-  const { user, company, role } = useAuth();
+  const { company, role } = useAuth();
   const [more, setMore] = useState(false);
   const [ws, setWs] = useState(false);       // desktop popover
   const [wsMore, setWsMore] = useState(false); // list inside the mobile More sheet
@@ -207,15 +198,10 @@ function ShellBody() {
           <Icon name="search" size={17} /><span>{t("Search…", "Buscar…")}</span><kbd>{modKey()} K</kbd></MiniBtn>}
         {items.work.length > 0 && <div className="sb-lbl">{t("Work", "Trabajo")}</div>}
         <nav>{items.work.map((it) => <Item key={it.to} it={it} />)}</nav>
-        {items.business.length > 0 && <div className="sb-lbl">{t("Business", "Negocio")}</div>}
-        <nav>{items.business.map((it) => <Item key={it.to} it={it} />)}</nav>
         <div className="sb-foot">
-          <div className="row"><span className="cloud" title={hasFirebase ? undefined : t("No Firebase keys: data stays in this browser only", "Sin claves de Firebase: los datos solo quedan en este navegador")}><i style={hasFirebase ? undefined : { background: "var(--warn, #F79009)" }} /><span>{hasFirebase ? t("Cloud on", "Nube activa") : t("Demo mode", "Modo demo")}</span></span><LangSwitch /></div>
-          <div className="me">
-            <span className="av" title={mini ? [user?.name, user?.email].filter(Boolean).join(" · ") : undefined}>{(user?.name || user?.email || "?").slice(0, 2).toUpperCase()}</span>
-            <div><b>{user?.name || company?.name}</b><span>{role ? t(...roleLabel(role)) + " · " : ""}{user?.email}</span></div>
-            <button className="btn sm" title={t("Sign out", "Salir")} onClick={() => backend.signOut()}>{t("Sign out", "Salir")}</button>
-          </div>
+          {/* like shadcn dashboard-01: Settings at the bottom, then the signed-in person with their menu */}
+          <nav className="sb-sec">{items.business.map((it) => <Item key={it.to} it={it} />)}</nav>
+          <NavUser mini={mini} onTip={(text, el) => { const r = el?.getBoundingClientRect(); setTipAt(text && r ? { text, top: r.top + r.height / 2 } : null); }} />
         </div>
       </aside>
       {mini && tipAt && <div className="sb-tip" style={{ top: tipAt.top }} aria-hidden>{tipAt.text}</div>}
@@ -223,7 +209,6 @@ function ShellBody() {
 
       <header className="mtop">
         <div className="sb-top" onClick={() => nav(homeFor(role))}><Logo size={28} /><b>TradeWorks</b></div>
-        <LangSwitch />
         {canNew && <button className="btn sm icon-only" onClick={() => setSearch(true)} aria-label={t("Search", "Buscar")}><Icon name="search" size={18} /></button>}
         {canNew && <button className="btn pri sm" aria-haspopup="menu" aria-expanded={qc === "sheet"} onClick={() => setQc("sheet")}><Icon name="plus" size={16} />{t("New", "Nuevo")}</button>}
       </header>
@@ -243,7 +228,10 @@ function ShellBody() {
             <span className="ws-chev"><Chevron /></span>
           </button>
           {wsMore && <WorkspaceList onDone={() => setMore(false)} />}
-          <button className="nav-item" onClick={() => backend.signOut()}><Icon name="user" /><span>{t("Sign out", "Salir")}</span></button>
+          <div className="more-user">
+            <UserHead />
+            <div className="mu-row"><ThemeSwitcher /><button className="btn sm" onClick={() => backend.signOut()}><Icon name="logout" size={16} />{t("Sign out", "Salir")}</button></div>
+          </div>
         </div></div>
       )}
       <nav className="bnav">

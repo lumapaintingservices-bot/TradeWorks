@@ -37,6 +37,13 @@ disabled and focus ring supported.
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 
+## Theme switcher [.thsw] → /src/ui/ThemeSwitcher.tsx (idea from Vercel Geist Theme Switcher)
+Pill with three round icon buttons: match device / light / dark (radio group, ← → keys). Settings > General and the user menu.
+
+## User menu → /src/layout/NavUser.tsx (idea from shadcn dashboard-01 NavUser)
+Sidebar bottom: Settings, then avatar + name + e-mail + ⇅. Menu (opens beside the sidebar): who / cloud or demo / role, Settings,
+Language & appearance, Theme, Sign out. Phones: the same block at the end of the More sheet. The app language is only in Settings.
+
 ## Sidebar [.v4-sb]
 White, border-right 1px --line. Top: TradeWorks logo 34px + "TradeWorks" 18/700 + subtitle.
 Workspace chip (company logo + name) → settings. "+ New estimate" black button full width.

@@ -29,6 +29,7 @@ import ShowcaseCard from "./settings/ShowcaseCard";
 import CardPayCard from "./settings/CardPayCard";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
+import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 import "./Settings.css";
 
 function LinkRow({ label, url }: { label: string; url: string }) {
@@ -48,16 +49,14 @@ function LinkRow({ label, url }: { label: string; url: string }) {
 
 function AppearanceCard() {
   const t = useT();
-  const { theme, setTheme, lang, setLang } = useUi();
+  const { theme, lang, setLang } = useUi();
   const opts: [ThemePref, string, string][] = [["light", "Light", "Claro"], ["dark", "Dark", "Oscuro"], ["auto", "Match device", "Igual al dispositivo"]];
   return (
     <div className="card">
       <div className="card-h"><h2>{t("Appearance & language", "Apariencia e idioma")}</h2></div>
       <div className="card-b">
         <div className="st-lbl">{t("Colors", "Colores")}</div>
-        <div className="tabs" style={{ marginBottom: 18 }}>
-          {opts.map(([k, en, es]) => <button key={k} className={theme === k ? "on" : ""} onClick={() => setTheme(k)}>{t(en, es)}</button>)}
-        </div>
+        <div className="st-theme"><ThemeSwitcher /><span>{(() => { const o = opts.find(([k]) => k === theme); return o ? t(o[1], o[2]) : ""; })()}</span></div>
         <div className="st-lbl">{t("App language", "Idioma de la app")}</div>
         <div className="pills">
           {(["en", "es"] as const).map((l) => <button key={l} className={"pill" + (lang === l ? " on" : "")} onClick={() => setLang(l)}>{l === "en" ? "English" : "Español"}</button>)}
@@ -298,26 +297,27 @@ export default function Settings() {
   const [params, setParams] = useSearchParams();
   const asked = params.get("section") || (location.hash === "#calendar-link" ? "calendar" : "");
   const sec = sections.find((s) => s.id === asked) || sections[0];
+  const only = sections.length === 1; // workers: just language & appearance, no section menu
   const go = (id: string) => { setParams({ section: id }, { replace: true }); window.scrollTo({ top: 0 }); };
   useEffect(() => { if (location.hash === "#calendar-link") setTimeout(() => document.getElementById("calendar-link")?.scrollIntoView({ block: "start" }), 50); }, []);
 
   return (
     <div className="page">
-      <div className="page-h"><div><h1>{t("Settings", "Ajustes")}</h1><p>{t("Defaults for new estimates. Existing estimates keep the values they were written with.", "Valores para presupuestos nuevos. Los presupuestos que ya existen conservan sus valores.")}</p></div></div>
-      <div className="st-layout">
-        <nav className="st-nav" aria-label={t("Settings sections", "Secciones de ajustes")}>
+      <div className="page-h"><div><h1>{t("Settings", "Ajustes")}</h1><p>{only ? t("Your language and how the app looks.", "Tu idioma y cómo se ve la app.") : t("Defaults for new estimates. Existing estimates keep the values they were written with.", "Valores para presupuestos nuevos. Los presupuestos que ya existen conservan sus valores.")}</p></div></div>
+      <div className={"st-layout" + (only ? " only" : "")}>
+        {!only && <nav className="st-nav" aria-label={t("Settings sections", "Secciones de ajustes")}>
           {sections.map((s) => (
             <button key={s.id} className={"st-nav-i" + (s.id === sec.id ? " on" : "")} aria-current={s.id === sec.id ? "page" : undefined} onClick={() => go(s.id)}>
               <Icon name={s.icon} size={18} /><span>{t(s.en, s.es)}</span>
             </button>
           ))}
-        </nav>
-        <label className="st-pick">
+        </nav>}
+        {!only && <label className="st-pick">
           <span>{t("Section", "Sección")}</span>
           <select value={sec.id} onChange={(e) => go(e.target.value)}>{sections.map((s) => <option key={s.id} value={s.id}>{t(s.en, s.es)}</option>)}</select>
-        </label>
+        </label>}
         <div className="st-main">
-          <div className="st-intro"><h2>{t(sec.en, sec.es)}</h2><p className="muted">{t(sec.descEn, sec.descEs)}</p></div>
+          {!only && <div className="st-intro"><h2>{t(sec.en, sec.es)}</h2><p className="muted">{t(sec.descEn, sec.descEs)}</p></div>}
           <div className="st-body" key={sec.id}>{sec.body()}</div>
         </div>
       </div>

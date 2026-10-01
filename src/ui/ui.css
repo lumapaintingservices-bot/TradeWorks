@@ -133,3 +133,14 @@ th.r .th-sort{flex-direction:row}
 .rm-it.danger{color:var(--bad)}
 .rm-it.danger svg{color:var(--bad)}
 .rm-it:disabled{opacity:.5;cursor:default}
+/* Theme switcher (ThemeSwitcher.tsx), idea from Vercel Geist: three round buttons in a pill */
+.thsw{display:inline-flex;align-items:center;height:32px;border-radius:999px;box-shadow:0 0 0 1px var(--line);background:var(--surface);flex:none}
+.thsw button{width:32px;height:32px;border:0;border-radius:999px;background:none;color:var(--ink-3);display:grid;place-items:center;padding:0;cursor:pointer}
+.thsw button svg{width:16px;height:16px}
+.thsw button:hover{color:var(--ink)}
+.thsw button.on{color:var(--ink);background:var(--surface);box-shadow:0 0 0 1px var(--ink-3),0 1px 2px rgba(16,24,40,.08)}
+html.tw-dark .thsw button.on{background:var(--surface-2)}
+.thsw button:focus-visible{outline:0;box-shadow:var(--focus-ring)}
+.thsw.sm{height:26px}
+.thsw.sm button{width:26px;height:26px}
+.thsw.sm button svg{width:14px;height:14px}
