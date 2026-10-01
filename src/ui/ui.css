@@ -79,8 +79,8 @@ a.badge:focus-visible,button.badge:focus-visible{outline:0;box-shadow:var(--focu
 .ask h2{font-size:17px;font-weight:600;line-height:1.35;margin:0;overflow-wrap:anywhere}
 .ask p{margin:6px 0 0;font-size:14px;color:var(--ink-2);line-height:1.5;overflow-wrap:anywhere}
 .ask-act{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
-.btn.ask-danger{background:var(--bad);border-color:var(--bad);color:#fff}
-.btn.ask-danger:hover{filter:brightness(.95)}
+.ask .btn.ask-danger,.ask .btn.ask-danger:hover{background:var(--bad);border-color:var(--bad);color:#fff}
+.ask .btn.ask-danger:hover{filter:brightness(.92)}
 @keyframes ask-fade{from{opacity:0}}
 @keyframes ask-in{from{transform:scale(.97);opacity:0}}
 @media(prefers-reduced-motion:reduce){.ask-back,.ask{animation:none}}
