@@ -179,7 +179,8 @@ Same PR: the red confirm button stays red on hover. Merged (PR #31).
 Profile photos (owner 2026-10-01, change or remove like shadcn): AvatarPicker (src/ui/AvatarPicker.tsx) in Settings > General > Your profile
 and Team > Edit worker. Workers: workers/{id}.photo (rules: a worker may change only the photo of their own record; Storage
 companies/{cid}/avatars/{wid}/); owners / admins: users/{uid}.avatar (Storage users/{uid}/avatar/). Crew copy carries crewPhotos for coworkers.
-Font changed to Figtree (owner request). Backup tag backup-2026-10-01-before-profile-photos. Needs Firestore + Storage rules published.
+Font changed to Figtree (owner request). Backup tag backup-2026-10-01-before-profile-photos. Merged (PR #32), Firestore + Storage rules published 2026-10-01.
+Owner said "later" (2026-10-01) to a Files page (file manager) and to email forwarding into the app.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
