@@ -146,7 +146,9 @@ payments" (first row "After the first day of work") and no pay button; the old Z
 owner's Shell (useDepositOnSign, src/data/deposit.ts) creates the job's invoices + a pay link for the first one as soon as the
 signature arrives, and the portal snapshot (s.deposit {atSign, pay {amount, token, paid}}) shows "Pay the deposit" -> /pay/token,
 then "Deposit received". publishPortal(e, s, company, invoices) now takes invoices. Printed estimate: "Deposit due at signing"
-when on.
+when on. Merged (PR #24), rules published 2026-09-30.
+Badges + checkboxes (shadcn/ui ideas, plain CSS): src/ui/Badge.tsx used by every pill (statuses keep the dot), global checkbox
+style in base.css (--chk / --chk-ink per container); dark-mode tints for --tile-*/--icon-*/--up-*/--down-* added (they were light).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

@@ -19,6 +19,7 @@ import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
 import { ClientForm } from "./ClientForm";
 import "./ClientProfile.css";
+import { Badge } from "../ui/Badge";
 
 export default function ClientProfile() {
   const t = useT();
@@ -164,8 +165,8 @@ export default function ClientProfile() {
                   <div key={r.id} className="cp-refrow">
                     <span className="cp-ref-who"><Link to={`/clients/${r.id}`}>{r.name}</Link>
                       <span className="muted">{fmtDate(dayOf(r.createdAt), lang)}</span>
-                      {row && <span className={"badge " + (row.status === "paid" ? "b-green" : row.status === "won" ? "b-blue" : "b-gray")}><i />
-                        {row.status === "paid" ? t("Job paid", "Trabajo pagado") : row.status === "won" ? t("Job won", "Trabajo ganado") : t("Lead", "Lead")}</span>}</span>
+                      {row && <Badge tone={row.status === "paid" ? "green" : row.status === "won" ? "blue" : "gray"} dot>
+                        {row.status === "paid" ? t("Job paid", "Trabajo pagado") : row.status === "won" ? t("Job won", "Trabajo ganado") : t("Lead", "Lead")}</Badge>}</span>
                     <span className="cp-ref-rw">
                       {rw ? <><span className="muted">✓ {t("Reward given", "Recompensa entregada")} · {money(rw.amount)} · {fmtDate(rw.paidAt, lang)}</span>
                           <button className="link-btn" onClick={() => undoReward(r)}>{t("Undo", "Deshacer")}</button></>
@@ -196,7 +197,7 @@ export default function ClientProfile() {
               <button className="cp-phb" onClick={() => setZoom(p.url)} title={[p.number, p.by ? "📷 " + p.by : "", p.caption].filter(Boolean).join(" · ")}>
                 <img src={p.url} alt={p.caption || p.number} loading="lazy" /></button>
               <button className="cp-phx" aria-label={t("Delete photo", "Borrar foto")} title={t("Delete photo", "Borrar foto")} onClick={() => delPhoto(p)}>×</button>
-              {p.by && <span className="cp-phby">{p.by}</span>}
+              {p.by && <Badge variant="overlay" size="sm" className="cp-phby">{p.by}</Badge>}
             </div>))}
           </div></div>
         </section>

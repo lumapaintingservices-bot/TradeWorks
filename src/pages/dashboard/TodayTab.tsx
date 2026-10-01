@@ -15,6 +15,7 @@ import { Icon } from "../../ui/Icon";
 import { StatusBadge } from "../../ui/StatusBadge";
 import { FollowUpList } from "../FollowUps";
 import "./dashboard.css";
+import { Badge } from "../../ui/Badge";
 
 /** Job status list of the "Jobs status" card (prototype JOB_ST, plus Viewed which the app tracks separately). */
 const JOB_ST: { k: EstStatus; en: string; es: string; ic: string }[] = [
@@ -111,7 +112,7 @@ export default function TodayTab({ onTab }: { onTab?: (tab: string) => void } = 
                         <tr key={e.id} className="click" onClick={() => nav(`/estimates/${e.id}`)}>
                           <td className={"db-when" + (now ? " now" : "")}><b>{dd.d}</b><span>{dd.m}</span></td>
                           <td><div className="db-nm">{nameOf(ctx, e)}</div><div className="db-sm">{jobWhat(e, lang)}</div></td>
-                          <td>{now ? <span className="badge b-teal"><i />{t("On site now", "En obra ahora")}</span> : <StatusBadge status={status} />}</td>
+                          <td>{now ? <Badge tone="teal" icon="pin">{t("On site now", "En obra ahora")}</Badge> : <StatusBadge status={status} />}</td>
                           <td className="db-addr">{e.address || "—"}</td>
                           <td className="db-num">{num(e.days) || 1} {t("d", "d")}</td>
                           <td className="db-num"><u>{e.number}</u></td>
@@ -126,7 +127,7 @@ export default function TodayTab({ onTab }: { onTab?: (tab: string) => void } = 
                       <span className="mid">
                         <span className="l1"><b>{nameOf(ctx, e)}</b><span className="db-sm">{e.number}</span></span>
                         <span className="l2" style={{ display: "block" }}>{jobWhat(e, lang)}</span>
-                        <span className="l3">{now ? <span className="badge b-teal"><i />{t("On site now", "En obra ahora")}</span> : <StatusBadge status={status} />}<span>{num(e.days) || 1} {t("d", "d")}</span></span>
+                        <span className="l3">{now ? <Badge tone="teal" icon="pin">{t("On site now", "En obra ahora")}</Badge> : <StatusBadge status={status} />}<span>{num(e.days) || 1} {t("d", "d")}</span></span>
                         {e.address && <span className="l2" style={{ display: "block", marginTop: 4 }}>{e.address}</span>}
                       </span>
                     </button>); })}

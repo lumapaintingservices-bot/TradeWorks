@@ -21,6 +21,7 @@ import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
 import "./chat.css";
+import { Badge } from "../../ui/Badge";
 
 const WON = ["Sent", "Viewed", "Accepted", "Deposit Paid", "Paid in Full"];
 const hhmm = (iso: string, lang: string) => { const d = new Date(iso); return isNaN(d.getTime()) ? "" : d.toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }); };
@@ -72,7 +73,7 @@ function ChatList({ active, onNew }: { active?: string; onNew?: () => void }) {
             <span className="chat-row-t">
               <span className="l1"><b>{c.jobLabel}</b><small>{when(c.last?.at)}</small></span>
               <span className="l2"><span>{c.last ? (c.last.by === me.key ? t("You: ", "Tú: ") : c.last.name + ": ") + c.last.text : t("No messages yet", "Sin mensajes todavía")}</span>
-                {c.closed ? <em className="chat-tag">{t("Closed", "Cerrado")}</em> : unread ? <i className="chat-dot" aria-label={t("New", "Nuevo")} /> : null}</span>
+                {c.closed ? <Badge variant="outline" size="sm">{t("Closed", "Cerrado")}</Badge> : unread ? <i className="chat-dot" aria-label={t("New", "Nuevo")} /> : null}</span>
             </span>
           </Link>);
       })}
@@ -183,10 +184,10 @@ function ChatThread({ chatId }: { chatId: string }) {
               const mine = m.by === me.key, prev = d.msgs[i - 1], sameAsPrev = prev && prev.by === m.by;
               return (
                 <div key={m.id} className={"chat-msg" + (mine ? " mine" : "") + (sameAsPrev ? " cont" : "")}>
-                  {!mine && !sameAsPrev && <span className="chat-name">{m.name || "—"}{!isWorkerKey(m.by) && <em>{t("Boss", "Jefe")}</em>}</span>}
+                  {!mine && !sameAsPrev && <span className="chat-name">{m.name || "—"}{!isWorkerKey(m.by) && <Badge tone="acc" size="sm">{t("Boss", "Jefe")}</Badge>}</span>}
                   <div className={"chat-bub" + (m.photo ? " has-ph" : "")}>
                     {m.photo?.url && <button type="button" className="chat-ph" onClick={() => setZoom(photos.indexOf(m))} aria-label={t("Open photo", "Abrir foto")}>
-                      <img src={m.photo.url} alt="" loading="lazy" />{kindName(m.photo.kind) && <em>{kindName(m.photo.kind)}</em>}</button>}
+                      <img src={m.photo.url} alt="" loading="lazy" />{kindName(m.photo.kind) && <Badge variant="overlay" size="sm" className="chat-ph-tag">{kindName(m.photo.kind)}</Badge>}</button>}
                     {m.text && <span className="chat-txt">{m.text}</span>}<small>{hhmm(m.at, lang)}</small></div>
                   {me.isBoss && <button type="button" className="chat-del" onClick={() => delMsg(m)} aria-label={t("Delete message", "Borrar mensaje")} title={t("Delete message", "Borrar mensaje")}>×</button>}
                 </div>);

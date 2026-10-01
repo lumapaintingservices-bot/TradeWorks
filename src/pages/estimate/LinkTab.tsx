@@ -13,6 +13,7 @@ import { fmtDate } from "../../lib/format";
 import type { Estimate, Settings } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Modal } from "../../ui/Modal";
+import { Badge } from "../../ui/Badge";
 
 export { brandOf };
 
@@ -89,7 +90,7 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
     <div className="stack">
       {sig && (
         <div className="card sig-card" id="signature"><div className="card-h"><h2>✍ {t("Signed by the client", "Firmado por el cliente")}</h2>
-          <span className="badge b-green"><i />{t("Signed", "Firmado")}</span></div>
+          <Badge tone="green" icon="check">{t("Signed", "Firmado")}</Badge></div>
           <div className="card-b sig-b">
             <div className="sig-img">{sigSrc ? <img src={sigSrc} alt={t("Client signature", "Firma del cliente")} /> : <span className="muted">—</span>}</div>
             <div className="sig-info">
@@ -103,7 +104,7 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
             </div>
           </div></div>)}
 
-      <div className="card"><div className="card-h"><h2>{t("Client link", "Enlace del cliente")}</h2>{signed && <span className="badge b-green"><i />{t("Signed", "Firmado")}</span>}</div><div className="card-b">
+      <div className="card"><div className="card-h"><h2>{t("Client link", "Enlace del cliente")}</h2>{signed && <Badge tone="green" icon="check" onClick={() => document.getElementById("signature")?.scrollIntoView({ behavior: "smooth" })}>{t("Signed", "Firmado")}</Badge>}</div><div className="card-b">
         <div className="linkbox">{link}</div>
         <div className="pills" style={{ marginTop: 12 }}>
           <button className="btn pri" onClick={openSend}>{t("Send to client", "Enviar al cliente")}</button>

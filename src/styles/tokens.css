@@ -33,6 +33,12 @@ html.tw-dark{
   --primary-btn:#F2F4F7; --primary-btn-hover:#FFFFFF; --active-nav:#262C37;
   --hatch:repeating-linear-gradient(135deg,#2A303B 0 6px,#20252E 6px 12px);
   --chart-grid:#262C37;
+  /* soft tints for badges / tiles: dark versions (the light pastels glared in dark mode) */
+  --tile-blue:#15233D; --icon-blue:#6FA0FF; --tile-green:#0F2A1E; --icon-green:#32D583;
+  --tile-purple:#221B3D; --icon-purple:#A48AFB; --tile-orange:#33200F; --icon-orange:#FF9C66;
+  --tile-pink:#33152A; --icon-pink:#F670C7; --tile-red:#371616; --icon-red:#F97066;
+  --tile-teal:#0D2A27; --icon-teal:#2ED3B7; --tile-amber:#33260C; --icon-amber:#FDB022;
+  --up-bg:#0F2A1E; --up-ink:#47CD89; --down-bg:#371616; --down-ink:#F97066;
 }
 html,body{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
 /* Client-facing pages (client link, lead form, documents) use the CONTRACTOR's brand color

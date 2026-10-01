@@ -9,7 +9,7 @@
 .docbar .seg button{border:0;background:none;border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;color:#4B5263;cursor:pointer}
 .docbar .seg button.on{background:#0B0D12;color:#fff}
 .docbar .chk{display:flex;gap:8px;align-items:center;font-size:14px;margin-left:2px}
-.docbar .chk input{width:17px;height:17px;padding:0;accent-color:#0B0D12}
+.docbar .chk input{width:17px;height:17px;padding:0;--chk:#0B0D12;--chk-ink:#fff}
 .docbar .btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 14px;border-radius:10px;border:1px solid #ECEEF2;background:#fff;color:#0B0D12;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .docbar .btn.pri{background:#0B0D12;border-color:#0B0D12;color:#fff}
 @media print{
