@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAccess, canChangeRole, canInviteRole, canLinkWorker, can, decideInvite, homeFor, isEmail, navFilter, normEmail, redirectFor,
-  canRemoveMember, canCreateCompany, onboardingView, workerAccess, workerScope, type MemberLite,
+  canRemoveMember, canCreateCompany, inviteMessage, onboardingView, workerAccess, workerAccessState, workerScope, type MemberLite,
 } from "./roles";
 
 describe("route permissions", () => {
@@ -177,5 +177,22 @@ describe("removing a worker's access", () => {
     expect(workerAccess(members, invites, "w1")).toEqual({ uids: ["u1"], emails: ["a@x.com"] });
     expect(workerAccess(members, invites, "w9")).toEqual({ uids: [], emails: [] });
     expect(workerAccess(members, invites, "")).toEqual({ uids: [], emails: [] });
+  });
+});
+
+describe("worker app access and the invitation message", () => {
+  it("a worker record: login linked, invitation waiting, or nothing", () => {
+    const members = [{ uid: "u1", role: "worker", workerId: "w1", email: "a@x.com" }, { uid: "u2", role: "admin", workerId: "w2", email: "b@x.com" }];
+    const invites = [{ email: "c@x.com", role: "worker", workerId: "w3" }];
+    expect(workerAccessState("w1", members, invites)).toEqual({ state: "app", email: "a@x.com" });
+    expect(workerAccessState("w2", members, invites)).toEqual({ state: "none" });   // an admin login is not a worker link
+    expect(workerAccessState("w3", members, invites)).toEqual({ state: "invited", email: "c@x.com" });
+    expect(workerAccessState("", members, invites)).toEqual({ state: "none" });
+  });
+  it("the message links to sign-up with the e-mail typed in, in the inviter's language", () => {
+    const en = inviteMessage({ companyName: "Luma", role: "worker", email: "sam+1@x.com" }, "en", "https://app.example");
+    expect(en).toContain("https://app.example/signup?email=sam%2B1%40x.com");
+    expect(en).toContain("as Worker");
+    expect(inviteMessage({ companyName: "Luma", role: "worker", email: "a@x.com" }, "es", "https://app.example")).toContain("como Trabajador");
   });
 });

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "../auth/AuthProvider";
-import { cleanDone, crewSnapshot, mergeDoneIntoCheck, snapshotChanged, toggleDone } from "../lib/crew";
+import { cleanDone, crewLangOf, crewSnapshot, mergeDoneIntoCheck, snapshotChanged, toggleDone } from "../lib/crew";
 import type { CrewJob } from "../lib/types";
-import { useClients, useCrewJobs, useEstimates, useJobChats, useWorkers } from "./hooks";
+import { useClients, useCrewJobs, useEstimates, useJobChats, useSettings, useWorkers } from "./hooks";
 import { patchRec, removeRec, saveRec, type Rec } from "./repo";
 
 /**
@@ -19,9 +19,11 @@ export function useCrewSync() {
   const { rows: clients, loading: l3 } = useClients();
   const { rows: workers, loading: l4 } = useWorkers();
   const { rows: chats, loading: l5 } = useJobChats();
+  const { settings, loading: l6 } = useSettings();
+  const lang = crewLangOf(settings); // the checklist language the Job day tab shows too
   const busy = useRef(new Set<string>());
   useEffect(() => {
-    if (!on || !cid || l1 || l2 || l3 || l4 || l5) return;
+    if (!on || !cid || l1 || l2 || l3 || l4 || l5 || l6) return;
     const run = (key: string, fn: () => Promise<unknown>) => {
       if (busy.current.has(key)) return;
       busy.current.add(key);
@@ -30,7 +32,7 @@ export function useCrewSync() {
     for (const e of ests) {
       const doc = docs.find((d) => d.id === e.id);
       if (!e.crew?.length) { if (doc) run("del:" + e.id, () => removeRec(cid, "crewjobs", e.id)); continue; }
-      const snap = crewSnapshot(e, clients, workers);
+      const snap = crewSnapshot(e, clients, workers, lang);
       if (!doc) {
         // first time: the crew starts from the ticks already on the estimate
         run("put:" + e.id, () => saveRec(cid, "crewjobs", { ...snap, done: cleanDone(e.check, snap.checklist), doneBy: {} } as CrewJob & Rec));
@@ -45,7 +47,7 @@ export function useCrewSync() {
     }
     // a deleted job: its crew copy goes too
     for (const d of docs) if (!ests.some((e) => e.id === d.id)) run("del:" + d.id, () => removeRec(cid, "crewjobs", d.id));
-  }, [on, cid, ests, docs, clients, workers, chats, l1, l2, l3, l4, l5, patchEst]);
+  }, [on, cid, ests, docs, clients, workers, chats, lang, l1, l2, l3, l4, l5, l6, patchEst]);
 }
 
 /** The open estimate editor keeps its own copy: bring the crew's ticks into it too (else its next save would undo them). */

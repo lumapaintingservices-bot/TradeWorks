@@ -7,10 +7,25 @@
 .jd-list{display:grid;gap:6px}
 .jd-day{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 2px}
 .jd-day span{text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink-2)}
-.jd-it{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;background:var(--surface);min-height:44px}
-.jd-it input{width:20px;height:20px;flex:none;padding:0;--chk:var(--ok);--chk-ink:#fff}
-.jd-it span{flex:1;min-width:0;line-height:1.4}
-.jd-it.on span{text-decoration:line-through;color:var(--ink-3)}
+.jd-it{display:flex;align-items:center;gap:8px;padding:4px 6px 4px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);min-height:46px}
+.jd-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0;padding:6px 0;cursor:pointer}
+.jd-l input{width:20px;height:20px;flex:none;padding:0;--chk:var(--ok);--chk-ink:#fff}
+.jd-l>span{flex:1;min-width:0;line-height:1.4}
+.jd-it.on .jd-l>span{text-decoration:line-through;color:var(--ink-3)}
+.jd-dayrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 2px}
+.jd-dayrow .jd-day{margin:0}
+.jd-lang{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--ink-2);margin:0 0 10px}
+.jd-lang select{height:32px;width:auto;font-size:13px;padding:0 28px 0 10px}
+.jd-who{margin:0 0 6px}
+.jd-who-p{display:inline-flex;align-items:center;gap:6px;padding-left:4px}
+.jd-who-p b{font-weight:600;color:var(--ink-3);font-size:12px}
+.jd-who-p.on b{color:inherit}
+/* who does it (AssignPicker) */
+.as-btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px dashed var(--line);border-radius:999px;background:none;color:var(--ink-3);font-size:12.5px;font-weight:500;white-space:nowrap;cursor:pointer}
+.as-btn:hover{border-color:var(--acc);color:var(--acc-ink)}
+.as-btn.set{border-style:solid;padding:0 6px;background:var(--surface)}
+.as-btn.day{height:28px;font-size:12px}
+.as-all{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:999px;background:var(--surface-2);color:var(--ink-3)}
 .jd-it em{font-style:normal;font-size:12px;color:var(--ink-3);white-space:nowrap}
 .jd-x{border:0;background:none;color:var(--ink-3);font-size:20px;line-height:1;padding:4px 8px;border-radius:8px}
 .jd-x:hover{background:var(--surface-2);color:var(--bad)}
@@ -56,6 +71,10 @@ pre.jd-shop{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14
   .ph-grid{grid-template-columns:1fr 1fr;gap:10px}
   .ph-meta{padding:8px}
   .jd-add .btn{flex:none}
+  .jd-it{flex-wrap:wrap;padding:4px 8px 6px 12px}
+  .jd-it .jd-l{flex-basis:calc(100% - 50px)}
+  .jd-it em{order:3;margin-left:30px}
+  .jd-it .pop-wrap{order:4;margin-left:auto}
 }
 
 /* ---- work order sheet (light, printable, extends doc.css) ---- */

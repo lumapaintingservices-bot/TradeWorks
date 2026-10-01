@@ -7,7 +7,7 @@ import { useWorkers } from "../../data/hooks";
 import { useMyPhoto } from "../../data/avatar";
 import { useT } from "../../i18n";
 import {
-  can, canChangeRole, canInviteRole, canLinkWorker, canRemoveMember, denialText, isEmail, normEmail, roleLabel, ROLES, type Role,
+  can, canChangeRole, canInviteRole, canLinkWorker, canRemoveMember, denialText, inviteMessage, isEmail, normEmail, roleLabel, ROLES, type Role,
 } from "../../lib/roles";
 import { useUi } from "../../store/ui";
 import { RoleBadge } from "../../auth/RoleBadge";
@@ -61,13 +61,7 @@ export default function MembersCard() {
   const invitable = ROLES.filter((r) => canInviteRole(role, r, isPlatformAdmin));
   const tellDenied = (r: Parameters<typeof denialText>[0]) => toast(t(...denialText(r)));
 
-  const message = (inv: Invite) => {
-    const [rEn, rEs] = roleLabel(inv.role);
-    const base = location.origin;
-    return lang === "es"
-      ? `¡Hola! Te invito a unirte a ${inv.companyName} en TradeWorks como ${rEs}.\n1. Abre ${base}/signup y crea tu cuenta con exactamente este correo: ${inv.email}\n2. Verifica tu correo (te llega un enlace; si no lo ves, revisa la carpeta de spam), entra en ${base}/login y toca "Unirme".`
-      : `Hi! I'm inviting you to join ${inv.companyName} on TradeWorks as ${rEn}.\n1. Open ${base}/signup and create your account with exactly this email: ${inv.email}\n2. Verify your email (you get a link; if you don't see it, check your spam folder), sign in at ${base}/login and tap "Join".`;
-  };
+  const message = (inv: Invite) => inviteMessage(inv, lang, location.origin);
   const copy = async (text: string) => {
     try { await navigator.clipboard.writeText(text); toast(t("Copied", "Copiado")); }
     catch { toast(t("Select the text and copy it", "Selecciona el texto y cópialo")); }

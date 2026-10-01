@@ -186,6 +186,23 @@ export function workerScope(col: string): { field: string; op?: "array-contains"
 
 export const roleLabel = (r: Role): [string, string] => (r === "owner" ? ["Owner", "Dueño"] : r === "admin" ? ["Admin", "Administrador"] : ["Worker", "Trabajador"]);
 
+/** The invitation text to send yourself (WhatsApp, text...) when the e-mail did not go out, in the inviter's language. */
+export function inviteMessage(inv: { companyName: string; role: Role; email: string }, lang: "en" | "es", origin: string): string {
+  const [rEn, rEs] = roleLabel(inv.role);
+  return lang === "es"
+    ? `¡Hola! Te invito a unirte a ${inv.companyName} en TradeWorks como ${rEs}.\n1. Abre ${origin}/signup?email=${encodeURIComponent(inv.email)} y crea tu cuenta con exactamente este correo: ${inv.email}\n2. Verifica tu correo (te llega un enlace; si no lo ves, revisa la carpeta de spam), entra en ${origin}/login y toca "Unirme".`
+    : `Hi! I'm inviting you to join ${inv.companyName} on TradeWorks as ${rEn}.\n1. Open ${origin}/signup?email=${encodeURIComponent(inv.email)} and create your account with exactly this email: ${inv.email}\n2. Verify your email (you get a link; if you don't see it, check your spam folder), sign in at ${origin}/login and tap "Join".`;
+}
+
+/** Can a worker record open the app? "app" = a login is linked to it, "invited" = an invitation is waiting, else "none". */
+export type WorkerAccess = { state: "app"; email: string } | { state: "invited"; email: string } | { state: "none" };
+export function workerAccessState(workerId: string, members: { role: string; workerId?: string; email?: string }[], invites: { email: string; role: string; workerId?: string }[]): WorkerAccess {
+  const m = workerId ? members.find((x) => x.role === "worker" && x.workerId === workerId) : undefined;
+  if (m) return { state: "app", email: m.email || "" };
+  const i = workerId ? invites.find((x) => x.role === "worker" && x.workerId === workerId) : undefined;
+  return i ? { state: "invited", email: i.email } : { state: "none" };
+}
+
 export const denialText = (d: Denial): [string, string] => {
   switch (d) {
     case "primary-owner": return ["The person who created the company cannot be removed or demoted.", "La persona que creó la empresa no se puede quitar ni bajar de nivel."];

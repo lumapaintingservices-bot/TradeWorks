@@ -9,7 +9,11 @@ import { fmtDate } from "../../lib/format";
 import { getLocation } from "../../lib/geo";
 import { num } from "../../lib/money";
 import { RANGE_KEYS, clockElapsed, clockFor, clockHHMM, clockTimes, hoursText, rangeBounds, type RangeKey } from "../../lib/team";
-import { clockTaskOptions, isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
+import { isMyTask, myHoursIn, myTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
+import { addDaysISO } from "../../lib/calendar";
+import { allWork, workToday, type WorkItem } from "../../lib/work";
+import { tickCrew } from "../../data/crew";
+import { DurationInput } from "../../ui/DurationInput";
 import { Link } from "react-router-dom";
 import { WorkerPhotos } from "./WorkerPhotos";
 import type { HourEntry } from "../../lib/types";
@@ -17,7 +21,6 @@ import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
-import { NumInput } from "../../ui/NumInput";
 import { ask } from "../../ui/confirm";
 import "../Team.css";
 import "./worker.css";
@@ -38,7 +41,7 @@ export function WorkerTeam() {
   const { workerId } = useAuth();
   return (
     <div className="page">
-      <div className="page-h"><div><h1>{t("Team", "Equipo")}</h1><p>{t("Your hours and your tasks.", "Tus horas y tus tareas.")}</p></div>
+      <div className="page-h"><div><h1>{t("Team", "Equipo")}</h1><p>{t("Clock in, see your tasks and your hours.", "Marca entrada, mira tus tareas y tus horas.")}</p></div>
         {workerId && <Link className="btn" to="/timesheet">{t("My hours & pay", "Mis horas y pagos")} →</Link>}</div>
       {!workerId ? (
         <div className="card"><EmptyState icon="team" title={t("Ask your boss to link your worker record to your account", "Pídele a tu jefe que vincule tu registro de trabajador a tu cuenta")}
@@ -50,7 +53,8 @@ export function WorkerTeam() {
 
 function WorkerBody({ workerId }: { workerId: string }) {
   const t = useT();
-  const track = !!useAuth().company?.trackLocation; // the owner turned on "location at clock-in" (Team > map)
+  const { company } = useAuth();
+  const track = !!company?.trackLocation; // the owner turned on "location at clock-in" (Team > map)
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
   const { rows: hours, save: saveHours, remove: removeHours } = useHours();
   const { rows: clocks, save: saveClock, remove: removeClock } = useClock();
@@ -58,14 +62,16 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const { rows: workerRows } = useWorkers();
   const me = workerRows.find((w) => w.id === workerId) || null; // my own record (the rate is used silently, never shown)
   const tasks = useMemo(() => myTasks(taskRows, workerId), [taskRows, workerId]);
-  const { open, done } = useMemo(() => splitTasks(tasks), [tasks]);
   const clock = clocks.find((c) => c.id === workerId);
 
   const [range, setRange] = useState<RangeKey>("week");
-  // the clock always runs for ONE of my tasks for today (owner rule); only one: picked by itself
+  // the clock always runs for ONE piece of today's work (owner rule): a task of mine, or one of my lines of today's job;
+  // only one: picked by itself
   const { rows: crewJobs } = useCrewJobs();
-  const taskOpts = useMemo(() => clockTaskOptions(tasks, todayISO()), [tasks]);
+  const taskOpts = useMemo(() => workToday(tasks, crewJobs, workerId, todayISO()), [tasks, crewJobs, workerId]);
+  const work = useMemo(() => allWork(tasks, crewJobs, workerId), [tasks, crewJobs, workerId]);
   const photoJobs = useMemo(() => crewJobOptions(crewJobs, workerId, todayISO(), "near"), [crewJobs, workerId]);
+  const today = todayISO();
   const [taskPick, setTaskPick] = useState("");
   const task = taskOpts.find((k) => k.id === taskPick) || (taskOpts.length === 1 ? taskOpts[0] : undefined);
   const [modal, setModal] = useState(false);
@@ -80,7 +86,6 @@ function WorkerBody({ workerId }: { workerId: string }) {
 
   const b = useMemo(() => rangeBounds(range), [range]);
   const list = useMemo(() => myHoursIn(hours, workerId, b), [hours, workerId, b]);
-  const today = todayISO();
   const todayHours = useMemo(() => sumHours(myHoursIn(hours, workerId, { from: today, to: today })), [hours, workerId, today]);
 
   const guard = async (key: string, fn: () => Promise<void>) => {
@@ -100,18 +105,41 @@ function WorkerBody({ workerId }: { workerId: string }) {
     const outLoc = track ? await getLocation() : null;
     const entry = { ...workerClockEntry(clock, workerId, me, t("Clock in/out", "Entrada/salida")), ...(clock.loc ? { inLoc: clock.loc } : {}), ...(outLoc ? { outLoc } : {}) };
     if (track && !outLoc) noLoc();
-    await saveHours(entry as unknown as HourEntry);
+    // exactly the minutes on the clock (no rounding); under a minute nothing is saved
+    if (entry.hours > 0) await saveHours(entry as unknown as HourEntry);
     await removeClock(workerId);
-    toast(t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`));
+    toast(entry.hours > 0 ? t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`) : t("Less than a minute on the clock: nothing saved.", "Menos de un minuto en el reloj: no se guardó nada."));
   });
-  const tick = (id: string, isDone: boolean) => {
-    const k = tasks.find((x) => x.id === id);
-    if (!k || !isMyTask(k, workerId)) return;
-    return guard("task" + id, async () => { await patchTask(id, { done: !isDone }); });
+  // tick a task of mine, or one of my lines on a job's checklist (the crew copy holds those ticks)
+  const tick = (k: WorkItem) => {
+    if (k.kind === "check") {
+      const j = crewJobs.find((x) => (x.estId || x.id) === k.estId);
+      if (!j || !company || !k.key) return;
+      return guard("task" + k.id, () => tickCrew(company.id, j, k.key!, !k.done, me?.name || ""));
+    }
+    const task = tasks.find((x) => x.id === k.id);
+    if (!task || !isMyTask(task, workerId)) return;
+    return guard("task" + k.id, async () => { await patchTask(k.id, { done: !k.done }); });
   };
+  // my work list: today (plus late tasks), the next two weeks, done tasks
+  const later = addDaysISO(today, 14);
+  const todayWork = work.filter((k) => k.date === today || (k.kind === "task" && !k.done && k.date < today));
+  const comingUp = work.filter((k) => k.date > today && k.date <= later && !k.done).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 40);
+  const doneTasks = work.filter((k) => k.kind === "task" && k.done && k.date !== today).reverse().slice(0, 10);
+  const openToday = todayWork.filter((k) => !k.done).length;
   const delHours = async (id: string) => { if (await ask(t("Delete these hours?", "¿Borrar estas horas?"))) guard("h" + id, () => removeHours(id)); };
 
   const el = clock ? clockElapsed(clock.at, now) : null;
+  const row = (k: WorkItem) => (
+    <div key={k.id} className="wk-task">
+      <button className={"wk-chk" + (k.done ? " on" : "")} disabled={busy["task" + k.id]} aria-label={k.done ? t("Mark not done", "Marcar como no hecha") : t("Mark done", "Marcar como hecha")}
+        onClick={() => tick(k)}>✓</button>
+      <div className="wk-info">
+        <div className={"wk-tt" + (k.done ? " done" : "")}>{k.title}</div>
+        <div className="muted wk-sub">{[k.date !== today && k.date ? fmtDate(k.date, lang) : "", k.time ? fmtTime(k.time) : "", k.jobLabel, k.crewWide ? t("whole crew", "todo el equipo") : ""].filter(Boolean).join(" · ")}</div>
+        {k.note && <div className="muted wk-sub wk-pre">{k.note}</div>}
+      </div>
+    </div>);
   return (
     <>
       <section className="card wk-clock">
@@ -123,12 +151,12 @@ function WorkerBody({ workerId }: { workerId: string }) {
           {el && !clock?.taskTitle && clock?.jobLabel && <small className="muted">{t("Job: ", "Trabajo: ")}{clock.jobLabel}</small>}
         </div>
         {!el && (taskOpts.length === 0
-          ? <p className="wk-notask">{t("You have no tasks for today. Ask your boss to assign you one to clock in.", "No tienes tareas para hoy. Pídele a tu jefe que te asigne una para marcar entrada.")}</p>
+          ? <p className="wk-notask">{t("You have no tasks for today. Ask your boss to assign you work to clock in.", "No tienes tareas para hoy. Pídele a tu jefe que te asigne trabajo para marcar entrada.")}</p>
           : <div className="wk-pick" role="radiogroup" aria-label={t("Task", "Tarea")}>
               {taskOpts.map((k) => (
                 <label key={k.id} className={"wk-opt" + (task?.id === k.id ? " on" : "")}>
                   <input type="radio" name="clock-task" checked={task?.id === k.id} onChange={() => setTaskPick(k.id)} />
-                  <span className="wk-opt-t"><b>{k.title}</b>{(k.time || k.jobLabel) && <small>{[k.time ? fmtTime(k.time) : "", k.jobLabel || ""].filter(Boolean).join(" · ")}</small>}</span>
+                  <span className="wk-opt-t"><b>{k.title}</b>{(k.time || k.jobLabel) && <small>{[k.time ? fmtTime(k.time) : "", k.kind === "check" && k.date < today ? t("from an earlier day", "de un día anterior") : "", k.jobLabel || ""].filter(Boolean).join(" · ")}</small>}</span>
                 </label>))}
             </div>)}
         {el
@@ -146,7 +174,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
       <div className="tm-tiles wk-tiles">
         <div className="card tm-tile"><span>{t("My hours", "Mis horas")}</span><b>{hrs(sumHours(list))}</b><small>{t(...RANGE_LABEL[range])}</small></div>
         <div className="card tm-tile"><span>{t("Today", "Hoy")}</span><b>{hrs(todayHours)}</b></div>
-        <div className="card tm-tile"><span>{t("Open tasks", "Tareas abiertas")}</span><b>{open.length}</b></div>
+        <div className="card tm-tile"><span>{t("Tasks today", "Tareas hoy")}</span><b>{openToday}</b></div>
       </div>
 
       <section className="card tm-sec">
@@ -174,19 +202,15 @@ function WorkerBody({ workerId }: { workerId: string }) {
       </section>
 
       <section className="card tm-sec">
-        <div className="card-h"><h2>{t("My tasks", "Mis tareas")}</h2></div>
-        {tasks.length === 0 ? <p className="muted tm-empty">{t("Nothing is assigned to you right now.", "No tienes nada asignado por ahora.")}</p> : (
+        <div className="card-h"><h2>{t("My tasks", "Mis tareas")}</h2><Link className="btn sm" to="/jobs">{t("My jobs", "Mis trabajos")}</Link></div>
+        {!todayWork.length && !comingUp.length && !doneTasks.length ? <p className="muted tm-empty">{t("Nothing is assigned to you right now.", "No tienes nada asignado por ahora.")}</p> : (
           <div className="wk-tasks">
-            {[...open, ...done.slice(0, 20)].map((k) => (
-              <div key={k.id} className="wk-task">
-                <button className={"wk-chk" + (k.done ? " on" : "")} disabled={busy["task" + k.id]} aria-label={k.done ? t("Mark not done", "Marcar como no hecha") : t("Mark done", "Marcar como hecha")}
-                  onClick={() => tick(k.id, !!k.done)}>✓</button>
-                <div className="wk-info">
-                  <div className={"wk-tt" + (k.done ? " done" : "")}>{k.title}</div>
-                  <div className="muted wk-sub">{fmtDate(k.date, lang)}{k.time ? " · " + k.time : ""}</div>
-                  {k.note && <div className="muted wk-sub wk-pre">{k.note}</div>}
-                </div>
-              </div>))}
+            <div className="wk-grp">{t("Today", "Hoy")}</div>
+            {todayWork.length ? todayWork.map(row) : <p className="muted wk-none">{t("Nothing for today.", "Nada para hoy.")}</p>}
+            {comingUp.length > 0 && <div className="wk-grp">{t("Coming up", "Próximos días")}</div>}
+            {comingUp.map(row)}
+            {doneTasks.length > 0 && <div className="wk-grp">{t("Done", "Hechas")}</div>}
+            {doneTasks.map(row)}
           </div>
         )}
       </section>
@@ -202,12 +226,12 @@ function WorkerBody({ workerId }: { workerId: string }) {
 function WorkerHoursModal({ onSave, onClose }: { onSave(f: { date: string; hours: number; note: string }): Promise<void>; onClose(): void }) {
   const t = useT(), toast = useUi((s) => s.toast);
   const [date, setDate] = useState(todayISO());
-  const [h, setH] = useState(0);
+  const [h, setH] = useState(0); // hours, kept to the minute
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const save = async () => {
     if (saving) return;
-    if (!(num(h) > 0)) { toast(t("Write the hours.", "Escribe las horas.")); return; }
+    if (!(num(h) > 0)) { toast(t("Write the time worked.", "Escribe el tiempo trabajado.")); return; }
     setSaving(true);
     try { await onSave({ date, hours: num(h), note }); }
     catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); setSaving(false); }
@@ -216,7 +240,7 @@ function WorkerHoursModal({ onSave, onClose }: { onSave(f: { date: string; hours
     <Modal title={t("Log hours", "Anotar horas")} onClose={onClose}>
       <div className="grid2">
         <label className="f">{t("Date", "Fecha")}<DatePicker value={date} onChange={(v) => setDate(v)} /></label>
-        <label className="f">{t("Hours", "Horas")}<NumInput step="0.25" placeholder="8" value={num(h)} onChange={setH} /></label>
+        <DurationInput label={t("Time worked", "Tiempo trabajado")} value={num(h)} onChange={setH} />
       </div>
       <label className="f">{t("Note (optional)", "Nota (opcional)")}<input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("Sanding, priming, spraying…", "Lijado, primer, sprayado…")} /></label>
       <div className="tm-actions"><button className="btn pri" disabled={saving} onClick={save}>{t("Save", "Guardar")}</button></div>

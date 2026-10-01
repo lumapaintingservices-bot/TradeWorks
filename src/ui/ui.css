@@ -223,3 +223,16 @@ label.f>.dtp{font-weight:400}
 .dtp-day:disabled{color:var(--ink-3);opacity:.4;cursor:not-allowed;text-decoration:line-through}
 .dtp-foot{display:flex;justify-content:space-between;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line-2)}
 .dtp-clear{color:var(--ink-2)}
+/* Popover (shadcn Popover idea): floating panel next to its button */
+.pop-wrap{display:inline-flex;min-width:0}
+.pop-btn{font:inherit}
+.pop{z-index:96;width:min(280px,calc(100vw - 16px));max-height:min(360px,calc(100vh - 24px));overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-pop);padding:6px;animation:ask-fade .12s ease-out}
+.pop-h{font-size:12px;font-weight:600;color:var(--ink-3);padding:6px 8px 4px}
+.pop-it{display:flex;align-items:center;gap:9px;width:100%;min-height:38px;padding:6px 8px;border:0;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.pop-it:hover,.pop-it:focus-visible{background:var(--surface-2);outline:0}
+.pop-it .pop-tick{margin-left:auto;color:var(--acc);display:inline-flex}
+.pop-sep{height:1px;background:var(--line);margin:4px 2px}
+/* hours + minutes (DurationInput) */
+div.f.dur{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:14px}
+.dur-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.dur-row .ig input{font-size:15px}

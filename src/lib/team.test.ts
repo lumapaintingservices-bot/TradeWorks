@@ -3,7 +3,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { blankEstimate } from "./estimate";
 import {
-  clockElapsed, clockEntry, clockFor, clockHHMM, clockHours, clockTimes, hourAmount, hoursText, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats,
+  clockElapsed, clockEntry, clockFor, clockHHMM, clockHours, clockTimes, hourAmount, hoursText, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats, clockMinutes, hoursOf, hoursSplit, rolePicks,
 } from "./team";
 import { defaultSettings } from "./settings";
 import { SERVICES } from "./services.data";
@@ -124,11 +124,18 @@ describe("known values", () => {
 
 describe("clock in / out", () => {
   const at = "2026-09-29T15:00:00.000Z", ms = Date.parse(at);
-  it("rounds to the nearest quarter hour with a 0.25 h minimum (prototype formula)", () => {
+  it("counts exactly the minutes on the clock: no quarter hours, no 15 min minimum (owner rule)", () => {
     const m = (min: number) => clockHours(at, ms + min * 60000);
-    expect(m(0)).toBe(0.25); expect(m(4)).toBe(0.25); expect(m(8)).toBe(0.25); expect(m(9)).toBe(0.25); expect(m(11)).toBe(0.25);
-    expect(m(12)).toBe(0.25); expect(m(23)).toBe(0.5); expect(m(60)).toBe(1); expect(m(97)).toBe(1.5); expect(m(8 * 60 + 52)).toBe(8.75);
-    for (const min of [1, 7, 13, 44, 61, 119, 250, 481, 777]) expect(m(min)).toBe(Math.max(0.25, Math.round((min * 60000) / 3600000 * 4) / 4));
+    expect(m(4)).toBe(4 / 60); expect(hoursText(m(4))).toBe("4 min");
+    expect(m(0)).toBe(0); expect(m(60)).toBe(1); expect(m(97)).toBe(97 / 60); expect(hoursText(m(8 * 60 + 52))).toBe("8 h 52 min");
+    expect(clockMinutes(at, ms + 4 * 60000 + 29000)).toBe(4); expect(clockMinutes(at, ms + 4 * 60000 + 31000)).toBe(5);   // to the nearest minute
+    expect(clockMinutes(at, ms - 60000)).toBe(0); expect(clockMinutes("bad", ms)).toBe(0);
+    // 10 workers x 4 minutes: paid 40 minutes, not 2 h 30 min
+    expect(hourAmount({ hours: m(4) * 10, rate: 30 })).toBe(20);
+  });
+  it("hours typed as hours + minutes", () => {
+    expect(hoursOf(7, 45)).toBe(7.75); expect(hoursOf(0, 4)).toBe(4 / 60); expect(hoursOf(-1, 0)).toBe(0);
+    expect(hoursSplit(7.75)).toEqual({ h: 7, m: 45 }); expect(hoursSplit(4 / 60)).toEqual({ h: 0, m: 4 }); expect(hoursSplit(0)).toEqual({ h: 0, m: 0 });
   });
   it("elapsed text", () => { expect(clockElapsed(at, ms + 125 * 60000)).toEqual({ h: 2, m: 5 }); expect(clockElapsed(at, ms - 5000)).toEqual({ h: 0, m: 0 }); });
   it("shows hours as hours and minutes", () => {
@@ -172,5 +179,13 @@ describe("clock in / out", () => {
     expect(jobOnSite(list, "2026-10-01")).toBeUndefined();
     expect(jobOnSite(list, "2026-09-19")).toBeUndefined();
     expect(jobOnSite([list[3]], "2026-09-29")).toBeUndefined();
+  });
+});
+
+describe("role quick picks", () => {
+  it("by trade and language", () => {
+    expect(rolePicks("painting", "en")).toContain("Sprayer");
+    expect(rolePicks("painting", "es")).toContain("Pintor");
+    expect(rolePicks("plumbing", "en")[0]).toBe("Plumber");
   });
 });

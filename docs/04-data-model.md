@@ -38,18 +38,25 @@ companies/{cid}/invoices/{id}        { number, estId, kind:'deposit'|'balance'|'
                                        pay{token}, payViews, payClaim{method,at,note}, payClaimSeen,
                                        online{status:paid|processing|failed,amount,at,session,method,dup,seen} (Stripe webhook) }
 companies/{cid}/tasks/{id}           { title, date, time, note, estId, jobLabel ("EST-1001 · Ana Ruiz", for workers), workerId, done }
+estimate.assign                      { checklist key: [workerId] }  who does each Job day line (Job day tab "Whole crew" picker, Team > Assign work)
+settings.crewLang                    "es" (default) | "en": language of the job checklist for the crew AND the Job day tab
 companies/{cid}/notes/{id}           { title, text, col (settings.noteCols id), order (number, fractional for drag & drop), prio (high|med|low|""), due?, estId?, jobLabel?, workerId?, by }  owners / admins only
-companies/{cid}/workers/{id}         { name, phone, role, rate, active, photo?: {url, path} | null }  (photo file: companies/{cid}/avatars/{workerId}/; the worker may change only photo)
+companies/{cid}/workers/{id}         { name, phone, role, rate, active, email?, photo?: {url, path} | null }  (photo file: companies/{cid}/avatars/{workerId}/; the worker may change only photo)
+                                     email = where Team > worker sent the app invitation (invites/{email} with workerId = this record)
 companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, taskId?, taskTitle? (the task the clock ran for), note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }
 companies/{cid}/clock/{workerId}     { at, estId, jobLabel?, taskId, taskTitle (always one task), loc?, last? }   loc/last = { lat, lng, acc(m), at } from the worker's phone
 companies/{cid}/crewjobs/{estId}     { estId, jobLabel, crew: [workerId], crewNames, start, days, address, client, note,
-                                       checklist: [{ key, day, text }], titles, colors, done: { key: ISO }, doneBy: { key: name } }
+                                       checklist: [{ key, day, text }], titles, colors, done: { key: ISO }, doneBy: { key: name },
+                                       assign: { key: [workerId] } }
                                      the crew's copy of a job (no prices), written by the owner's app from estimate.crew /
-                                     crewNote (src/data/crew.ts useCrewSync); workers tick done/doneBy, mirrored into estimate.check.
-                                     Checklist = checklistFor(e, "es") (work-order language) so keys stay stable.
+                                     crewNote / assign (src/data/crew.ts useCrewSync); workers tick done/doneBy, mirrored into estimate.check.
+                                     Checklist = checklistFor(e, settings.crewLang || "es"): the Job day tab shows the SAME list, so keys
+                                     (ticks, who does what) match on both sides. assign = who does each line; a line nobody has is for the
+                                     whole crew (src/lib/crew.ts isForWorker). A worker's work = their tasks + their lines (src/lib/work.ts):
+                                     the clock runs for one of them (clock.taskId = task id or "c:{estId}:{key}").
 companies/{cid}/jobchats/{estId}     { estId, jobLabel, members: [workerId], closed?, last?: { by, name, text, at } }
                                      team chat of one job: owners / admins + the workers in members (src/lib/teamChat.ts)
 companies/{cid}/jobchats/{estId}/msgs/{id}  { by ("u:{uid}" owner/admin | "w:{workerId}"), name, text (<= 2000), at, photo?: { url, path, kind? } }

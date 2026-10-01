@@ -38,7 +38,8 @@ export function Combobox({ value, options, onChange, none, placeholder, ariaLabe
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => { if (!pop.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node)) setOpen(false); };
-    const move = (e: Event) => { if (!pop.current?.contains(e.target as Node)) setOpen(false); };
+    // a resize comes from the window (not a Node): always close; a scroll inside the list keeps it open
+    const move = (e: Event) => { if (!(e.target instanceof Node) || !pop.current?.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", away);
     window.addEventListener("resize", move); window.addEventListener("scroll", move, true);
     return () => { document.removeEventListener("mousedown", away); window.removeEventListener("resize", move); window.removeEventListener("scroll", move, true); };

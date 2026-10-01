@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useCrewJobs, useEstimates, useJobChats, useWorkers } from "../../data/hooks";
 import { useT } from "../../i18n";
-import { crewConflicts } from "../../lib/crew";
+import { crewConflicts, dropFromAssign } from "../../lib/crew";
 import { jobDates } from "../../lib/calendar";
 import { fmtDate } from "../../lib/format";
 import { progress } from "../../lib/jobday";
@@ -29,7 +29,8 @@ export function CrewCard({ e, set }: { e: Estimate; set(p: Partial<Estimate>): v
   const conflicts = useMemo(() => crewConflicts(e, crew, ests), [e, crew, ests]);
   const days = jobDates(e);
   const nameOf = (id: string) => workers.find((w) => w.id === id)?.name || t("Worker", "Trabajador");
-  const toggle = (id: string) => set({ crew: crew.includes(id) ? crew.filter((x) => x !== id) : [...crew, id] });
+  // taken off the crew: their checklist lines go back to the others (or to the whole crew)
+  const toggle = (id: string) => set(crew.includes(id) ? { crew: crew.filter((x) => x !== id), assign: dropFromAssign(e.assign, id) } : { crew: [...crew, id] });
   const pr = doc ? progress({ items: doc.checklist.map((x) => ({ ...x })), days: 0, titles: {} }, doc.done) : null;
   const hasChat = chats.some((c) => c.id === e.id);
 

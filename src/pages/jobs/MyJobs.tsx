@@ -1,11 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { tickCrew } from "../../data/crew";
 import { useClock, useCrewJobs, useJobChats, useTasks } from "../../data/hooks";
 import { useChatMe } from "../../data/teamChat";
 import { useT } from "../../i18n";
-import { cleanDone, crewDates, crewEnd, jobDayNo, mapsUrl, myJobsSplit, onSite } from "../../lib/crew";
+import { assignees, cleanDone, crewDates, crewEnd, isForWorker, jobDayNo, mapsUrl, myJobsSplit, onSite } from "../../lib/crew";
 import { todayISO } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import type { CrewJob } from "../../lib/types";
@@ -29,7 +29,11 @@ function whenLabel(j: CrewJob, today: string, t: T, lang: string) {
   if (j.start > today) return t("Starts ", "Empieza ") + fmtDate(j.start, lang as "en" | "es");
   return t("Finished ", "Terminó ") + fmtDate(crewEnd(j), lang as "en" | "es");
 }
-const doneCount = (j: CrewJob) => { const d = cleanDone(j.done, j.checklist); return { done: Object.keys(d).length, total: j.checklist.length }; };
+/** My lines of the job (mine + the whole crew's) and how many are ticked. */
+const doneCount = (j: CrewJob, workerId: string) => {
+  const d = cleanDone(j.done, j.checklist), mine = j.checklist.filter((x) => isForWorker(j.assign, x.key, j.crew || [], workerId));
+  return { done: mine.filter((x) => d[x.key]).length, total: mine.length };
+};
 
 /** Worker home (/jobs): the jobs they are on the crew of. Owners and admins see jobs in Estimates. */
 export function MyJobs() {
@@ -42,7 +46,7 @@ export function MyJobs() {
   if (role !== "worker") return <Navigate to="/estimates" replace />;
   const none = !loading && !split.today.length && !split.upcoming.length && !split.unscheduled.length && !split.recent.length;
   const sec = (title: string, list: CrewJob[]) => list.length > 0 && (
-    <section className="mj-sec"><h2>{title}</h2><div className="mj-list">{list.map((j) => <JobCard key={j.id} j={j} today={today} t={t} lang={lang} />)}</div></section>);
+    <section className="mj-sec"><h2>{title}</h2><div className="mj-list">{list.map((j) => <JobCard key={j.id} j={j} today={today} t={t} lang={lang} workerId={workerId || ""} />)}</div></section>);
   return (
     <div className="page mj-page">
       <div className="page-h"><div><h1>{t("My jobs", "Mis trabajos")}</h1><p>{t("Where to go, what to do, and the checklist.", "A dónde ir, qué hacer y la lista de tareas.")}</p></div></div>
@@ -65,8 +69,8 @@ export function MyJobs() {
   );
 }
 
-function JobCard({ j, today, t, lang }: { j: CrewJob; today: string; t: T; lang: string }) {
-  const c = doneCount(j);
+function JobCard({ j, today, t, lang, workerId }: { j: CrewJob; today: string; t: T; lang: string; workerId: string }) {
+  const c = doneCount(j, workerId);
   const pct = c.total ? Math.round((c.done / c.total) * 100) : 0;
   const isToday = onSite(j, today);
   return (
@@ -74,7 +78,7 @@ function JobCard({ j, today, t, lang }: { j: CrewJob; today: string; t: T; lang:
       <div className="mj-l1"><b>{j.jobLabel}</b><Badge tone={isToday ? "acc" : "gray"} icon={isToday ? "pin" : "calendar"} size="sm">{whenLabel(j, today, t, lang)}</Badge></div>
       {j.address && <div className="mj-l2"><Icon name="pin" size={15} />{j.address}</div>}
       <div className="mj-l2"><Icon name="calendar" size={15} />{range(j, lang) || t("Your boss will set the dates", "Tu jefe pondrá las fechas")}</div>
-      {c.total > 0 && <div className="mj-prog"><i style={{ width: pct + "%" }} /><span>{c.done}/{c.total}</span></div>}
+      {c.total > 0 && <div className="mj-prog" title={t("Your tasks on this job", "Tus tareas en este trabajo")}><i style={{ width: pct + "%" }} /><span>{t(`${c.done}/${c.total} yours`, `${c.done}/${c.total} tuyas`)}</span></div>}
     </Link>
   );
 }
@@ -92,6 +96,8 @@ export function JobDetail() {
   const { rows: clocks } = useClock();
   const today = todayISO();
   const j = rows.find((x) => x.id === id && (x.crew || []).includes(workerId || ""));
+  // checklist: my lines (mine + the whole crew's), or the whole job with who does each line
+  const [all, setAll] = useState(false);
   if (role !== "worker") return <Navigate to={"/estimates/" + id} replace />;
   if (loading) return <div className="page" />;
   if (!j) return (
@@ -108,6 +114,11 @@ export function JobDetail() {
     tickCrew(company.id, j, key, on, me.name).catch(() => toast(t("Couldn't save. Check your connection.", "No se pudo guardar. Revisa tu conexión.")));
   };
   const coworkers = j.crewNames.filter((n, i) => n && j.crew[i] !== workerId);
+  const wid = workerId || "";
+  const anyAssigned = j.checklist.some((x) => assignees(j.assign, x.key, j.crew).length > 0);
+  const showAll = all || !anyAssigned;
+  const shown = j.checklist.filter((x) => showAll || isForWorker(j.assign, x.key, j.crew, wid));
+  const person = (id: string) => { const i = j.crew.indexOf(id); return { name: j.crewNames[i] || "", src: j.crewPhotos?.[i] || undefined }; };
 
   return (
     <div className="page mj-page">
@@ -133,20 +144,28 @@ export function JobDetail() {
 
       {j.checklist.length > 0 && (
         <section className="card mj-check">
-          <div className="card-h"><h2>{t("Checklist", "Lista de tareas")}</h2><span className="muted">{Object.keys(done).length}/{j.checklist.length}</span></div>
+          <div className="card-h"><h2>{t("Checklist", "Lista de tareas")}</h2><span className="muted">{shown.filter((x) => done[x.key]).length}/{shown.length}</span></div>
+          {anyAssigned && <div className="mj-seg" role="tablist">
+            <button type="button" role="tab" aria-selected={!all} className={!all ? "on" : ""} onClick={() => setAll(false)}>{t("My tasks", "Mis tareas")}</button>
+            <button type="button" role="tab" aria-selected={all} className={all ? "on" : ""} onClick={() => setAll(true)}>{t("Whole job", "Todo el trabajo")}</button>
+          </div>}
           <div className="mj-days">{Array.from({ length: days }, (_, i) => i + 1).map((d) => {
-            const items = j.checklist.filter((x) => x.day === d);
+            const items = shown.filter((x) => x.day === d);
             if (!items.length) return null;
             return (
               <div key={d} className={"mj-day" + (todayNo === d ? " now" : "")}>
                 <div className="mj-dh">{t("Day", "Día")} {d}{j.titles[String(d)] ? " · " + j.titles[String(d)] : ""}{todayNo === d && <Badge tone="acc" size="sm">{t("Today", "Hoy")}</Badge>}</div>
                 {items.map((x) => {
                   const at = done[x.key], by = j.doneBy?.[x.key];
+                  const who = assignees(j.assign, x.key, j.crew), mine = isForWorker(j.assign, x.key, j.crew, wid);
                   return (
-                    <label key={x.key} className={"mj-it" + (at ? " on" : "")}>
+                    <label key={x.key} className={"mj-it" + (at ? " on" : "") + (mine ? "" : " other")}>
                       <input type="checkbox" checked={!!at} onChange={(ev) => tick(x.key, ev.target.checked)} />
                       <span>{x.text}</span>
                       {at && <em>{by ? by + " · " : ""}{fmtDate(new Date(at).toLocaleDateString("en-CA"), lang)}</em>}
+                      {showAll && anyAssigned && (who.length
+                        ? <AvatarGroup className="mj-who" people={who.map((id) => (id === wid ? { name: t("You", "Tú") } : person(id))).filter((p) => p.name)} max={3} size="xs" />
+                        : <span className="mj-tag">{t("crew", "equipo")}</span>)}
                     </label>);
                 })}
               </div>);

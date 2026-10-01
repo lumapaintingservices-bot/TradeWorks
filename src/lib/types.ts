@@ -43,6 +43,8 @@ export type Estimate = {
   photos?: PhotoRef[]; showPhotos?: boolean; check?: Record<string, string>; jobTasks?: JobTask[]; colors?: ColorRow[];
   /** The workers on this job (worker ids) and notes for them; their copy of the job is crewjobs/{id} (src/lib/crew.ts). */
   crew?: string[]; crewNote?: string;
+  /** Who does each checklist line (line key -> worker ids); a line nobody has is for the whole crew (src/lib/crew.ts assignees). */
+  assign?: Record<string, string[]>;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
 export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
@@ -53,6 +55,8 @@ export type MessageTemplates = Partial<Record<string, { en: string; es: string }
 /** A profile photo: the image (Storage download URL, or a data URL in demo mode) and its Storage path (to delete it). */
 export type PhotoMini = { url: string; path: string };
 export type Worker = { id: string; name: string; phone?: string; role?: string; rate: number; active?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+  /** E-mail the app invitation went to (Team > worker); their login is the members doc linked to this record. */
+  email?: string;
   /** Profile photo (src/data/avatar.ts): set by the owner in Team or by the worker in Settings; null = removed. */
   photo?: PhotoMini | null };
 export type HourEntry = { id: string; workerId: string; date: string; hours: number; rate: number; estId?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
@@ -84,6 +88,8 @@ export type CrewJob = {
   crewPhotos?: string[]; start: string; days: number;
   address: string; client: string; note: string; checklist: CrewItem[]; titles: Record<string, string>; colors: ColorRow[];
   done?: Record<string, string>; doneBy?: Record<string, string>; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
+  /** Who does each line (key -> crew member ids); a line nobody has is for the whole crew. */
+  assign?: Record<string, string[]>;
 };
 export type CrewItem = { key: string; day: number; text: string };
 /** companies/{cid}/jobchats/{estId}: the team chat of one job: owners / admins + the workers in `members` (worker ids). */
@@ -171,6 +177,8 @@ export type Settings = {
   depositAtSignSince?: string;
   /** Notes board columns, left to right (empty name = the built-in name in the app language). Missing = the defaults. */
   noteCols?: NoteCol[];
+  /** Language of the job checklist the crew sees (and the Job day tab shows), so both are the same list. Missing = Spanish. */
+  crewLang?: "en" | "es";
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];
