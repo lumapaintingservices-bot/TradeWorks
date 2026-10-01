@@ -139,6 +139,14 @@ Signature: chip "✍ Signed by X · date" under the estimate number (opens Link 
 name, date/time, "See it on the document" and "Remove signature" (deletes portal client.sign first via patchTop remove, then
 estimate.signature, portalSeen.sign=false, Accepted -> Sent). Activity card has "Clear". Signature date now stored as the local
 day (was the UTC day: a 7 pm signature showed the next day).
+Deposit at signing (owner decision 2026-09-30: switch, OFF by default; when on, pay through the invoice pay page; default payment
+stages = after day 1 50% / job done 50%): settings.depositAtSign (+ depositAtSignSince, so old signed jobs are never billed by
+surprise) and estimate.depositAtSign (Pricing checkbox, wins). src/lib/deposit.ts. Off: after signing the client link shows "Your
+payments" (first row "After the first day of work") and no pay button; the old Zelle "I sent the Zelle" box is gone. On: the
+owner's Shell (useDepositOnSign, src/data/deposit.ts) creates the job's invoices + a pay link for the first one as soon as the
+signature arrives, and the portal snapshot (s.deposit {atSign, pay {amount, token, paid}}) shows "Pay the deposit" -> /pay/token,
+then "Deposit received". publishPortal(e, s, company, invoices) now takes invoices. Printed estimate: "Deposit due at signing"
+when on.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

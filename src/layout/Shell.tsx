@@ -18,6 +18,7 @@ import { usePayLinkSync } from "../data/paylinks";
 import { useTeamPhotoSync } from "../data/teamPhotos";
 import { useChatInbox } from "../data/teamChat";
 import { useCrewSync } from "../data/crew";
+import { useDepositOnSign } from "../data/deposit";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import { hasFirebase } from "../lib/firebase";
@@ -106,6 +107,7 @@ function AdminBadges({ children }: { children: ReactNode }) {
   usePayLinkSync(); // invoice payment links: keep the public copies fresh and pick up "I paid" claims
   useTeamPhotoSync(); // before / after photos workers take land on their jobs
   useCrewSync(); // each job's crew gets its copy of the job (My jobs) and their checklist ticks come back
+  useDepositOnSign(); // deposit at signing: invoices + payment link as soon as the client signs
   const nb = useNavBadges();
   const { rows: invs } = useInvoices();
   const chats = useChatInbox(); // job team chats with news (and a toast when a message comes in)

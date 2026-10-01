@@ -30,10 +30,10 @@ export const serviceRate = (s: Pick<Settings, "serviceRates">, sv: { id: string;
 };
 
 export const payPlanOn = (e: Pick<Estimate, "payPlanOn" | "payPlan">) => !!(e && e.payPlanOn && e.payPlan && e.payPlan.length >= 2);
+/** Payment stages when they are first switched on: half after the first day of work, the rest when the job is done. */
 export const defaultPlan = () => [
-  { label: "Deposit", labelEs: "Depósito", pct: 50 },
-  { label: "When painting is done", labelEs: "Al terminar de pintar", pct: 40 },
-  { label: "Final walkthrough", labelEs: "Al revisar con el cliente", pct: 10 },
+  { label: "After the first day of work", labelEs: "Al terminar el primer día de trabajo", pct: 50 },
+  { label: "When the job is done", labelEs: "Al terminar el trabajo", pct: 50 },
 ];
 
 export function findDiscount(s: Settings, code?: string): Discount | null {

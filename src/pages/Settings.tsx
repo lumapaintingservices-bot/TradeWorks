@@ -174,6 +174,26 @@ function BusinessCard() {
   );
 }
 
+/** Deposit at signing: company default (each estimate can change it in Pricing). */
+function DepositCard() {
+  const t = useT();
+  const toast = useUi((x) => x.toast);
+  const { settings, update } = useSettings();
+  const on = !!settings.depositAtSign;
+  return (
+    <div className="card">
+      <div className="card-h"><h2>{t("Deposit when the client signs", "Depósito al firmar")}</h2>
+        <label className="chk"><input type="checkbox" checked={on} onChange={async (ev) => { await update({ depositAtSign: ev.target.checked, ...(ev.target.checked ? { depositAtSignSince: new Date().toISOString() } : {}) }); toast(t("Saved", "Guardado")); }} />{on ? t("On", "Activo") : t("Off", "Apagado")}</label></div>
+      <div className="card-b"><p className="muted" style={{ margin: 0 }}>
+        {on ? t("Right after signing, the client is asked to pay the first payment: TradeWorks creates the job's invoices and the client gets a “Pay the deposit” button with all your ways to pay (and card, if it's on).",
+              "Justo al firmar se le pide al cliente el primer pago: TradeWorks crea las facturas del trabajo y el cliente ve un botón “Pagar depósito” con todas tus formas de pago (y tarjeta, si está activa).")
+            : t("After signing, the client only sees “Thank you” and the payment schedule. You bill each payment with an invoice when it's due.",
+              "Al firmar, el cliente solo ve “Gracias” y el calendario de pagos. Cobras cada pago con una factura cuando toca.")}
+        {" "}{t("You can change it on each estimate (Pricing).", "Lo puedes cambiar en cada presupuesto (Precios).")}</p></div>
+    </div>
+  );
+}
+
 function ClientLinkCard() {
   const t = useT();
   const toast = useUi((x) => x.toast);
@@ -200,7 +220,7 @@ function ClientLinkCard() {
     <div className="card">
       <div className="card-h"><h2>{t("How clients pay you", "Cómo te pagan tus clientes")}</h2></div>
       <div className="card-b">
-        <p className="muted" style={{ marginTop: 0 }}>{t("Shown after a client signs, on your documents and on each invoice's payment link. TradeWorks only shows the details — the money goes straight to you.", "Se muestra al firmar, en tus documentos y en el enlace de pago de cada factura. TradeWorks solo muestra los datos — el dinero va directo a ti.")}</p>
+        <p className="muted" style={{ marginTop: 0 }}>{t("Shown on your documents and on each invoice's payment link (and after signing, when you ask for a deposit). TradeWorks only shows the details — the money goes straight to you.", "Se muestra en tus documentos y en el enlace de pago de cada factura (y al firmar, si pides depósito). TradeWorks solo muestra los datos — el dinero va directo a ti.")}</p>
         <div className="grid2">
           <label className="f">{t("Zelle email or phone", "Correo o teléfono de Zelle")}<input value={f.payZelle} onChange={set("payZelle")} /></label>
           <label className="f">{t("Name on the Zelle account", "Nombre en la cuenta Zelle")}<input value={f.payZelleName} onChange={set("payZelleName")} /></label>
@@ -260,7 +280,7 @@ const SECTIONS: Section[] = [
   { id: "leads", icon: "tag", en: "Leads & messages", es: "Clientes y mensajes", descEn: "Where your clients come from and the messages you send them.", descEs: "De dónde vienen tus clientes y los mensajes que les mandas.",
     body: () => <><LeadSourcesCard /><ReferralCard /><AutoEmailCard /><MessageTemplatesCard /></> },
   { id: "client", icon: "send", en: "Client link & payments", es: "Enlace del cliente y pagos", descEn: "What your client sees: how to pay you, request form and your recent work.", descEs: "Lo que ve tu cliente: cómo pagarte, formulario de solicitud y tus trabajos recientes.",
-    body: () => <><ClientLinkCard /><CardPayCard /><RequestLinkCard /><ShowcaseCard /></> },
+    body: () => <><DepositCard /><ClientLinkCard /><CardPayCard /><RequestLinkCard /><ShowcaseCard /></> },
   { id: "calendar", icon: "calendar", en: "Calendar", es: "Calendario", descEn: "Your jobs and tasks in Google, Outlook or Apple calendar.", descEs: "Tus trabajos y tareas en el calendario de Google, Outlook o Apple.",
     body: () => <CalendarCard /> },
   { id: "team", icon: "team", en: "Team & plan", es: "Equipo y plan", descEn: "Who can use your company, and your TradeWorks plan.", descEs: "Quién puede usar tu empresa y tu plan de TradeWorks.",

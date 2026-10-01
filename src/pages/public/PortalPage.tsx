@@ -28,6 +28,8 @@ const PT = {
     offline: "No connection. Try again.", you: "You", navOpt: "Options", navSign: "Sign", navChat: "Questions", navPhotos: "Photos", ctaBtn: "Review & sign", daysKpi: "Days on site", validKpi: "Valid until",
     upgrade: "Upgrade", depositL: "Deposit", balanceL: "Balance on the final day", close: "Close", padHint: "Sign with your finger", padName: "Name of the person signing", padOk: "Sign", padNeed: "Add a signature and a name first.", change: "Change #",
     copy: "Copy", zelleH: "Pay your deposit with Zelle", depFor: "Deposit to book your date", paidThanks: "Thank you! We'll confirm your payment shortly.", sent: "I sent the Zelle",
+    firstDayL: "After the first day of work", schedH: "Your payments", schedHint: "We'll send you each invoice with a payment link when it's due. Nothing to pay now.",
+    depH: "Pay the deposit", payDep: "Pay the deposit", payWays: "On the next page you choose how to pay.", depSoon: "Your deposit payment link is on its way — it will show here in a few minutes. We'll also send it to you.", depPaid: "Deposit received. Thank you!",
     bank: (d: string) => `Open your bank app → Zelle → send ${d} to the address above.`, notFound: "This link is no longer active. Please contact us.",
   },
   es: {
@@ -43,6 +45,8 @@ const PT = {
     offline: "Sin conexión. Inténtalo de nuevo.", you: "Usted", navOpt: "Opciones", navSign: "Firmar", navChat: "Preguntas", navPhotos: "Fotos", ctaBtn: "Revisar y firmar", daysKpi: "Días en su casa", validKpi: "Válido hasta",
     upgrade: "Mejora", depositL: "Depósito", balanceL: "Saldo el último día", close: "Cerrar", padHint: "Firme con el dedo", padName: "Nombre de quien firma", padOk: "Firmar", padNeed: "Falta la firma o el nombre.", change: "Cambio #",
     copy: "Copiar", zelleH: "Pague su depósito por Zelle", depFor: "Depósito para reservar su fecha", paidThanks: "¡Gracias! Confirmaremos su pago en breve.", sent: "Ya envié el Zelle",
+    firstDayL: "Al terminar el primer día de trabajo", schedH: "Sus pagos", schedHint: "Le enviaremos cada factura con su enlace de pago cuando toque. No tiene que pagar nada ahora.",
+    depH: "Pague el depósito", payDep: "Pagar depósito", payWays: "En la siguiente página elige cómo pagar.", depSoon: "Su enlace para pagar el depósito viene en camino: aparecerá aquí en unos minutos. También se lo enviaremos.", depPaid: "Depósito recibido. ¡Gracias!",
     bank: (d: string) => `Abra la app de su banco → Zelle → envíe ${d} a la dirección de arriba.`, notFound: "Este link ya no está activo. Por favor contáctenos.",
   },
 };
@@ -81,6 +85,8 @@ export default function PortalPage() {
   const P = PT[L], es = L === "es";
   const c = doc?.client || {};
   const ownerSigned = m ? isOwnerSigned(m) : false, signed = !!c.sign || ownerSigned;
+  // deposit at signing: only when the contractor asks for it (links published before this existed: no deposit box)
+  const depAtSign = !!m?.s.deposit?.atSign, depPay = m?.s.deposit?.pay || null;
   useEffect(() => { if (doc && m) document.title = `${m.s.business.name} — ${m.e.number || ""}`; }, [doc, m]);
 
   // the top bar shows where you are; the bottom bar offers "Review & sign" until the signing part is on screen
@@ -144,7 +150,7 @@ export default function PortalPage() {
   }).filter((l) => !l.skip);
   const payRows = payPlanOn(eff)
     ? planAmounts(eff, t.total).map((a, i) => ({ label: `${es ? eff.payPlan[i].labelEs || eff.payPlan[i].label : eff.payPlan[i].label} (${num(eff.payPlan[i].pct)}%)`, amount: a }))
-    : [{ label: `${P.depositL} (${num(t.depositPct)}%)`, amount: t.deposit }, { label: P.balanceL, amount: t.balance }];
+    : [{ label: `${depAtSign ? P.depositL : P.firstDayL} (${num(t.depositPct)}%)`, amount: t.deposit }, { label: P.balanceL, amount: t.balance }];
   const scope = nl2list(es ? e.scopeEs || e.scopeEn : e.scopeEn || e.scopeEs), terms = nl2list(es ? e.termsEs || e.termsEn : e.termsEn || e.termsEs);
   const groups = scopeGroups(scope);
   const K: Record<string, string> = { before: P.kBefore, after: P.kAfter, detail: P.kDetail };
@@ -262,14 +268,18 @@ export default function PortalPage() {
               <div className="row" style={{ marginTop: 10 }}><button className="btn sm" onClick={() => pad.current?.clear()}>{P.clear}</button><div style={{ marginLeft: "auto" }} />
                 <button className="btn pri" id="ptAccept" onClick={accept}>{P.accept} · <span className="num" id="ptSignTotal">{money(t.total)}</span></button></div>
             </>}
-          {signed && zelle && (c.paid
-            ? <div className="pt-pay"><h3>{P.depositL}</h3><p className="pt-paid">✓ {P.paidThanks}</p></div>
-            : <div className="pt-pay"><h3>{P.zelleH}</h3>
-              <div className="pt-amt"><span>{P.depFor}</span><b>{money(dep)}</b></div>
-              <div className="pt-pm"><div><b>Zelle</b><span>{zelle}{s.payZelleName ? " · " + s.payZelleName : ""}</span></div><button className="btn sm" onClick={() => copy(zelle)}>{P.copy}</button></div>
-              <p className="pt-hint" style={{ marginTop: 4 }}>{P.bank(money(dep))}</p>
-              {s.payNote && <p className="pt-hint">{s.payNote}</p>}
-              <div className="pt-sent"><button className="btn pri" style={{ width: "100%" }} onClick={() => patchTop("portal", token, { set: { "client.paid": { method: "Zelle", at: now() } } }).catch(offline)}>{P.sent}</button></div></div>)}
+          {signed && (!depAtSign
+            ? <div className="pt-pay"><h3>{P.schedH}</h3>
+              {payRows.map((r, i) => <div key={i} className="pt-amt"><span>{r.label}</span><b>{money(r.amount)}</b></div>)}
+              <p className="pt-hint" style={{ marginTop: 4 }}>{P.schedHint}</p></div>
+            : depPay?.paid ? <div className="pt-pay"><h3>{P.depositL}</h3><p className="pt-paid">✓ {P.depPaid}</p></div>
+            : <div className="pt-pay"><h3>{P.depH}</h3>
+              <div className="pt-amt"><span>{P.depFor}</span><b>{money(depPay?.amount ?? dep)}</b></div>
+              {depPay?.token
+                ? <><a className="btn pri" style={{ width: "100%", justifyContent: "center", marginTop: 6 }} href={"/pay/" + depPay.token}>{P.payDep} · {money(depPay.amount)}</a>
+                  <p className="pt-hint" style={{ marginTop: 6 }}>{P.payWays}</p></>
+                : <p className="pt-hint" style={{ marginTop: 4 }}>{P.depSoon}</p>}
+              {s.payNote && <p className="pt-hint">{s.payNote}</p>}</div>)}
         </section>
 
         <section className="pt-sec" id="ptChatSec"><h2>{P.chat}</h2><p className="pt-hint">{P.chatHint}</p>

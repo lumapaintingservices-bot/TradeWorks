@@ -6,6 +6,8 @@ import { calcEstimate, uid } from "../../lib/estimate";
 import { waLink } from "../../lib/format";
 import { money } from "../../lib/money";
 import { brandOf, newToken, portalSnapshot, sendLinkMessage } from "../../lib/portal";
+import { depositAtSignOf, depositPayFor } from "../../lib/deposit";
+import type { InvoiceRec } from "../../lib/invoices";
 import { safeImgSrc } from "../../lib/safeUrl";
 import { fmtDate } from "../../lib/format";
 import type { Estimate, Settings } from "../../lib/types";
@@ -16,10 +18,14 @@ export { brandOf };
 
 export const linkOf = (token: string) => `${location.origin}/p/${token}`;
 
-/** Writes the client-visible copy of the estimate to portal/{token} (owner-only fields stripped). */
-export function publishPortal(e: Estimate, s: Settings, company: Parameters<typeof brandOf>[0] & { id: string }) {
+/**
+ * Writes the client-visible copy of the estimate to portal/{token} (owner-only fields stripped). `invoices` = this company's
+ * invoices, for the deposit box (deposit at signing: amount, payment link, paid).
+ */
+export function publishPortal(e: Estimate, s: Settings, company: Parameters<typeof brandOf>[0] & { id: string }, invoices: InvoiceRec[] = []) {
   if (!e.portal) return Promise.resolve();
-  const snap = portalSnapshot(e, s, brandOf(company), { reviewUrl: s.reviewUrl, websiteUrl: s.websiteUrl, instagramUrl: s.instagramUrl });
+  const deposit = { atSign: depositAtSignOf(e, s), pay: depositPayFor(e, s, invoices) };
+  const snap = portalSnapshot(e, s, brandOf(company), { reviewUrl: s.reviewUrl, websiteUrl: s.websiteUrl, instagramUrl: s.instagramUrl, deposit });
   return setTop("portal", e.portal.token, { owner: company.id, estId: e.id, number: e.number, data: JSON.stringify(snap) }, true);
 }
 

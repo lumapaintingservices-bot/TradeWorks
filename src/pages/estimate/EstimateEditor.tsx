@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import { useJobExpenses } from "../../data/jobExpenses";
-import { nextEstimateNumber, useClients, useEstimates, useSettings } from "../../data/hooks";
+import { nextEstimateNumber, useClients, useEstimates, useInvoices, useSettings } from "../../data/hooks";
+import type { InvoiceRec } from "../../lib/invoices";
 import { useT } from "../../i18n";
 import { calcEstimate, jobEconomics, uid } from "../../lib/estimate";
 import { leadSourceList } from "../../lib/leadSources";
@@ -95,12 +96,13 @@ export default function EstimateEditor() {
   // checklist lines the crew ticked on their phones (src/data/crew.ts)
   useCrewTicksInto(e?.id, () => eRef.current?.check, (check) => set({ check }));
 
-  // keep the client's copy in step with edits (owner-only fields are stripped in portalSnapshot)
+  // keep the client's copy in step with edits (owner-only fields are stripped in portalSnapshot); invoices feed the deposit box
+  const { rows: invRows } = useInvoices();
   useEffect(() => {
     if (!e?.portal || !company) return;
     clearTimeout(syncTimer.current);
-    syncTimer.current = setTimeout(() => { publishPortal(e, s, company).catch(() => {}); }, 800);
-  }, [e, s, company]); // eslint-disable-line react-hooks/exhaustive-deps
+    syncTimer.current = setTimeout(() => { publishPortal(e, s, company, invRows as unknown as InvoiceRec[]).catch(() => {}); }, 800);
+  }, [e, s, company, invRows]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const listedMat = useJobExpenses(id || "", e);
   if (!e) return <div className="page">{loading ? null : <><p>{t("Estimate not found.", "No se encontró el presupuesto.")}</p><Link to="/estimates">{t("All estimates", "Todos los presupuestos")}</Link></>}</div>;

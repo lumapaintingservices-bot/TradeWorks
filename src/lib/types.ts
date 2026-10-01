@@ -24,6 +24,8 @@ export type Estimate = {
   manualType: "percent" | "fixed"; manualValue: number; manualLabel: string; manualLabelEs: string;
   taxEnabled: boolean; taxRate: number;
   depositPct: number; payPlanOn: boolean; payPlan: PayStep[];
+  /** Ask for the deposit as soon as the client signs (src/lib/deposit.ts). Unset = the company default (settings.depositAtSign). */
+  depositAtSign?: boolean | null;
   days: number; startDate: string; leadSource: string;
   scopeEn: string; scopeEs: string; termsEn: string; termsEs: string; notes: string; crewNotes: string;
   showMaterials: boolean; materialsMode: "included" | "added"; materialsList: MatRow[]; matBuyer: "me" | "paint" | "client";
@@ -143,6 +145,10 @@ export type Settings = {
   referral?: { on?: boolean; amount?: number; rewardEn?: string; rewardEs?: string };
   /** "Pay by card or bank" on invoice payment links, once the company's Stripe account is connected (on unless switched off). */
   cardPay?: { on?: boolean };
+  /** Company default: ask for a deposit as soon as the client signs the estimate (off: bill with invoices later). */
+  depositAtSign?: boolean;
+  /** When the company default was switched on: only signatures after it get an automatic deposit invoice. */
+  depositAtSignSince?: string;
   calOn?: boolean; calToken?: string;
   goal?: { sales: number }; dashCards?: { id: string; p: "month" | "lastmonth" | "ytd" | "lastyear" }[];
   recurring?: { id: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; day: number; from?: string; active: boolean; skip?: string[] }[];

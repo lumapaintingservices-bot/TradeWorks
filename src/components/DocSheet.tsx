@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { clientCanSee } from "../lib/jobPhotos";
+import { depositAtSignOf } from "../lib/deposit";
 import { calcEstimate } from "../lib/estimate";
 import { fmtDate } from "../lib/format";
 import { invKindLabel, planAmounts, type InvoiceRec } from "../lib/invoices";
@@ -27,7 +28,7 @@ const L = {
     materials: "Materials", materialsTotal: "Materials total", workSubtotal: "Work subtotal", notIncluded: "Not included",
     materialsIncludedNote: "Already included in the prices above — itemised here at your request, at no extra charge.",
     materialsAddedNote: "On this estimate materials are billed separately and are counted in the subtotal below.",
-    payment: "Payment methods", depositDue: "Deposit due day 1", balanceDue: "Balance due final day", dueNow: "Amount due now",
+    payment: "Payment methods", depositDue: "Deposit due day 1", depositSign: "Deposit due at signing", balanceDue: "Balance due final day", dueNow: "Amount due now",
     jobTotal: "Job total", lessDeposit: "Less deposit invoiced", accepted: "Accepted by (client signature)", sigDate: "Date", paid: "PAID",
     thanks: "Thank you for your business.", depositInv: "Deposit invoice", balanceInv: "Balance invoice", fullInv: "Invoice", photos: "Project photos",
     allIncluded: "All materials included", clientPaint: "Paint & primer provided by the client", clientAll: "Materials provided by the client",
@@ -41,7 +42,7 @@ const L = {
     materials: "Materiales", materialsTotal: "Total de materiales", workSubtotal: "Subtotal del trabajo", notIncluded: "No incluye",
     materialsIncludedNote: "Ya están incluidos en los precios de arriba — se detallan aquí a su solicitud, sin costo adicional.",
     materialsAddedNote: "En este presupuesto los materiales se cobran por separado y están contados en el subtotal de abajo.",
-    payment: "Formas de pago", depositDue: "Depósito — primer día", balanceDue: "Saldo — último día", dueNow: "Monto a pagar",
+    payment: "Formas de pago", depositDue: "Depósito — primer día", depositSign: "Depósito — al firmar", balanceDue: "Saldo — último día", dueNow: "Monto a pagar",
     jobTotal: "Total del trabajo", lessDeposit: "Menos depósito facturado", accepted: "Aceptado por (firma del cliente)", sigDate: "Fecha", paid: "PAGADO",
     thanks: "Gracias por su confianza.", depositInv: "Factura de depósito", balanceInv: "Factura de saldo", fullInv: "Factura", photos: "Fotos del proyecto",
     allIncluded: "Todos los materiales incluidos", clientPaint: "Pintura y primer los aporta el cliente", clientAll: "Materiales aportados por el cliente",
@@ -193,7 +194,7 @@ export function EstimateSheet({ e, s, biz, lang, compact, pay, services, sigImg 
       <Materials e={e} T={T} lang={lang} t={t} />
       <Totals>{totalsRows(e, s, T, lang, t, T.total)}
         {planRows ? planRows.map((r, i) => <Row key={i} label={r.label} v={money(r.amount)} />)
-          : <><Row label={`${T.depositDue} (${num(t.depositPct)}%)`} v={money(t.deposit)} /><Row label={T.balanceDue} v={money(t.balance)} /></>}</Totals>
+          : <><Row label={`${depositAtSignOf(e, s) ? T.depositSign : T.depositDue} (${num(t.depositPct)}%)`} v={money(t.deposit)} /><Row label={T.balanceDue} v={money(t.balance)} /></>}</Totals>
       {scope.length > 0 && <Sec title={T.scope}><ul className="scope"><ScopeLis list={scope} /></ul></Sec>}
       {terms.length > 0 && <Sec title={T.terms}><ul className="scope">{terms.map((x, i) => <li key={i}>{x}</li>)}</ul></Sec>}
       <Exclusions e={e} T={T} />

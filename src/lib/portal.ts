@@ -3,6 +3,7 @@ import { calcEstimate, findDiscount, servicesLine } from "./estimate";
 import { clientCanSee } from "./jobPhotos";
 import { num } from "./money";
 import type { ChatMsg, Estimate, Settings } from "./types";
+import type { DepositPay } from "./deposit";
 
 /** Fields that must never reach the client's phone. */
 export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "actualMaterialCost", "activity", "snooze", "portalSeen",
@@ -18,7 +19,9 @@ export type PortalModel = {
   s: { business: Brand; pricing: Settings["pricing"]; tax: Settings["tax"]; discounts: Settings["discounts"];
        showcase?: { id: string; url: string; caption: string }[];
        services?: { en: string; es: string };
-       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string; payMethods?: string[] };
+       reviewUrl: string; websiteUrl: string; instagramUrl: string; payZelle: string; payZelleName: string; payNote: string; payMethods?: string[];
+       /** Deposit at signing (src/lib/deposit.ts): absent on links published before it existed = no deposit box. */
+       deposit?: { atSign: boolean; pay: DepositPay | null } };
 };
 export type ClientState = {
   views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
@@ -35,7 +38,7 @@ export function newToken(): string {
   return Array.from(arr, (n) => a.charAt(n % a.length)).join("");
 }
 
-export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { reviewUrl?: string; websiteUrl?: string; instagramUrl?: string } = {}): PortalModel {
+export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { reviewUrl?: string; websiteUrl?: string; instagramUrl?: string; deposit?: { atSign: boolean; pay: DepositPay | null } } = {}): PortalModel {
   const x = JSON.parse(JSON.stringify(e)) as Estimate;
   PORTAL_STRIP.forEach((k) => delete (x as unknown as Record<string, unknown>)[k]);
   if (!x.showMaterials) x.materialsList = [];
@@ -56,7 +59,8 @@ export function portalSnapshot(e: Estimate, s: Settings, b: Brand, extra: { revi
     services: { en: servicesLine(e, s, "en"), es: servicesLine(e, s, "es") },
     reviewUrl: extra.reviewUrl || "", websiteUrl: extra.websiteUrl || b.website || "", instagramUrl: extra.instagramUrl || "",
     showcase: (s.showcase || []).filter((x) => x.url).map((x) => ({ id: x.id, url: x.url, caption: x.caption || "" })),
-    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "", ...(s.payMethods ? { payMethods: s.payMethods } : {}) } };
+    payZelle: s.payZelle || "", payZelleName: s.payZelleName || "", payNote: s.payNote || "", ...(s.payMethods ? { payMethods: s.payMethods } : {}),
+    deposit: extra.deposit || { atSign: false, pay: null } } };
 }
 
 /** Settings shaped for calcEstimate, using only what the snapshot carries. */
