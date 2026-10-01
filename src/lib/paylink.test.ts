@@ -114,3 +114,10 @@ it("payLinkMessage speaks the client's language", () => {
   expect(payLinkMessage(v, "https://x/pay/t", "Luma", "es")).toContain("Hola Ana, aquí está su factura INV-1001 (saldo) por $1,200.00");
   expect(payLinkMessage(v, "https://x/pay/t", "Luma", "en")).toContain("https://x/pay/t");
 });
+it("payLinkMessage for a paid invoice is a thank-you, not a request to pay", () => {
+  const v = { number: "INV-1001", kind: "balance", amount: 1200, clientName: "Ana Diaz", status: "Paid" } as InvoiceRec;
+  const es = payLinkMessage(v, "https://x/pay/t", "Luma", "es");
+  expect(es).toContain("gracias por su pago");
+  expect(es).not.toContain("pagar desde");
+  expect(payLinkMessage(v, "https://x/pay/t", "Luma", "en")).toContain("marked paid:\nhttps://x/pay/t");
+});

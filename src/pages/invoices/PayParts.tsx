@@ -10,7 +10,7 @@ import { money } from "../../lib/money";
 import { payLinkMessage, payOptionsOf } from "../../lib/paylink";
 import type { Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
-import { Modal } from "../../ui/Modal";
+import { Icon } from "../../ui/Icon";
 import { Badge } from "../../ui/Badge";
 
 /** Paid / Unpaid badge, plus what happened online: a bank payment on its way, or a second payment (to refund in Stripe). */
@@ -45,65 +45,75 @@ export function PayClaimBar({ v, busy, onConfirm, onDismiss }: { v: InvoiceRec; 
   );
 }
 
-/** Create / send / turn off the public payment link of one invoice. */
-export function PayLinkModal({ v, e, onClose }: { v: InvoiceRec; e: Estimate | undefined; onClose(): void }) {
+/**
+ * Send one invoice to the client: creates its public payment link if needed, then the message (in the client's language)
+ * with WhatsApp / SMS / e-mail / copy buttons. A paid invoice's link shows it as paid, so it doubles as a receipt.
+ */
+export function PaySend({ v, e, lang }: { v: InvoiceRec; e: Estimate | undefined; lang: "en" | "es" }) {
   const t = useT();
   const toast = useUi((x) => x.toast);
   const { company } = useAuth();
   const { settings } = useSettings();
   const [busy, setBusy] = useState(false);
-  const [token, setToken] = useState(v.pay?.token || "");
+  const token = v.pay?.token || "";
   const link = token ? payLinkOf(token) : "";
-  const lang = e?.docLang === "es" ? "es" : "en";
-  const [body, setBody] = useState(link ? payLinkMessage(v, link, company?.name || "", lang) : "");
+  const paid = v.status === "Paid";
+  const auto = link ? payLinkMessage(v, link, company?.name || "", lang) : "";
+  const [edit, setEdit] = useState<{ base: string; text: string } | null>(null);
+  // an edited message is kept until what it was written from changes (other language, marked paid, new amount)
+  const body = edit && edit.base === auto ? edit.text : auto;
   const methods = payOptionsOf(settings);
   const phone = e?.phone || v.phone || "", email = e?.email || v.email || "";
+  const subject = (lang === "es" ? "Factura " : "Invoice ") + v.number;
 
   const create = async () => {
     if (!e || !company || busy) return;
     setBusy(true);
-    try {
-      const tk = await createPayLink(v, e, settings, company);
-      setToken(tk); setBody(payLinkMessage(v, payLinkOf(tk), company.name, lang));
-      toast(t("Payment link created", "Enlace de pago creado"));
-    } catch (err) { console.error(err); toast(t("Could not create the link. Try again.", "No se pudo crear el enlace. Inténtalo de nuevo.")); }
+    try { await createPayLink(v, e, settings, company); toast(t("Link created", "Enlace creado")); }
+    catch (err) { console.error(err); toast(t("Could not create the link. Try again.", "No se pudo crear el enlace. Inténtalo de nuevo.")); }
     finally { setBusy(false); }
   };
   const turnOff = async () => {
-    if (!company || busy || !confirm(t("Turn off this payment link? The client will see that it is no longer active.", "¿Desactivar este enlace de pago? El cliente verá que ya no está activo."))) return;
+    if (!company || busy || !confirm(t("Turn off this link? The client will see that it is no longer active.", "¿Desactivar este enlace? El cliente verá que ya no está activo."))) return;
     setBusy(true);
-    try { await removePayLink({ ...v, pay: { token } }, company.id); setToken(""); toast(t("Payment link turned off", "Enlace de pago desactivado")); }
+    try { await removePayLink(v, company.id); toast(t("Link turned off", "Enlace desactivado")); }
     finally { setBusy(false); }
   };
-  const copy = () => navigator.clipboard?.writeText(link).then(() => toast(t("Copied.", "Copiado."))).catch(() => prompt(t("Copy the link", "Copia el enlace"), link));
-  const subject = (lang === "es" ? "Factura " : "Invoice ") + v.number;
+  const copy = (x: string, done: string) => navigator.clipboard?.writeText(x).then(() => toast(done)).catch(() => prompt(t("Copy it", "Cópialo"), x));
 
   return (
-    <Modal title={t("Payment link", "Enlace de pago") + " — " + v.number} onClose={onClose}>
-      {methods.length === 0 && (
+    <div className="pay-send">
+      {!paid && methods.length === 0 && (
         <p className="iv-warn" style={{ marginTop: 0 }}>{t("Add at least one way to pay (Zelle, Venmo, Cash App…) so the client knows how. ", "Agrega al menos una forma de pago (Zelle, Venmo, Cash App…) para que el cliente sepa cómo pagar. ")}
-          <Link to="/settings?section=client" onClick={onClose}>{t("Open settings", "Abrir ajustes")}</Link></p>)}
+          <Link to="/settings?section=client">{t("Open settings", "Abrir ajustes")}</Link></p>)}
       {!token ? (
         <>
-          <p className="muted" style={{ marginTop: 0 }}>{t(`The client opens the invoice on their phone, sees ${money(v.amount)} due and your payment options, and taps “I paid”. You confirm when the money arrives.`, `El cliente abre la factura en su teléfono, ve ${money(v.amount)} a pagar y tus formas de pago, y toca “Ya pagué”. Tú confirmas cuando llegue el dinero.`)}</p>
+          <p className="muted">{paid
+            ? t("This invoice is paid. Create a link to send the client a copy marked paid.", "Esta factura está pagada. Crea un enlace para mandarle al cliente una copia marcada como pagada.")
+            : t(`The client opens the invoice on their phone, sees ${money(v.amount)} due and your payment options, and taps “I paid”. You confirm when the money arrives.`, `El cliente abre la factura en su teléfono, ve ${money(v.amount)} a pagar y tus formas de pago, y toca “Ya pagué”. Tú confirmas cuando llegue el dinero.`)}</p>
           {!e && <p className="iv-warn">{t("This invoice's estimate was deleted, so there is nothing to show the client.", "Se borró el presupuesto de esta factura, así que no hay nada que mostrarle al cliente.")}</p>}
-          <button className="btn pri" disabled={busy || !e} onClick={create}>{t("Create payment link", "Crear enlace de pago")}</button>
+          <button className="btn pri" disabled={busy || !e} onClick={create}><Icon name="send" size={16} />{paid ? t("Create link", "Crear enlace") : t("Create payment link", "Crear enlace de pago")}</button>
         </>
       ) : (
         <>
-          <div className="linkbox">{link}</div>
-          <p className="muted" style={{ fontSize: 12.5, margin: "8px 0 0" }}>{t(`Opened ${v.payViews || 0} time(s). It updates by itself when you change or mark the invoice paid.`, `Abierto ${v.payViews || 0} vez/veces. Se actualiza solo cuando cambias la factura o la marcas pagada.`)}</p>
-          <label className="f" style={{ marginTop: 12 }}>{t("Message (in the client's language — edit anything)", "Mensaje (en el idioma del cliente — cambia lo que quieras)")}<textarea rows={7} value={body} onChange={(ev) => setBody(ev.target.value)} /></label>
-          <div className="pills">
-            <a className="btn wa-btn" href={waUrl(phone, body)} target="_blank" rel="noreferrer">WhatsApp</a>
-            <a className="btn" href={smsUrl(phone, body)}>SMS</a>
-            <a className="btn" href={mailUrl(email, subject, body)}>{t("Email", "Correo")}</a>
-            <button className="btn" onClick={copy}>{t("Copy link", "Copiar enlace")}</button>
-            <a className="btn" href={link} target="_blank" rel="noreferrer">{t("Open", "Abrir")}</a>
+          <div className="pay-link">
+            <span>{link}</span>
+            <button className="btn sm icon-only" onClick={() => copy(link, t("Link copied.", "Enlace copiado."))} title={t("Copy link", "Copiar enlace")} aria-label={t("Copy link", "Copiar enlace")}><Icon name="copy" size={16} /></button>
           </div>
-          <div style={{ marginTop: 14 }}><button className="link-btn" disabled={busy} onClick={turnOff}>{t("Turn off link", "Desactivar enlace")}</button></div>
+          <p className="muted pay-views">{t(`Opened ${v.payViews || 0} time(s). It updates by itself when you change the invoice or mark it paid.`, `Abierto ${v.payViews || 0} vez/veces. Se actualiza solo cuando cambias la factura o la marcas pagada.`)}</p>
+          <label className="f">{t("Message (edit anything)", "Mensaje (cambia lo que quieras)")}<textarea rows={6} value={body} onChange={(ev) => setEdit({ base: auto, text: ev.target.value })} /></label>
+          <div className="pay-btns">
+            <a className="btn wa-btn" href={waUrl(phone, body)} target="_blank" rel="noreferrer"><Icon name="chat" size={16} />WhatsApp</a>
+            <a className="btn" href={smsUrl(phone, body)}><Icon name="phone" size={16} />SMS</a>
+            <a className="btn" href={mailUrl(email, subject, body)}><Icon name="mail" size={16} />{t("Email", "Correo")}</a>
+            <button className="btn" onClick={() => copy(body, t("Message copied.", "Mensaje copiado."))}><Icon name="copy" size={16} />{t("Copy message", "Copiar mensaje")}</button>
+          </div>
+          <div className="pay-more">
+            <a className="link-btn" href={link} target="_blank" rel="noreferrer">{t("See what the client sees", "Ver lo que ve el cliente")}</a>
+            <button className="link-btn" disabled={busy} onClick={turnOff}>{t("Turn off link", "Desactivar enlace")}</button>
+          </div>
         </>
       )}
-    </Modal>
+    </div>
   );
 }

@@ -154,6 +154,9 @@ export function payApply(v: InvoiceRec, c: PayClient | undefined): Partial<Invoi
 export function payLinkMessage(v: InvoiceRec, link: string, businessName: string, lang: "en" | "es"): string {
   const first = String(v.clientName || "").split(" ")[0];
   const what = invKindLabel(v, lang === "es").toLowerCase();
+  if (v.status === "Paid") return lang === "es"
+    ? `Hola ${first}, gracias por su pago. Aquí está su factura ${v.number} (${what}) por ${money(v.amount)}, marcada como pagada:\n${link}\n\nGracias,\n${businessName}`
+    : `Hi ${first}, thank you for your payment. Here is your invoice ${v.number} (${what}) for ${money(v.amount)}, marked paid:\n${link}\n\nThank you,\n${businessName}`;
   return lang === "es"
     ? `Hola ${first}, aquí está su factura ${v.number} (${what}) por ${money(v.amount)}.\n\nEn este enlace la puede ver y pagar desde el teléfono:\n${link}\n\nGracias,\n${businessName}`
     : `Hi ${first}, here is your invoice ${v.number} (${what}) for ${money(v.amount)}.\n\nYou can view and pay it from your phone here:\n${link}\n\nThank you,\n${businessName}`;

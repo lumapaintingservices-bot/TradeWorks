@@ -8,7 +8,8 @@ import { money, num, r2 } from "../lib/money";
 import { useUi } from "../store/ui";
 import { EmptyState } from "../ui/EmptyState";
 import { statusPatch, useInvoiceOps } from "./estimate/InvoicesTab";
-import { InvBadge, PayClaimBar, PayLinkModal } from "./invoices/PayParts";
+import { InvoicePreview } from "./invoices/InvoicePreview";
+import { InvBadge, PayClaimBar } from "./invoices/PayParts";
 import "./Invoices.css";
 
 type Filter = "all" | "unpaid" | "paid" | "claims";
@@ -23,7 +24,7 @@ export default function Invoices() {
   const ops = useInvoiceOps();
   const { rows: ests, save: saveEst } = useEstimates();
   const [q, setQ] = useState(""); const [f, setF] = useState<Filter>("all"); const [busy, setBusy] = useState(false);
-  const [payFor, setPayFor] = useState("");
+  const [open, setOpen] = useState<{ id: string; start: "doc" | "send" } | null>(null);
   const estOf = (v: InvoiceRec) => ests.find((e) => e.id === v.estId);
   const nameOf = (v: InvoiceRec) => estOf(v)?.clientName || v.clientName || t("Unnamed client", "Cliente sin nombre");
 
@@ -61,13 +62,12 @@ export default function Invoices() {
   const actions = (v: InvoiceRec) => (
     <div className="iv-act" onClick={(ev) => ev.stopPropagation()}>
       <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
-      {!isPaid(v) && <button className="btn sm" onClick={() => setPayFor(v.id)}>{v.pay?.token ? t("Pay link ✓", "Enlace ✓") : t("Pay link", "Enlace de pago")}</button>}
-      <Link className="btn sm" to={`/invoices/${v.id}/doc`} target="_blank">{t("Document", "Documento")}</Link>
+      <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "send" })}>{v.pay?.token ? t("Send ✓", "Enviar ✓") : t("Send", "Enviar")}</button>
       <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
     </div>
   );
   const claimBar = (v: InvoiceRec) => <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />;
-  const payInv = ops.invoices.find((v) => v.id === payFor);
+  const openInv = open ? ops.invoices.find((v) => v.id === open.id) : undefined;
   const badge = (v: InvoiceRec) => <InvBadge v={v} />;
 
   return (
@@ -96,7 +96,7 @@ export default function Invoices() {
                 <table className="tbl iv-tbl">
                   <thead><tr><th>#</th><th>{t("Client", "Cliente")}</th><th>{t("Estimate", "Presupuesto")}</th><th>{t("Type", "Tipo")}</th><th>{t("Date", "Fecha")}</th><th className="r">{t("Amount", "Monto")}</th><th>{t("Status", "Estado")}</th><th /></tr></thead>
                   <tbody>{list.map((v) => (<Fragment key={v.id}>
-                    <tr className="click" onClick={() => window.open(`/invoices/${v.id}/doc`, "_blank")}>
+                    <tr className="click" onClick={() => setOpen({ id: v.id, start: "doc" })}>
                       <td><b className="num">{v.number}</b></td>
                       <td><b>{nameOf(v)}</b></td>
                       <td><Link to={`/estimates/${v.estId}`} onClick={(ev) => ev.stopPropagation()}>{v.estNumber || estOf(v)?.number || "—"}</Link></td>
@@ -111,7 +111,7 @@ export default function Invoices() {
                 </table>
               </div>
               <div className="cards only-phone">{list.map((v) => (
-                <div key={v.id} className="ec iv-card" onClick={() => window.open(`/invoices/${v.id}/doc`, "_blank")}>
+                <div key={v.id} className="ec iv-card" onClick={() => setOpen({ id: v.id, start: "doc" })}>
                   <div className="l1"><span>{nameOf(v)}</span><span>{money(v.amount)}</span></div>
                   <div className="l2"><span>{v.number} · {invKindText(v, es)} · {fmtDate(v.date, lang)}</span>{badge(v)}</div>
                   <div className="l2"><Link to={`/estimates/${v.estId}`} onClick={(ev) => ev.stopPropagation()}>{v.estNumber || estOf(v)?.number || "—"}</Link></div>
@@ -122,7 +122,8 @@ export default function Invoices() {
           )}
         </>
       )}
-      {payInv && <PayLinkModal v={payInv} e={estOf(payInv)} onClose={() => setPayFor("")} />}
+      {openInv && open && <InvoicePreview v={openInv} e={estOf(openInv)} client={nameOf(openInv)} busy={busy} start={open.start} onClose={() => setOpen(null)}
+        onToggle={(method) => toggle(openInv, method)} onDismissClaim={() => run(async () => { await ops.dismissClaim(openInv); })} onDelete={() => del(openInv)} />}
     </div>
   );
 }

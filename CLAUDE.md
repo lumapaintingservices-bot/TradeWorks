@@ -149,6 +149,11 @@ then "Deposit received". publishPortal(e, s, company, invoices) now takes invoic
 when on. Merged (PR #24), rules published 2026-09-30.
 Badges + checkboxes (shadcn/ui ideas, plain CSS): src/ui/Badge.tsx used by every pill (statuses keep the dot), global checkbox
 style in base.css (--chk / --chk-ink per container); dark-mode tints for --tile-*/--icon-*/--up-*/--down-* added (they were light).
+Merged (PR #25).
+Invoice preview (owner liked the studio-admin template, 2026-09-30; also wants later: a notes board like its Kanban, then a cleaner
+calendar with multi-day bars + week view; extras offered: Quick create button, Ctrl+K search, trend badges): click an invoice ->
+Drawer (src/ui/Drawer.tsx) with the document (InvoicePaper + PaperFit in src/pages/invoices/InvoicePaper.tsx, also used by
+InvoiceDoc) and PaySend (PayParts.tsx; replaced PayLinkModal). No download button by owner choice, only Print / Save PDF.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

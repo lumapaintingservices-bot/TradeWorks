@@ -1,13 +1,9 @@
-import { payMethodsOf } from "../lib/payMethods";
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
-import { InvoiceSheet } from "../components/DocSheet";
-import { useEstimates, useInvoices, useSettings } from "../data/hooks";
-import { servicesLine } from "../lib/estimate";
+import { InvoicePaper } from "./invoices/InvoicePaper";
+import { useEstimates, useInvoices } from "../data/hooks";
 import { asInv } from "../lib/invoices";
-import { payHandleLines } from "../lib/paylink";
-import { payLinkOf } from "../data/paylinks";
 import "./estimate/doc.css";
 
 /** Client-facing invoice: always light, in the CLIENT's language and the contractor's branding, printable to PDF. Route: /invoices/:id/doc */
@@ -17,7 +13,6 @@ export default function InvoiceDoc() {
   const { company } = useAuth();
   const { rows: invs, loading } = useInvoices();
   const { rows: ests } = useEstimates();
-  const { settings: s } = useSettings();
   const raw = invs.find((r) => r.id === id);
   const v = raw ? asInv(raw) : undefined;
   const e = v && ests.find((r) => r.id === v.estId);
@@ -40,8 +35,7 @@ export default function InvoiceDoc() {
         <span className="sp" />
         <button className="btn pri" onClick={() => window.print()}>{T("Print / Save as PDF", "Imprimir / Guardar PDF")}</button>
       </div></div>
-      <InvoiceSheet v={v} e={e} s={s} lang={lang} compact={compact} biz={company} services={servicesLine(e, s, lang)}
-        pay={{ zelle: s.payZelle || "", zelleName: s.payZelleName || "", note: s.payNote || "", methods: payMethodsOf(s.payMethods), handles: payHandleLines(s, lang === "es"), payUrl: v.pay?.token && v.status !== "Paid" ? payLinkOf(v.pay.token) : "" }} />
+      <InvoicePaper v={v} e={e} lang={lang} compact={compact} />
     </div>
   );
 }
