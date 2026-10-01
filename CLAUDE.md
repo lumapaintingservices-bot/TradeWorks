@@ -196,6 +196,8 @@ Access control + clock by task (owner 2026-10-01; backup tag backup-2026-10-01-b
 - Time clock always runs for ONE task of today (clockTaskOptions, clockFor): worker picks it (radio cards), owner's Team "Clock in" opens a
   task window (or "New task" pre-assigned, then back). clock + hours carry taskId / taskTitle (rules taskOk). Hours shown as "7 h 30 min"
   (hoursText), running clock "02:05" (clockHHMM). Global radio style (shadcn Radio Group) in base.css.
+Merged (PR #34), Firestore rules published and admins/RqJH4iTMLOdNcUy5ODyyak6WR3g1 (lumapaintingservices@gmail.com) added 2026-10-01.
+Two companies were created by other accounts before the lock: "ginolacera94@gmail.com" (etbFLIZx2gzjhAvj1efR) and "Jeksk" (wxBkkazjG40h5k1yiLGl); owner to decide.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
