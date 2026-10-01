@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
-import { addDaysISO, calendarEvents, gcalLink, icsCalendar, icsEsc, icsEvent, icsFold, jobDates, jobEndISO, jobsOn, jobStatus, fmtTime, type CalEvent } from "./calendar";
+import { addDaysISO, calendarEvents, gcalLink, icsCalendar, icsEsc, icsEvent, icsFold, jobDates, jobEndISO, jobsOn, jobStatus, fmtTime, monthWeeks, weekDays, weekSegments, weekStartISO, type CalEvent } from "./calendar";
 import { blankEstimate } from "./estimate";
 import { defaultSettings } from "./settings";
 import type { Estimate, Task } from "./types";
@@ -140,5 +140,34 @@ describe("parity with the prototype", () => {
     const strip = (x: string) => x.replace(/DTSTAMP:[^\r]+\r\n/, "");
     expect(strip(icsEvent(ev, NOW))).toBe(strip(ctx.icsEvent(ev)));
     expect(gcalLink(ev)).toBe(ctx.gcalLink(ev));
+  });
+});
+
+describe("month / week grid layout", () => {
+  it("weeks start on Sunday and cover the whole month", () => {
+    expect(weekStartISO("2026-09-30")).toBe("2026-09-27");
+    expect(weekStartISO("2026-09-27")).toBe("2026-09-27");
+    const w = monthWeeks("2026-09");
+    expect(w.length).toBe(5);
+    expect(w[0][0]).toBe("2026-08-30");
+    expect(w[4][6]).toBe("2026-10-03");
+    expect(monthWeeks("2026-02")[0][0]).toBe("2026-02-01");
+  });
+  it("puts multi-day bars on lanes and marks bars that continue", () => {
+    const days = weekDays("2026-09-27");
+    const r = weekSegments(days, [
+      { item: "a", dates: ["2026-09-25", "2026-09-26", "2026-09-27", "2026-09-28"] }, // from last week
+      { item: "b", dates: ["2026-09-28", "2026-09-29", "2026-09-30"] },
+      { item: "c", dates: ["2026-09-29"] },
+      { item: "d", dates: ["2026-10-02", "2026-10-03", "2026-10-04"] },                // into next week
+      { item: "x", dates: ["2026-10-10"] },                                            // not this week
+    ]);
+    const by = Object.fromEntries(r.segs.map((s) => [s.item, s]));
+    expect(by.x).toBeUndefined();
+    expect(by.a).toMatchObject({ from: 0, to: 1, lane: 0, cutL: true, cutR: false });
+    expect(by.b).toMatchObject({ from: 1, to: 3, lane: 1 });
+    expect(by.c).toMatchObject({ from: 2, to: 2, lane: 0 });
+    expect(by.d).toMatchObject({ from: 5, to: 6, lane: 0, cutL: false, cutR: true });
+    expect(r.lanes).toBe(2);
   });
 });

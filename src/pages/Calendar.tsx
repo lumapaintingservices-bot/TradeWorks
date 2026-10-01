@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useClients, useEstimates, useInvoices, useSettings, useTasks } from "../data/hooks";
 import { useT } from "../i18n";
 import {
-  addDaysISO, clientNameOf, daysBetween, downloadICS, fmtTime, gcalLink, jobDates, jobEventData, jobsOn, jobStatus, tasksOn,
+  addDaysISO, clientNameOf, daysBetween, downloadICS, fmtTime, gcalLink, jobDates, jobEventData, jobsOn, jobStatus, monthWeeks, tasksOn,
+  weekDays, weekStartISO,
 } from "../lib/calendar";
 import { calcEstimate, jobWhat, todayISO, uid } from "../lib/estimate";
 import { fmtDate } from "../lib/format";
@@ -16,10 +17,13 @@ import { Modal } from "../ui/Modal";
 import { StatusBadge } from "../ui/StatusBadge";
 import { DOW_EN, DOW_ES, MONTH_EN, MONTH_ES, monthKey, p2, shiftMonth } from "./calendar/dates";
 import { WorkerCalendar } from "./calendar/WorkerCalendar";
+import { WeekRow } from "./calendar/WeekRow";
 import { useAuth } from "../auth/AuthProvider";
 import "./Calendar.css";
 
 const stClass = (s: string) => "st-" + s.replace(/\s+/g, "").toLowerCase();
+const LS_VIEW = "tw.calView";
+const readView = (): "month" | "week" => { try { return localStorage.getItem(LS_VIEW) === "week" ? "week" : "month"; } catch { return "month"; } };
 
 /**
  * Calendar. Owners / admins get the full page (OwnerCalendar). A worker gets WorkerCalendar (only their own tasks), a
@@ -45,11 +49,19 @@ function OwnerCalendar() {
   const [month, setMonth] = useState(monthKey(todayISO()));
   const [day, setDay] = useState<string | null>(null);
   const [draft, setDraft] = useState<(Task & { isNew?: boolean }) | null>(null);
+  const [view, setViewS] = useState<"month" | "week">(readView);
+  const setView = (v: "month" | "week") => { setViewS(v); try { localStorage.setItem(LS_VIEW, v); } catch { /* private mode */ } };
+  const [wk, setWk] = useState(() => weekStartISO(todayISO()));
+  const [show, setShow] = useState<"all" | "jobs" | "tasks">("all");
+  const [who, setWho] = useState("");
 
   const today = todayISO();
   const y = num(month.slice(0, 4)), m = num(month.slice(5, 7)) - 1;
-  const startPad = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate();
-  const title = (es ? MONTH_ES[m] : MONTH_EN[m]) + " " + y;
+  const MON = es ? MONTH_ES : MONTH_EN;
+  const wEnd = addDaysISO(wk, 6);
+  const title = view === "month" ? MON[m] + " " + y
+    : wk.slice(0, 7) === wEnd.slice(0, 7) ? `${MON[num(wk.slice(5, 7)) - 1]} ${num(wk.slice(8))} – ${num(wEnd.slice(8))}, ${wEnd.slice(0, 4)}`
+    : `${MON[num(wk.slice(5, 7)) - 1].slice(0, 3)} ${num(wk.slice(8))} – ${MON[num(wEnd.slice(5, 7)) - 1].slice(0, 3)} ${num(wEnd.slice(8))}, ${wEnd.slice(0, 4)}`;
   const nameOf = (e: Estimate) => clientNameOf(e, clients, lang);
   // little avatars in the month grid: who does a task, who is on a job's crew
   const workerOf = (id?: string) => (id ? workers.find((w) => w.id === id) : undefined);
@@ -58,16 +70,11 @@ function OwnerCalendar() {
   const stOf = (e: Estimate) => jobStatus(e, invoices);
   const ctx = { invoices, clients, settings, lang };
 
-  const cells = useMemo(() => {
-    const out: (null | { iso: string; n: number; jobs: Estimate[]; tasks: Task[] })[] = [];
-    for (let i = 0; i < startPad; i++) out.push(null);
-    for (let n = 1; n <= dim; n++) {
-      const iso = `${y}-${p2(m + 1)}-${p2(n)}`;
-      out.push({ iso, n, jobs: jobsOn(iso, estimates, invoices), tasks: tasksOn(iso, tasks) });
-    }
-    while (out.length % 7) out.push(null);
-    return out;
-  }, [estimates, invoices, tasks, y, m, startPad, dim]);
+  const weeks = useMemo(() => (view === "month" ? monthWeeks(month) : [weekDays(wk)]), [view, month, wk]);
+  // what the grid shows: no declined jobs; "Show" and "Person" filters (a person = jobs they are on the crew of, their tasks)
+  const shownJobs = useMemo(() => show === "tasks" ? [] : estimates.filter((e) => e.startDate && stOf(e) !== "Declined" && (!who || (e.crew || []).includes(who))),
+    [estimates, invoices, show, who]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shownTasks = useMemo(() => show === "jobs" ? [] : tasks.filter((k) => !who || k.workerId === who), [tasks, show, who]);
 
   const week = useMemo(() => {
     const [ty, tm, td] = [num(today.slice(0, 4)), num(today.slice(5, 7)) - 1, num(today.slice(8, 10))];
@@ -77,7 +84,14 @@ function OwnerCalendar() {
   }, [estimates, invoices, settings, today]);
 
   const pick = (iso: string) => setDay(iso === day ? null : iso);
-  const goToday = () => { setMonth(monthKey(today)); setDay(today); };
+  const goToday = () => { setMonth(monthKey(today)); setWk(weekStartISO(today)); setDay(today); };
+  const step = (dir: -1 | 1) => { if (view === "month") setMonth(shiftMonth(month, dir)); else setWk(addDaysISO(wk, dir * 7)); };
+  const switchView = (v: "month" | "week") => {
+    // keep looking at the same time: month -> the week of the picked day / today / the 1st; week -> its month
+    if (v === "week") setWk(weekStartISO(day && monthKey(day) === month ? day : monthKey(today) === month ? today : month + "-01"));
+    else setMonth(monthKey(day && weekDays(wk).includes(day) ? day : addDaysISO(wk, 3)));
+    setView(v);
+  };
 
   async function moveJob(e: Estimate, to: string) {
     if (!to || to === e.startDate) return;
@@ -85,7 +99,7 @@ function OwnerCalendar() {
     await saveEst({ ...e, startDate: to });
     let moved = 0;
     if (d) for (const tk of tasks) if (tk.estId === e.id && tk.date) { await saveTask({ ...tk, date: addDaysISO(tk.date, d) }); moved++; }
-    setDay(to); setMonth(monthKey(to));
+    setDay(to); setMonth(monthKey(to)); setWk(weekStartISO(to));
     toast(t(`${e.number} moved to ${fmtDate(to, "en")}.`, `${e.number} movido al ${fmtDate(to, "es")}.`) + (moved ? " " + t(`${moved} task(s) moved with the job.`, `${moved} tarea(s) se movieron con el trabajo.`) : ""));
   }
   async function takeOff(e: Estimate) {
@@ -100,9 +114,41 @@ function OwnerCalendar() {
     const { isNew: _n, ...rec } = draft;
     const est = rec.estId ? estimates.find((x) => x.id === rec.estId) : undefined; // the job's name travels with the task (workers can't read estimates)
     await saveTask({ ...rec, title: draft.title.trim(), date: draft.date || today, jobLabel: est ? `${est.number} · ${nameOf(est)}` : "" });
-    setDay(draft.date || today); setMonth(monthKey(draft.date || today)); setDraft(null);
+    setDay(draft.date || today); setMonth(monthKey(draft.date || today)); setWk(weekStartISO(draft.date || today)); setDraft(null);
     toast(t("Task saved.", "Tarea guardada."));
   }
+
+  /** A job: bar across its days (month / week grid) or a chip (phone week list). */
+  const jobChip = (e: Estimate, start?: string) => {
+    const st = stOf(e), n = Math.max(1, Math.round(num(e.days) || 1));
+    const crew = (e.crew || []).map((id) => workerOf(id)?.name || "").filter(Boolean);
+    const dayNo = start ? jobDates(e).indexOf(start) + 1 : 0;
+    return (
+      <button className={"cal-chip " + stClass(st) + (st === "Draft" ? " draft" : "")} title={`${nameOf(e)} · ${e.number} · ${st}${n > 1 ? " · " + n + (es ? " días" : " days") : ""}${crew.length ? " · 👷 " + crew.join(", ") : ""}`}
+        onClick={(ev) => { ev.stopPropagation(); nav(`/estimates/${e.id}`); }}>
+        <span className="nm">{nameOf(e)}</span>
+        {n > 1 && <span className="d">{dayNo > 1 ? `${dayNo}/${n}` : es ? `${n} días` : `${n} days`}</span>}
+        {crew.length > 0 && <span className="cal-avs">{crew.slice(0, 3).map((nm, j) => <i key={j}>{ini(nm)}</i>)}{crew.length > 3 && <i>+{crew.length - 3}</i>}</span>}
+      </button>
+    );
+  };
+  const taskChip = (k: Task) => {
+    const w = workerOf(k.workerId), cl = taskClient(k);
+    return (
+      <button key={k.id} className={"cal-task" + (k.done ? " done" : "")} title={[k.title, w ? "👷 " + w.name : "", cl].filter(Boolean).join(" · ")}
+        onClick={(ev) => { ev.stopPropagation(); setDraft({ ...k }); }}>
+        <span className="l1">{w && <i className="cal-av">{ini(w.name)}</i>}{k.time && <span className="tm">{fmtTime(k.time)}</span>}<span className="tt">{k.title}</span></span>
+        {(cl || w) && <span className="l2">{[w?.name.split(" ")[0], cl].filter(Boolean).join(" · ")}</span>}</button>);
+  };
+  /** Phone month view: little coloured dots instead of bars. */
+  const dots = (iso: string) => {
+    const js = shownJobs.filter((e) => jobDates(e).includes(iso)), ts = tasksOn(iso, shownTasks);
+    if (!js.length && !ts.length) return null;
+    return <div className="cal-dots" aria-hidden>
+      {js.slice(0, 4).map((e) => { const st = stOf(e); return <i key={e.id} className={"dot " + stClass(st) + (st === "Draft" ? " draft" : "")} />; })}
+      {ts.slice(0, Math.max(0, 4 - js.length)).map((k) => <i key={k.id} className={"dot tk" + (k.done ? " done" : "")} />)}
+    </div>;
+  };
 
   const dayJobs = day ? jobsOn(day, estimates, invoices) : [];
   const dayTasks = day ? tasksOn(day, tasks) : [];
@@ -115,47 +161,53 @@ function OwnerCalendar() {
           <p>{t(`${week.n} jobs this week · ${money(week.val)} scheduled`, `${week.n} trabajos esta semana · ${money(week.val)} programados`)}</p></div>
         <div className="cal-actions">
           <button className="btn pri" onClick={() => newTask()}><Icon name="plus" />{t("New task", "Nueva tarea")}</button>
-          <button className="btn" aria-label={t("Previous month", "Mes anterior")} onClick={() => setMonth(shiftMonth(month, -1))}>←</button>
-          <button className="btn" onClick={goToday}>{t("Today", "Hoy")}</button>
-          <button className="btn" aria-label={t("Next month", "Mes siguiente")} onClick={() => setMonth(shiftMonth(month, 1))}>→</button>
         </div>
       </div>
 
-      <div className="card">
-        <div className="card-h"><h2>{title}</h2>
-          <span className="cal-legend muted"><i className="lg lg-draft" />{t("Draft", "Borrador")}<i className="lg st-sent" />{t("Sent", "Enviado")}<i className="lg st-accepted" />{t("Accepted", "Aceptado")}<i className="lg st-depositpaid" />{t("Paid", "Pagado")}<i className="lg lg-task" />{t("Task", "Tarea")}</span></div>
-        <div className="card-b cal-body">
-          <div className="cal-dow">{(es ? DOW_ES : DOW_EN).map((d) => <div key={d}>{d}</div>)}</div>
-          <div className="cal-grid">
-            {cells.map((c, i) => !c ? <div key={i} className="cal-cell out" /> : (
-              <div key={c.iso} className={"cal-cell" + (c.iso === today ? " today" : "") + (c.iso === day ? " sel" : "")} role="button" tabIndex={0}
-                aria-label={fmtDate(c.iso, lang) + (c.jobs.length + c.tasks.length ? ` · ${c.jobs.length + c.tasks.length}` : "")}
-                onClick={() => pick(c.iso)} onKeyDown={(ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); pick(c.iso); } }}>
-                <div className="cal-n">{c.n}</div>
-                <div className="cal-chips">
-                  {c.jobs.map((e) => {
-                    const st = stOf(e), n = Math.max(1, Math.round(num(e.days) || 1));
-                    const crew = (e.crew || []).map((id) => workerOf(id)?.name || "").filter(Boolean);
-                    return <button key={e.id} className={"cal-chip " + stClass(st) + (st === "Draft" ? " draft" : "")} title={`${nameOf(e)} · ${e.number} · ${st}${crew.length ? " · 👷 " + crew.join(", ") : ""}`}
-                      onClick={(ev) => { ev.stopPropagation(); nav(`/estimates/${e.id}`); }}><span className="nm">{nameOf(e)}</span> <span className="d">{jobDates(e).indexOf(c.iso) + 1}/{n}</span>
-                      {crew.length > 0 && <span className="cal-avs">{crew.slice(0, 3).map((nm, j) => <i key={j}>{ini(nm)}</i>)}{crew.length > 3 && <i>+{crew.length - 3}</i>}</span>}</button>;
-                  })}
-                  {c.tasks.map((k) => {
-                    const w = workerOf(k.workerId), cl = taskClient(k);
-                    return (
-                      <button key={k.id} className={"cal-task" + (k.done ? " done" : "")} title={[k.title, w ? "👷 " + w.name : "", cl].filter(Boolean).join(" · ")}
-                        onClick={(ev) => { ev.stopPropagation(); setDraft({ ...k }); }}>
-                        <span className="l1">{w && <i className="cal-av">{ini(w.name)}</i>}{k.time && <span className="tm">{fmtTime(k.time)}</span>}<span className="tt">{k.title}</span></span>
-                        {(cl || w) && <span className="l2">{[w?.name.split(" ")[0], cl].filter(Boolean).join(" · ")}</span>}</button>);
-                  })}
-                </div>
-                {(c.jobs.length + c.tasks.length > 0) && <div className="cal-dots" aria-hidden>
-                  {c.jobs.slice(0, 4).map((e) => { const st = stOf(e); return <i key={e.id} className={"dot " + stClass(st) + (st === "Draft" ? " draft" : "")} />; })}
-                  {c.tasks.slice(0, Math.max(0, 4 - c.jobs.length)).map((k) => <i key={k.id} className={"dot tk" + (k.done ? " done" : "")} />)}
-                </div>}
-              </div>
+      <div className="card cal-card">
+        <div className="cal-bar">
+          <div className="cal-nav">
+            <button className="btn sm icon-only" aria-label={view === "month" ? t("Previous month", "Mes anterior") : t("Previous week", "Semana anterior")} onClick={() => step(-1)}>‹</button>
+            <button className="btn sm" onClick={goToday}>{t("Today", "Hoy")}</button>
+            <button className="btn sm icon-only" aria-label={view === "month" ? t("Next month", "Mes siguiente") : t("Next week", "Semana siguiente")} onClick={() => step(1)}>›</button>
+            <h2>{title}</h2>
+          </div>
+          <div className="cal-tools">
+            <select value={show} onChange={(e) => setShow(e.target.value as typeof show)} aria-label={t("Show", "Mostrar")}>
+              <option value="all">{t("Jobs and tasks", "Trabajos y tareas")}</option>
+              <option value="jobs">{t("Only jobs", "Solo trabajos")}</option>
+              <option value="tasks">{t("Only tasks", "Solo tareas")}</option>
+            </select>
+            {workers.length > 0 && <select value={who} onChange={(e) => setWho(e.target.value)} aria-label={t("Person", "Persona")}>
+              <option value="">{t("Everyone", "Todos")}</option>
+              {workers.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>}
+            <div className="seg cal-view">
+              <button className={view === "month" ? "on" : ""} onClick={() => switchView("month")}>{t("Month", "Mes")}</button>
+              <button className={view === "week" ? "on" : ""} onClick={() => switchView("week")}>{t("Week", "Semana")}</button>
+            </div>
+          </div>
+        </div>
+        <div className={"cal-body" + (view === "week" ? " is-week" : "")}>
+          <div className="cal-dow">{weeks[0].map((d, i) => <div key={d} className={view === "week" && d === today ? "today" : ""}>{(es ? DOW_ES : DOW_EN)[i]}</div>)}</div>
+          <div className={"cal-weeks" + (view === "week" ? " only-desk" : "")}>
+            {weeks.map((days) => (
+              <WeekRow key={days[0]} days={days} today={today} sel={day} lang={lang} month={view === "month" ? month : undefined}
+                jobs={shownJobs} tasks={shownTasks} maxLanes={view === "month" ? 3 : undefined} maxTasks={view === "month" ? 2 : undefined} week={view === "week"}
+                jobChip={jobChip} taskChip={taskChip} dots={dots} onPick={pick} />
             ))}
           </div>
+          {view === "week" && <div className="cal-agenda only-phone">{weeks[0].map((d) => {
+            const js = shownJobs.filter((e) => jobDates(e).includes(d)), ts = tasksOn(d, shownTasks);
+            return (
+              <div key={d} className={"cal-ag-day" + (d === today ? " today" : "") + (d === day ? " sel" : "")}>
+                <button className="cal-ag-h" onClick={() => pick(d)}><b>{(es ? DOW_ES : DOW_EN)[new Date(d + "T12:00:00").getDay()]} {num(d.slice(8))}</b>
+                  <span className="muted">{js.length + ts.length ? t(`${js.length + ts.length} item(s)`, `${js.length + ts.length} cosa(s)`) : t("Free", "Libre")}</span></button>
+                {js.map((e) => <div key={e.id}>{jobChip(e)}</div>)}
+                {ts.map((k) => taskChip(k))}
+              </div>);
+          })}</div>}
+          <div className="cal-legend muted"><i className="lg lg-draft" />{t("Draft", "Borrador")}<i className="lg st-sent" />{t("Sent", "Enviado")}<i className="lg st-accepted" />{t("Accepted", "Aceptado")}<i className="lg st-depositpaid" />{t("Paid", "Pagado")}<i className="lg lg-task" />{t("Task", "Tarea")}</div>
         </div>
       </div>
 

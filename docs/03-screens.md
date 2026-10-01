@@ -24,7 +24,12 @@ Lead card: name, days, phone/source, questionnaire summary, message, WhatsApp / 
 "Removed leads (N)" → modal with Put back / Delete / Delete all. "+ New lead".
 
 ## Calendar (/calendar)
-Month grid: jobs span startDate..+days (drafts dotted), tasks. Day panel: job status, Move to, Take off,
+Toolbar (idea from the studio-admin calendar): ‹ Today › + title, Show (jobs and tasks / only jobs / only tasks), Person (a
+worker: jobs they are on the crew of + their tasks), Month / Week (remembered per device). Month grid in table lines: out-of-month
+days dimmed, today = filled circle, jobs are ONE bar across their days (cut ends when they go on into the next / previous week;
+lanes so bars never overlap; up to 3 bar rows + 2 tasks a day, then "+N more" opens the day), tasks with time / worker / client.
+Week view = the same row, tall, no limits. Phone: month = dots, week = a list of the 7 days (src/pages/calendar/WeekRow.tsx,
+layout in src/lib/calendar.ts weekSegments). Day panel: job status, Move to, Take off,
 **+ Google / + Outlook/Apple**, Open. Tasks can be assigned to workers.
 
 ## Estimates (/estimates)

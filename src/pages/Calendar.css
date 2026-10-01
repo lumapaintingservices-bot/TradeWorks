@@ -86,3 +86,68 @@
 .cal-avs{display:inline-flex;margin-left:auto;padding-left:3px;flex:none}
 .cal-avs i{width:15px;height:15px;border-radius:50%;background:var(--surface);color:var(--ink);border:1px solid var(--line);font-style:normal;font-size:8px;font-weight:700;display:grid;place-items:center;margin-left:-4px}
 .cal-avs i:first-child{margin-left:0}
+/* ---------- owner calendar: toolbar, month / week grid with multi-day bars (WeekRow.tsx) ---------- */
+.cal-card{overflow:hidden}
+.cal-bar{display:flex;align-items:center;justify-content:space-between;gap:10px 14px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.cal-nav{display:flex;align-items:center;gap:6px;min-width:0}
+.cal-nav h2{font-size:17px;font-weight:600;margin:0 0 0 8px;white-space:nowrap;text-transform:capitalize}
+.cal-nav .btn.icon-only{width:32px;height:32px;font-size:17px}
+.cal-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cal-tools select{width:auto;height:34px;padding:0 30px 0 10px;font-size:13px}
+.cal-view button{padding:6px 12px;font-size:12.5px}
+.cal-card .cal-body{padding:0}
+.cal-card .cal-dow{gap:0;margin:0;border-bottom:1px solid var(--line-2)}
+.cal-card .cal-dow div{padding:8px 0}
+.cal-card .cal-dow div.today{color:var(--acc)}
+.cal-card .cal-legend{padding:10px 16px;border-top:1px solid var(--line-2)}
+.cw{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:3px;min-height:118px;border-bottom:1px solid var(--line-2);position:relative;padding-bottom:6px}
+.cal-weeks .cw:last-child{border-bottom:0}
+.cw.week{min-height:440px}
+.cw-bg{border-right:1px solid var(--line-2);cursor:pointer;margin-bottom:-6px;min-width:0}
+.cw-bg:nth-child(7){border-right:0}
+.cw-bg:hover{background:var(--surface-2)}
+.cw-bg:focus-visible{outline:0;box-shadow:inset 0 0 0 2px var(--acc)}
+.cw-bg.out{background:var(--surface-2)}
+.cw-bg.out:hover{background:var(--bg)}
+.cw-bg.sel{background:var(--acc-soft)}
+.cw-n{pointer-events:none;padding:6px 8px 2px;text-align:right;font-size:12.5px;font-weight:600;color:var(--ink-2);line-height:1}
+.cw-n span{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:999px;padding:0 4px}
+.cw-n span.today{background:var(--acc);color:#fff}
+.cw-bar{position:relative;z-index:1;margin:0 4px;min-width:0}
+.cw-bar.cl{margin-left:0}
+.cw-bar.cr{margin-right:0}
+.cw-bar .cal-chip{height:22px}
+.cw-bar.cl .cal-chip{border-top-left-radius:0;border-bottom-left-radius:0;border-left-color:transparent}
+.cw-bar.cr .cal-chip{border-top-right-radius:0;border-bottom-right-radius:0}
+.cw-tasks{position:relative;z-index:1;pointer-events:none;display:flex;flex-direction:column;gap:3px;padding:0 4px;min-width:0}
+.cw-tasks>*{pointer-events:auto}
+.cw-more{border:0;background:none;padding:1px 4px;font-size:11px;font-weight:600;color:var(--ink-3);text-align:left;border-radius:4px;cursor:pointer}
+.cw-more:hover{background:var(--surface-2);color:var(--ink)}
+.cw.week .cw-n{font-size:15px;padding:8px 10px 4px}
+.cw.week .cw-n span{min-width:28px;height:28px}
+.cw.week .cal-task{white-space:normal}
+.cw.week .cal-task .l1 .tt{white-space:normal}
+/* phone: week as a list of days */
+.cal-agenda{padding:4px 12px 8px}
+.cal-ag-day{display:flex;flex-direction:column;gap:5px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.cal-ag-day:last-child{border-bottom:0}
+.cal-ag-h{display:flex;justify-content:space-between;align-items:center;border:0;background:none;padding:0;color:var(--ink);font-size:14px;text-align:left}
+.cal-ag-day.today .cal-ag-h b{color:var(--acc)}
+.cal-ag-day.sel{background:var(--acc-soft);margin:0 -12px;padding:10px 12px}
+.cal-ag-day .cal-chip{height:28px;font-size:12.5px}
+.cal-ag-day .cal-task{font-size:12.5px;padding:5px 8px}
+@media(max-width:640px){
+  .cal-bar{padding:10px 12px}
+  .cal-nav{width:100%}
+  .cal-nav h2{font-size:16px;margin-left:auto}
+  .cal-tools{width:100%}
+  .cal-tools select{flex:1 1 40%;min-width:0}
+  .cal-view{margin-left:auto}
+  .cw{min-height:54px;padding-bottom:0;row-gap:0}
+  .cw-bar,.cw-tasks{display:none}
+  .cw-bg{display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;margin-bottom:0}
+  .cw-n{text-align:center;padding:5px 0 0}
+  .cw-n span{min-width:24px;height:24px}
+  .cal-card .cal-legend{padding:8px 12px}
+  .cal-body.is-week .cal-dow{display:none}
+}
