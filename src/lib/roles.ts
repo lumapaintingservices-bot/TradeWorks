@@ -19,8 +19,24 @@ export const isRole = (v: unknown): v is Role => v === "owner" || v === "admin" 
 /** Routes a worker may open (prefix match). Everything else redirects to homeFor("worker"). */
 export const WORKER_ROUTES = ["/jobs", "/calendar", "/team", "/timesheet", "/chats", "/settings"];
 
-/** May this person start a new company of their own? Not when every company they belong to has them as a plain worker. */
-export const canCreateCompany = (roles: Role[]): boolean => roles.length === 0 || roles.some((r) => r !== "worker");
+/**
+ * May this person start a NEW company? Only a TradeWorks platform admin (admins/{uid} in Firestore, set by hand in the
+ * console; rules check the same doc). Everyone else gets into a company by invitation only. Demo mode: everybody.
+ */
+export const canCreateCompany = (isPlatformAdmin: boolean): boolean => isPlatformAdmin;
+
+export type OnboardingView = "join" | "wizard" | "home" | "no-access";
+/**
+ * What /onboarding shows: the "You were invited" prompt, the company wizard (a platform admin creating a company, or
+ * anyone finishing the setup of the company they are already in), their home, or "you need an invitation".
+ */
+export function onboardingView(o: { invite: boolean; skipInvite: boolean; hasCompany: boolean; companies: number; creating: boolean; isPlatformAdmin: boolean; role: Role | null }): OnboardingView {
+  if (o.invite && !o.hasCompany && !o.creating && !o.skipInvite) return "join";
+  if (o.role === "worker" && o.companies > 0) return "home"; // a worker never sets up a company
+  if (o.hasCompany && !o.creating) return "wizard";        // finishing the setup of the company they are in
+  if (o.isPlatformAdmin) return "wizard";                   // creating a new company
+  return o.companies > 0 ? "home" : "no-access";
+}
 
 export const homeFor = (role: Role | null | undefined): string => (role === "worker" ? "/jobs" : "/");
 

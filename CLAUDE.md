@@ -186,7 +186,15 @@ Measurements per job type (owner 2026-10-01: "every service should have its metr
 (+ test; DEFAULT_MEASURES per job type of every trade, settings.measures overrides). Estimate Pricing tab: MeasuresCard (how many × price per
 unit; each one is an ordinary line with svc = service id, so totals / hours / materials / documents are unchanged; 0 removes the line).
 Settings > Job types: per type, Cabinet prices (moved from Prices) + measurements list (price = the service's price, reorder, remove,
-add from services or create a new service). The Prices card no longer writes the cabinet prices. Owner rule: build new UI the shadcn way.
+add from services or create a new service). The Prices card no longer writes the cabinet prices. Owner rule: build new UI the shadcn way. Merged (PR #33).
+Access control + clock by task (owner 2026-10-01; backup tag backup-2026-10-01-before-access-control):
+- Accounts are by invitation: only a TradeWorks platform admin (admins/{uid}, added by hand in the Firebase console; rules isPlatformAdmin())
+  creates companies; the owner sets up each client company (onboarding) and invites its people (an "Owner" invite for the contractor).
+  Anyone else who signs up sees "You need an invitation" (App.tsx NoAccess, roles.ts onboardingView). Demo mode: everyone may create.
+- Login / sign-up: PasswordInput with show / hide (src/ui/PasswordInput.tsx); sign-up says it is for invited people.
+- Time clock always runs for ONE task of today (clockTaskOptions, clockFor): worker picks it (radio cards), owner's Team "Clock in" opens a
+  task window (or "New task" pre-assigned, then back). clock + hours carry taskId / taskTitle (rules taskOk). Hours shown as "7 h 30 min"
+  (hoursText), running clock "02:05" (clockHHMM). Global radio style (shadcn Radio Group) in base.css.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

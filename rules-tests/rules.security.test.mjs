@@ -363,6 +363,7 @@ await no("owner cannot set stripeCustomerId", () => updateDoc(doc(own1, "compani
 await no("owner cannot set pastDueSince", () => updateDoc(doc(own1, "companies/c1"), { pastDueSince: new Date() }));
 await no("owner cannot point card payments at another Stripe account", () => updateDoc(doc(own1, "companies/c1"), { stripeAccountId: "acct_x" }));
 await no("admin cannot switch card payments on", () => updateDoc(doc(adm1, "companies/c1"), { stripeReady: true }));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "admins/own2"), { note: "test" }); });
 await no("a new company cannot start with a Stripe account", () => setDoc(doc(own2, "companies/cNew"), { ownerUid: "own2", name: "x", stripeAccountId: "acct_x" }));
 await no("owner cannot replace the whole company doc (would drop ownerUid)", () => setDoc(doc(own1, "companies/c1"), { name: "x" }));
 await no("owner cannot change createdAt", () => updateDoc(doc(own1, "companies/c1"), { createdAt: 5 }));

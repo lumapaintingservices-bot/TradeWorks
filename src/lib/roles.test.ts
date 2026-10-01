@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAccess, canChangeRole, canInviteRole, canLinkWorker, can, decideInvite, homeFor, isEmail, navFilter, normEmail, redirectFor,
-  canRemoveMember, canCreateCompany, workerScope, type MemberLite,
+  canRemoveMember, canCreateCompany, onboardingView, workerScope, type MemberLite,
 } from "./roles";
 
 describe("route permissions", () => {
@@ -136,12 +136,29 @@ describe("worker data scope", () => {
   });
 });
 
-describe("canCreateCompany", () => {
-  it("is false only when every company is as a worker", () => {
-    expect(canCreateCompany([])).toBe(true);
-    expect(canCreateCompany(["owner"])).toBe(true);
-    expect(canCreateCompany(["worker", "admin"])).toBe(true);
-    expect(canCreateCompany(["worker"])).toBe(false);
-    expect(canCreateCompany(["worker", "worker"])).toBe(false);
+describe("who may create a company", () => {
+  it("only a platform admin", () => {
+    expect(canCreateCompany(true)).toBe(true);
+    expect(canCreateCompany(false)).toBe(false);
+  });
+  const base = { invite: false, skipInvite: false, hasCompany: false, companies: 0, creating: false, isPlatformAdmin: false, role: null };
+  it("a stranger without an invitation cannot get in", () => {
+    expect(onboardingView(base)).toBe("no-access");
+    expect(onboardingView({ ...base, invite: true, skipInvite: true })).toBe("no-access");
+  });
+  it("an invited person sees the join prompt", () => {
+    expect(onboardingView({ ...base, invite: true })).toBe("join");
+    expect(onboardingView({ ...base, invite: true, isPlatformAdmin: true })).toBe("join");
+  });
+  it("a platform admin can create companies", () => {
+    expect(onboardingView({ ...base, isPlatformAdmin: true })).toBe("wizard");
+    expect(onboardingView({ ...base, isPlatformAdmin: true, companies: 2, creating: true, role: "owner" })).toBe("wizard");
+  });
+  it("an owner who is not a platform admin cannot start another company", () => {
+    expect(onboardingView({ ...base, companies: 1, creating: true, role: "owner" })).toBe("home");
+  });
+  it("anyone may finish the setup of the company they are in, except workers", () => {
+    expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "owner" })).toBe("wizard");
+    expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "worker" })).toBe("home");
   });
 });

@@ -19,6 +19,8 @@ type Ctx = {
   activeCompanyId: string | null;
   /** True while the user is creating an additional company with the onboarding steps (the old company is untouched). */
   creating: boolean;
+  /** A TradeWorks platform admin: the only one who may create companies (backend.isPlatformAdmin). */
+  isPlatformAdmin: boolean;
   /** Account data could not be loaded (offline / rules / too slow). The app shows a retry screen instead of onboarding. */
   loadError: boolean;
   /** Signed in, and the account (companies, role) is still loading: the sign-in page shows "Signing you in…". */
@@ -67,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loadError, setLoadError] = useState(false);
   const [retry, setRetry] = useState(0);
   const [loadingAccount, setLoadingAccount] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const seq = useRef(0);
   const userRef = useRef<User | null>(null);
   userRef.current = user;
@@ -75,15 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => backend.onUser(async (u) => {
     const mine = ++seq.current;
     if (!u) {
-      setUser(null); setMembers([]); setActiveId(null); setDraft(false); setInviteDoc(null); setDismissed([]); setLoadError(false); setReady(true);
+      setUser(null); setMembers([]); setActiveId(null); setDraft(false); setInviteDoc(null); setDismissed([]); setLoadError(false); setIsAdmin(false); setReady(true);
       return;
     }
     setReady(false); setLoadingAccount(true);
     let list: Membership[] = [], active: string | null = null, err = false;
     try { ({ list, activeId: active } = await withTimeout(backend.loadMemberships(u.uid), LOAD_TIMEOUT_MS)); } catch { err = true; }
-    const inv = err ? null : await withTimeout(backend.getInvite(u.email), 8000).catch(() => null);
+    const [inv, admin] = err ? [null, false] : await Promise.all([
+      withTimeout(backend.getInvite(u.email), 8000).catch(() => null),
+      withTimeout(backend.isPlatformAdmin(u.uid), 8000).catch(() => false),
+    ]);
     if (mine !== seq.current) return;
-    setUser(u); setMembers(list); setActiveId(active); setDraft(false); setInviteDoc(inv); setDismissed([]); setLoadError(err); setReady(true); setLoadingAccount(false);
+    setUser(u); setMembers(list); setActiveId(active); setDraft(false); setInviteDoc(inv); setDismissed([]); setLoadError(err); setIsAdmin(admin); setReady(true); setLoadingAccount(false);
   }), [retry]);
 
   const active = useMemo(() => members.find((m) => m.company.id === activeId) ?? null, [members, activeId]);
@@ -135,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: Ctx = {
     ready, user, company, role: draft ? null : active?.role ?? null, workerId: draft ? null : active?.workerId ?? null,
     companies: members.map((m) => ({ id: m.company.id, name: m.company.name, logoUrl: m.company.logoUrl, role: m.role })),
-    activeCompanyId: activeId, creating: draft, loadError, loadingAccount,
+    activeCompanyId: activeId, creating: draft, isPlatformAdmin: isAdmin, loadError, loadingAccount,
     saveCompany, switchCompany,
     createCompany: () => setDraft(true),
     cancelCreateCompany: () => setDraft(false),

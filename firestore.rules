@@ -30,8 +30,14 @@ service cloud.firestore {
         && d[k].acc is number && d[k].acc >= 0 && d[k].acc <= 100000
         && d[k].at is string && d[k].at.size() <= 40);
     }
+    // the task the time clock ran for (clock and hours entries): short strings
+    function taskOk(d) {
+      return (!('taskId' in d) || (d.taskId is string && d.taskId.size() <= 80))
+        && (!('taskTitle' in d) || (d.taskTitle is string && d.taskTitle.size() <= 120));
+    }
     function hoursShapeOk() {
-      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'jobLabel', 'note', 'start', 'end', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['workerId', 'date', 'hours', 'rate', 'estId', 'jobLabel', 'taskId', 'taskTitle', 'note', 'start', 'end', 'inLoc', 'outLoc', 'companyId', 'createdAt', 'updatedAt'])
+        && taskOk(request.resource.data)
         && (!('jobLabel' in request.resource.data) || (request.resource.data.jobLabel is string && request.resource.data.jobLabel.size() <= 120))
         && request.resource.data.hours is number && request.resource.data.hours >= 0 && request.resource.data.hours <= 1000
         && (!('start' in request.resource.data) || (request.resource.data.start is string && request.resource.data.start.size() <= 40))
@@ -39,7 +45,8 @@ service cloud.firestore {
         && locOk(request.resource.data, 'inLoc') && locOk(request.resource.data, 'outLoc');
     }
     function clockShapeOk() {
-      return request.resource.data.keys().hasOnly(['at', 'estId', 'jobLabel', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
+      return request.resource.data.keys().hasOnly(['at', 'estId', 'jobLabel', 'taskId', 'taskTitle', 'loc', 'last', 'companyId', 'createdAt', 'updatedAt'])
+        && taskOk(request.resource.data)
         && (!('jobLabel' in request.resource.data) || (request.resource.data.jobLabel is string && request.resource.data.jobLabel.size() <= 120))
         && locOk(request.resource.data, 'loc') && locOk(request.resource.data, 'last');
     }
@@ -97,6 +104,11 @@ service cloud.firestore {
     // users.companies is only a hint: a company counts only if its members/{uid} doc exists.
     match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
 
+    // TradeWorks platform admins: the only people who may create companies (everyone else joins one by invitation).
+    // Added by hand in the Firebase console (admins/{uid}); nobody can write them from the app.
+    function isPlatformAdmin() { return signedIn() && exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }
+    match /admins/{uid} { allow get: if signedIn() && request.auth.uid == uid; allow write: if false; }
+
     // billing fields and the Stripe Connect account (card payments on invoice links) are written only by the server
     // (Stripe webhooks / functions, with the service account), never from the browser
     function billingUntouched() {
@@ -107,8 +119,8 @@ service cloud.firestore {
     }
 
     match /companies/{cid} {
-      // a new company may only start as a trial that ends within 15 days
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+      // only a platform admin creates companies, and a new company may only start as a trial that ends within 15 days
+      allow create: if isPlatformAdmin() && request.resource.data.ownerUid == request.auth.uid
         && !request.resource.data.keys().hasAny(['subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'currentPeriodEnd', 'pastDueSince', 'stripeEventAt',
                                                   'stripeAccountId', 'stripeReady', 'stripeDetails', 'stripeCheckedAt'])
         && request.resource.data.get('plan', 'trial') == 'trial'

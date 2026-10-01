@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { PasswordInput } from "../ui/PasswordInput";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { LoadingScreen } from "../ui/LoadingScreen";
@@ -52,9 +53,10 @@ export default function AuthPage({ mode }: { mode: "signin" | "signup" | "reset"
           <div className="seg">{(["en", "es"] as const).map((l) => <button type="button" key={l} className={lang === l ? "on" : ""} onClick={() => setLang(l)}>{l.toUpperCase()}</button>)}</div>
         </div>
         <h1>{title}</h1>
+        {mode === "signup" && <p className="muted auth-sub">{t("For people invited by their company. Use exactly the e-mail they invited.", "Para personas invitadas por su empresa. Usa exactamente el correo que invitaron.")}</p>}
         {mode === "signup" && <label className="f">{t("Your name", "Tu nombre")}<input value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" /></label>}
         <label className="f">{t("Email", "Correo")}<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label>
-        {mode !== "reset" && <label className="f">{t("Password", "Contraseña")}<input type="password" value={pw} onChange={(e) => setPw(e.target.value)} required autoComplete={mode === "signup" ? "new-password" : "current-password"} /></label>}
+        {mode !== "reset" && <PasswordInput label={t("Password", "Contraseña")} value={pw} onChange={setPw} required autoComplete={mode === "signup" ? "new-password" : "current-password"} />}
         {err && <p className="err" role="alert">{err}</p>}
         {sent && <p className="muted" style={{ marginBottom: 12 }}>{t("If that email has an account, a reset link is on its way.", "Si ese correo tiene cuenta, te enviamos un enlace.")}</p>}
         <button className="btn pri" style={{ width: "100%", height: 42 }} disabled={busy}>{mode === "reset" ? t("Send reset link", "Enviar enlace") : title}</button>
@@ -65,7 +67,7 @@ export default function AuthPage({ mode }: { mode: "signin" | "signup" | "reset"
             {t("Continue with Google", "Continuar con Google")}
           </button></>}
         <div className="auth-links">
-          {mode === "signin" && <><Link to="/signup">{t("Create an account", "Crear cuenta")}</Link><Link to="/reset">{t("Forgot password?", "¿Olvidaste tu contraseña?")}</Link></>}
+          {mode === "signin" && <><Link to="/signup">{t("Invited? Create your account", "¿Te invitaron? Crea tu cuenta")}</Link><Link to="/reset">{t("Forgot password?", "¿Olvidaste tu contraseña?")}</Link></>}
           {mode !== "signin" && <Link to="/login">{t("I already have an account", "Ya tengo cuenta")}</Link>}
         </div>
       </form>

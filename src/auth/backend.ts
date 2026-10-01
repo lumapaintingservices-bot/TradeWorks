@@ -34,6 +34,8 @@ export interface Backend {
   resendVerification(): Promise<void>;
 
   loadMemberships(uid: string): Promise<{ list: Membership[]; activeId: string | null }>;
+  /** A TradeWorks platform admin may create companies (admins/{uid}, added by hand in the Firebase console). Demo: always. */
+  isPlatformAdmin(uid: string): Promise<boolean>;
   setActive(uid: string, companyId: string): Promise<void>;
   /** With c.id: updates that company (never touches ownerUid). Without: creates a NEW company, makes the caller its owner and the active one. */
   saveCompany(uid: string, c: Partial<Company> & { name: string }): Promise<Company>;
@@ -90,6 +92,9 @@ const fbBackend: Backend = {
   },
   async resendVerification() { if (auth.currentUser) await sendEmailVerification(auth.currentUser); },
 
+  async isPlatformAdmin(uid) {
+    try { return (await getDoc(doc(db, "admins", uid))).exists(); } catch { return false; }
+  },
   async loadMemberships(uid) {
     const snap = await getDoc(doc(db, "users", uid));
     const d = snap.data() || {};
@@ -275,6 +280,7 @@ const demoBackend: Backend = {
   async refreshUser() { return read<User | null>(K.session, null); },
   async resendVerification() { /* demo: nothing to send */ },
 
+  async isPlatformAdmin() { return true; },
   async loadMemberships(uid) {
     const list: Membership[] = [];
     for (const c of Object.values(demoCompanies())) {

@@ -31,7 +31,7 @@ export async function signUp(page: Page, name = "Luis Owner", email = uniq("owne
   await page.goto("/signup");
   await page.getByLabel("Your name").fill(name);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(pw);
+  await page.getByLabel("Password", { exact: true }).fill(pw);
   await page.getByRole("button", { name: "Create your account" }).click();
   await page.waitForURL("**/onboarding");
   return { name, email, pw };
@@ -48,7 +48,7 @@ export async function signUpAndSkip(page: Page, name = "Luis Owner", email = uni
 export async function signIn(page: Page, email: string, pw = PW) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(pw);
+  await page.getByLabel("Password", { exact: true }).fill(pw);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 }
 

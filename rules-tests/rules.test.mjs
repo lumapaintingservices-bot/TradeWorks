@@ -142,6 +142,10 @@ await ok("creator owner deletes company", () => deleteDoc(doc(as("own2b", "b@x.c
 
 // ---- creating a company
 const fresh = as("fresh", "f@x.com");
+await no("not a platform admin: cannot create a company", () => setDoc(doc(fresh, "companies/n0"), { name: "N", ownerUid: "fresh", createdAt: serverTimestamp() }));
+await no("cannot make yourself a platform admin", () => setDoc(doc(fresh, "admins/fresh"), { by: "me" }));
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "admins/fresh"), { note: "test" }); await setDoc(doc(ctx.firestore(), "admins/nu"), { note: "test" }); });
+await ok("a platform admin reads their own admin doc", () => getDoc(doc(fresh, "admins/fresh")));
 await no("fake owner create", () => setDoc(doc(fresh, "companies/n1"), { name: "N", ownerUid: "someoneelse" }));
 await ok("create company", () => setDoc(doc(fresh, "companies/n1"), { name: "N", ownerUid: "fresh", createdAt: serverTimestamp() }));
 await ok("creator adds self as owner", () => setDoc(doc(fresh, "companies/n1/members/fresh"), { role: "owner", name: "F", email: "f@x.com", createdAt: serverTimestamp() }));

@@ -57,6 +57,16 @@ input:where([type=checkbox]):checked:focus{border-color:var(--chk,var(--ink))}
 input:where([type=checkbox]):focus-visible{box-shadow:var(--focus-ring)}
 input:where([type=checkbox]):disabled{opacity:.5;cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){input:where([type=checkbox]),input:where([type=checkbox])::before{transition:none}}
+/* Radio (idea from shadcn/ui Radio Group): a circle with a dot when picked. --chk colors it like the checkbox. */
+input:where([type=radio]){-webkit-appearance:none;appearance:none;flex:none;width:18px;height:18px;margin:0;padding:0;border:1.5px solid var(--line);border-radius:50%;background:var(--surface);display:inline-grid;place-content:center;vertical-align:middle;cursor:pointer;transition:border-color .12s,box-shadow .12s}
+input:where([type=radio])::before{content:"";width:8px;height:8px;border-radius:50%;transform:scale(0);transition:transform .12s ease-in-out;background:var(--chk,var(--ink))}
+input:where([type=radio]):hover{border-color:var(--ink-3)}
+input:where([type=radio]):checked{border-color:var(--chk,var(--ink))}
+input:where([type=radio]):checked::before{transform:scale(1)}
+input:where([type=radio]):focus{box-shadow:none}
+input:where([type=radio]):focus-visible{box-shadow:var(--focus-ring)}
+input:where([type=radio]):disabled{opacity:.5;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){input:where([type=radio]),input:where([type=radio])::before{transition:none}}
 /* Switch (idea from shadcn/ui Switch): an on / off setting. <input type="checkbox" role="switch" className="sw"> */
 input[type=checkbox].sw{width:38px;height:22px;border-radius:999px;border:0;background:var(--line);padding:0;place-content:normal;display:inline-block;position:relative;transition:background-color .15s}
 input[type=checkbox].sw::before{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;clip-path:none;transform:none;box-shadow:0 1px 3px rgba(16,24,40,.25);transition:transform .15s ease}

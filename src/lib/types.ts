@@ -60,12 +60,15 @@ export type HourEntry = { id: string; workerId: string; date: string; hours: num
   jobLabel?: string;
   /** Clock-in / clock-out time (ISO) of an entry made by the time clock; manual entries have none. */
   start?: string; end?: string;
+  /** The task the time clock was running for. */
+  taskId?: string; taskTitle?: string;
   /** Where the worker's phone was at clock-in / clock-out (src/lib/geo.ts). */
   inLoc?: Loc; outLoc?: Loc };
 export type Payout = { id: string; workerId: string; date: string; amount: number; method?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** A running clock. loc = where the worker clocked in; last = latest position while the app was open (src/lib/geo.ts). */
-export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; companyId?: string; loc?: Loc; last?: Loc };
+/** Clocked in now (clock/{workerId}): always for one task (taskId / taskTitle), and that task's job. */
+export type ClockRec = { id: string; at: string; estId?: string; jobLabel?: string; taskId?: string; taskTitle?: string; companyId?: string; loc?: Loc; last?: Loc };
 /**
  * teamId / by / at: a photo a worker took on their phone (jobphotos/{teamId}), copied onto the job by the owner's app (src/lib/jobPhotos.ts).
  * A worker's photo is private: the client sees it only when the owner ticks toClient (clientCanSee).

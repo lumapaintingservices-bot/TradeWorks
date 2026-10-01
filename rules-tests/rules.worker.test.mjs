@@ -50,6 +50,9 @@ await no("unlinked clock get", () => getDoc(doc(wnl, C + "/clock/w1")));
 // --- writes issued by WorkerTeam / WorkerCalendar
 const at = "2026-05-04T13:00:00.000Z";
 await ok("clock in (saveRec shape)", () => setDoc(doc(wrk, C + "/clock/w1"), { at, estId: "", companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+await ok("clock in for a task", () => setDoc(doc(wrk, C + "/clock/w1"), { at, estId: "", taskId: "t1", taskTitle: "Prep", companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+await no("clock in with a huge task title", () => setDoc(doc(wrk, C + "/clock/w1"), { at, estId: "", taskId: "t1", taskTitle: "x".repeat(500) }));
+await ok("hours entry keeps the task", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-9"), { workerId: "w1", date: "2026-05-04", hours: 1, estId: "", note: "Prep", taskId: "t1", taskTitle: "Prep", rate: 20, companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await ok("clock out: hours entry with rate (saveRec shape)", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-1"), { workerId: "w1", date: "2026-05-04", hours: 2, estId: "", note: "n", rate: 20, companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await ok("clock out: hours entry WITHOUT rate", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-2"), { workerId: "w1", date: "2026-05-04", hours: 2, estId: "", note: "n", companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await ok("clock out: same entry written twice (2nd device)", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-1"), { workerId: "w1", date: "2026-05-04", hours: 2, estId: "", note: "n", rate: 20, companyId: "c1", createdAt: ts, updatedAt: serverTimestamp() }));

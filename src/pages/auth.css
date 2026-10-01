@@ -3,6 +3,7 @@
 .auth-top{display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .auth-top b{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-right:auto}
 .auth-card h1{font-size:22px;font-weight:600;letter-spacing:var(--tracking-tight);margin-bottom:18px}
+.auth-sub{font-size:13.5px;margin:-10px 0 16px;line-height:1.45}
 .auth-links{display:flex;justify-content:space-between;gap:12px;margin-top:16px;font-size:13.5px}
 .onb{width:100%;max-width:560px;padding:32px;border-radius:20px;position:relative}
 .onb-dashes{display:flex;gap:6px;margin:14px 0 24px}

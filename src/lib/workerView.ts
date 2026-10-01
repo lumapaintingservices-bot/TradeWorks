@@ -5,7 +5,7 @@
 import { todayISO } from "./estimate";
 import { num, r2 } from "./money";
 import { workerScope, type Role } from "./roles";
-import { clockHours, inBounds, type Bounds } from "./team";
+import { clockCarry, clockHours, inBounds, type Bounds, type ClockTask } from "./team";
 import type { HourEntry, Task, Worker } from "./types";
 
 /** How useCollection() must read a collection for a given login. */
@@ -31,6 +31,14 @@ export const matchFilter = (row: Record<string, unknown>, f?: { field: string; v
 export const isMyTask = (task: Pick<Task, "workerId">, workerId: string | null | undefined): boolean => !!workerId && (task.workerId || "") === workerId;
 export const myTasks = <T extends Pick<Task, "workerId">>(tasks: T[], workerId: string | null | undefined): T[] => tasks.filter((k) => isMyTask(k, workerId));
 
+/**
+ * Tasks a worker can clock in to: their tasks for today that are not done yet, by time then title.
+ * The time clock always runs for ONE task (owner rule): no task for today = no clock-in.
+ */
+export function clockTaskOptions<T extends Pick<Task, "id" | "date" | "done" | "time" | "title">>(tasks: T[], today: string): T[] {
+  return sortTasks(tasks.filter((k) => String(k.date || "").slice(0, 10) === today && !k.done));
+}
+
 /** Jobs a worker can clock in to today: the jobs of their tasks for that day (one entry per job), named by the task's jobLabel. */
 export function clockJobOptions(tasks: Pick<Task, "date" | "estId" | "jobLabel" | "title">[], today: string): { estId: string; label: string }[] {
   const out: { estId: string; label: string }[] = [];
@@ -50,13 +58,13 @@ export const sortTasks = <T extends Pick<Task, "date" | "time" | "title">>(tasks
  * The pay rate comes from the worker's own record (readable by them); when that record is not available yet the `rate` field
  * is OMITTED so the owner's screens fall back to the worker's current rate (team.hourAmount) instead of showing $0.
  */
-export function workerClockEntry(clock: { at: string; estId?: string; jobLabel?: string }, workerId: string, worker: Pick<Worker, "rate"> | null | undefined, note: string, nowMs: number = Date.now()): Omit<HourEntry, "rate"> & { rate?: number } {
+export function workerClockEntry(clock: ClockTask, workerId: string, worker: Pick<Worker, "rate"> | null | undefined, note: string, nowMs: number = Date.now()): Omit<HourEntry, "rate"> & { rate?: number } {
   const d = new Date(clock.at);
   const p2 = (n: number) => String(n).padStart(2, "0");
   const date = isNaN(d.getTime()) ? String(clock.at).slice(0, 10) : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
   const e: Omit<HourEntry, "rate"> & { rate?: number } = {
-    id: `h-clk-${workerId}-${Date.parse(clock.at) || 0}`, workerId, date, hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note,
-    start: clock.at, end: new Date(nowMs).toISOString(), ...(clock.jobLabel ? { jobLabel: clock.jobLabel } : {}),
+    id: `h-clk-${workerId}-${Date.parse(clock.at) || 0}`, workerId, date, hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note: clock.taskTitle || note,
+    start: clock.at, end: new Date(nowMs).toISOString(), ...clockCarry(clock),
   };
   if (worker && (worker.rate as unknown) !== undefined && (worker.rate as unknown) !== "") e.rate = num(worker.rate);
   return e;
