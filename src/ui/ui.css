@@ -59,3 +59,15 @@ a.badge:focus-visible,button.badge:focus-visible{outline:0;box-shadow:var(--focu
 .jt-card b{font-size:15px}.jt-card .muted{font-size:12.5px}
 .jt-card em{position:absolute;top:10px;right:10px;font-style:normal;font-size:11px;font-weight:600;color:var(--acc)}
 @media(max-width:640px){.jt-grid{grid-template-columns:1fr}}
+/* Drawer: panel from the right (Drawer.tsx); full screen on phones */
+.drawer-back{position:fixed;inset:0;background:rgba(11,13,18,.45);z-index:60;display:flex;justify-content:flex-end}
+.drawer{background:var(--surface);width:min(1120px,100vw);height:100%;display:flex;flex-direction:column;box-shadow:var(--shadow-modal);animation:drawer-in .18s ease-out}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px 12px 22px;border-bottom:1px solid var(--line-2);flex:none}
+.drawer-t{min-width:0}
+.drawer-h h2{font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.drawer-sub{font-size:13px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.drawer-b{flex:1;min-height:0;overflow:auto}
+.btn.icon-only{width:36px;height:36px;padding:0;justify-content:center;flex:none}
+@keyframes drawer-in{from{transform:translateX(28px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.drawer{animation:none}}
+@media(max-width:640px){.drawer-h{padding:10px 12px 10px 16px}}

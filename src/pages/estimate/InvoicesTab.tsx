@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { useInvoices, useSettings } from "../../data/hooks";
 import { deleteTop, patchTop, type Rec } from "../../data/repo";
 import { useT } from "../../i18n";
@@ -12,8 +11,10 @@ import { fmtDate } from "../../lib/format";
 import { money, num } from "../../lib/money";
 import type { ChangeOrder, Estimate, Invoice } from "../../lib/types";
 import { useUi } from "../../store/ui";
+import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
-import { InvBadge, PayClaimBar, PayLinkModal } from "../invoices/PayParts";
+import { InvoicePreview } from "../invoices/InvoicePreview";
+import { InvBadge, PayClaimBar } from "../invoices/PayParts";
 import "../Invoices.css";
 import type { TabProps } from "./types";
 
@@ -112,8 +113,8 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
     if (patch) set(patch);
     toast(now ? t(`${v.number} marked paid.`, `${v.number} marcada como pagada.`) : t(`${v.number} marked unpaid.`, `${v.number} marcada como no pagada.`));
   });
-  const [payFor, setPayFor] = useState("");
-  const payInv = mine.find((v) => v.id === payFor);
+  const [open, setOpen] = useState<{ id: string; start: "doc" | "send" } | null>(null);
+  const openInv = open ? mine.find((v) => v.id === open.id) : undefined;
   const del = (v: InvoiceRec) => run(async () => {
     if (!confirm(t(`Delete invoice ${v.number}?`, `¿Borrar la factura ${v.number}?`))) return;
     const list = await ops.removeInv(v);
@@ -149,8 +150,8 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
               <InvBadge v={v} />
               <div className="iv-act">
                 <button className={"btn sm" + (isPaid(v) ? "" : " pri")} disabled={busy} onClick={() => toggle(v)}>{isPaid(v) ? t("Mark unpaid", "Marcar sin pagar") : t("Mark paid", "Marcar pagada")}</button>
-                {!isPaid(v) && <button className="btn sm" onClick={() => setPayFor(v.id)}>{v.pay?.token ? t("Payment link ✓", "Enlace de pago ✓") : t("Payment link", "Enlace de pago")}</button>}
-                <Link className="btn sm" to={`/invoices/${v.id}/doc`} target="_blank">{t("Open", "Abrir")}</Link>
+                <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "doc" })}><Icon name="eye" size={15} />{t("Preview", "Ver")}</button>
+                <button className="btn sm" onClick={() => setOpen({ id: v.id, start: "send" })}>{v.pay?.token ? t("Send ✓", "Enviar ✓") : t("Send", "Enviar")}</button>
                 <button className="btn sm danger" disabled={busy} onClick={() => del(v)} aria-label={t("Delete", "Borrar")}>×</button>
               </div>
               <PayClaimBar v={v} busy={busy} onConfirm={() => toggle(v, v.payClaim?.method)} onDismiss={() => run(async () => { await ops.dismissClaim(v); })} />
@@ -173,7 +174,8 @@ export default function InvoicesTab({ e, set, s }: TabProps) {
         </div>
       </div>
 
-      {payInv && <PayLinkModal v={payInv} e={e} onClose={() => setPayFor("")} />}
+      {openInv && open && <InvoicePreview v={openInv} e={e} client={e.clientName || t("Unnamed client", "Cliente sin nombre")} busy={busy} start={open.start} inEstimate onClose={() => setOpen(null)}
+        onToggle={(method) => toggle(openInv, method)} onDismissClaim={() => run(async () => { await ops.dismissClaim(openInv); })} onDelete={() => del(openInv)} />}
       {pick && (
         <Modal title={t("Invoice for a change order", "Factura de una orden de cambio")} onClose={() => setPick(false)}>
           {pending.length === 0 ? <p className="muted">{t("There is nothing to invoice. A change order gets its invoice once the client (or you) signs it — see the Change orders tab.", "No hay nada que facturar. Una orden de cambio tiene su factura cuando el cliente (o tú) la firma — mira la pestaña Cambios.")}</p>

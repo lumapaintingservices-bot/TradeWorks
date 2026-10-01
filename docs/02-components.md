@@ -78,6 +78,10 @@ Icon tile 56 (radius 16, --acc-soft / --acc) · title 17/600 · text 14 --ink-3 
 ## Modal [.modal-card]
 Radius 18, header with title + Close, body padding 24. Wide variant 980px. On phones becomes a bottom sheet.
 
+## Drawer [.drawer] → /src/ui/Drawer.tsx
+Panel from the right, up to 1120px wide (full screen on phones), header with title + subtitle + X, body scrolls. Escape or a
+click on the backdrop closes it; the page behind does not scroll. Used by the invoice preview.
+
 ## Onboarding [.onb]
 Centered card 560px radius 20, 5 progress dashes, steps: Welcome (language) → Business (logo, name,
 phone, email, website, area) → Trade → Prices (door, drawer, deposit %) → Done (first estimate / sample).

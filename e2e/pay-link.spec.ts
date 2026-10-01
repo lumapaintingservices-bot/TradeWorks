@@ -22,16 +22,24 @@ test("invoice payment link: client claims, owner confirms, link shows paid", asy
   await page.getByRole("button", { name: "Create deposit + balance invoices" }).click();
   await expect(page.getByText("2 invoices created.")).toBeVisible();
 
-  // payment link for the deposit invoice
+  // the preview panel: the client's document next to "Send to the client"; create the deposit's payment link there
   const depRow = page.locator(".iv-row", { hasText: "Deposit" }).first();
-  await depRow.getByRole("button", { name: "Payment link" }).click();
-  await page.getByRole("button", { name: "Create payment link" }).click();
-  await expect(page.getByText("Payment link created")).toBeVisible();
-  const link = (await page.locator(".modal-card .linkbox").innerText()).trim();
+  await depRow.getByRole("button", { name: "Preview" }).click();
+  const panel = page.locator(".drawer");
+  await expect(panel.locator(".sheet")).toContainText("$537.50");
+  await panel.getByRole("button", { name: "Create payment link" }).click();
+  await expect(page.getByText("Link created")).toBeVisible();
+  const link = (await panel.locator(".pay-link span").innerText()).trim();
   expect(link).toMatch(/\/pay\/[A-Za-z0-9]{24}$/);
-  await expect(page.locator(".modal-card textarea")).toHaveValue(/Hi Ana, here is your invoice INV-\d+ \(deposit\) for \$537\.50/);
-  await page.getByRole("button", { name: "Close" }).click();
-  await expect(depRow.getByRole("button", { name: "Payment link ✓" })).toBeVisible();
+  await expect(panel.locator("textarea")).toHaveValue(/Hi Ana, here is your invoice INV-\d+ \(deposit\) for \$537\.50/);
+  // the document's language switch also switches the message
+  await panel.getByRole("button", { name: "Español" }).click();
+  await expect(panel.locator(".sheet")).toContainText("Factura");
+  await expect(panel.locator("textarea")).toHaveValue(/Hola Ana, aquí está su factura/);
+  await panel.getByRole("button", { name: "English" }).click();
+  await panel.getByRole("button", { name: "Close" }).click();
+  await expect(panel).toHaveCount(0);
+  await expect(depRow.getByRole("button", { name: "Send ✓" })).toBeVisible();
 
   // ---- the client
   const client = await context.newPage();
@@ -71,10 +79,11 @@ test("invoice payment link: client claims, owner confirms, link shows paid", asy
   await expect(client.getByRole("heading", { name: "How to pay" })).toHaveCount(0);
 
   // "Not received" on the balance: the client can tell us again
-  await page.locator("tbody tr", { hasText: "Balance" }).getByRole("button", { name: "Pay link" }).click();
-  await page.getByRole("button", { name: "Create payment link" }).click();
-  const link2 = (await page.locator(".modal-card .linkbox").innerText()).trim();
-  await page.getByRole("button", { name: "Close" }).click();
+  await page.locator("tbody tr", { hasText: "Balance" }).getByRole("button", { name: "Send", exact: true }).click();
+  await page.locator(".drawer").getByRole("button", { name: "Create payment link" }).click();
+  await expect(page.locator(".drawer .pay-link span")).toContainText("/pay/");
+  const link2 = (await page.locator(".drawer .pay-link span").innerText()).trim();
+  await page.locator(".drawer").getByRole("button", { name: "Close" }).click();
   await client.goto(link2);
   await client.getByRole("button", { name: "I already paid" }).click();
   await client.getByRole("button", { name: "Zelle", exact: true }).click();
@@ -87,10 +96,10 @@ test("invoice payment link: client claims, owner confirms, link shows paid", asy
   await expect(client.getByRole("button", { name: "I already paid" })).toBeVisible();
 
   // turning the link off shows "not active"
-  await page.locator("tbody tr", { hasText: "Balance" }).getByRole("button", { name: "Pay link ✓" }).click();
+  await page.locator("tbody tr", { hasText: "Balance" }).getByRole("button", { name: "Send ✓" }).click();
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: "Turn off link" }).click();
-  await expect(page.getByText("Payment link turned off")).toBeVisible();
+  await page.locator(".drawer").getByRole("button", { name: "Turn off link" }).click();
+  await expect(page.getByText("Link turned off")).toBeVisible();
   await client.goto(link2);
   await expect(client.getByText("This link isn't active")).toBeVisible();
 });

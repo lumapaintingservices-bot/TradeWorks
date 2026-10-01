@@ -63,7 +63,12 @@ island, style, current finish, extras; interior rooms/surfaces/size; exterior st
 channel, source) with summary → thank-you (call, WhatsApp, website, Instagram, reviews).
 
 ## Invoices, Clients, Client profile
-Invoices list + document. Clients table (inline edit) → **profile**: header with WhatsApp/Call/New estimate,
+Invoices list + document. Tapping an invoice (or Preview / Send on a row, also in the estimate's Invoices tab) opens the
+**invoice preview** drawer (idea from the shadcn studio-admin invoice page): left = the client's document scaled like a page
+(English / Español switch), right = amount + Mark paid, "Send to the client" (create the payment link, message in the
+document's language, WhatsApp / SMS / Email / Copy, see what the client sees, turn off), Print / Save PDF, Open estimate,
+Delete. Phones: two tabs, Invoice / Send. A paid invoice's message is a thank-you with the link (it shows as paid).
+Clients table (inline edit) → **profile**: header with WhatsApp/Call/New estimate,
 tiles (jobs, won, paid, owes), jobs list, notes, referral link (+ referred clients), colors used, photos.
 
 ## Expenses (/expenses)
