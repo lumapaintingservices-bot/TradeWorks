@@ -200,6 +200,13 @@ Merged (PR #34), Firestore rules published and admins/RqJH4iTMLOdNcUy5ODyyak6WR3
 The two companies other accounts created before the lock ("ginolacera94@gmail.com" etbFLIZx2gzjhAvj1efR, "Jeksk" wxBkkazjG40h5k1yiLGl) were deleted by
 the owner 2026-10-01; only Luma Painting Services LLC (xSTQaO1jXsFNmuIhbSXL) remains. Their leftover public/{cid} cards (and 2 old test ones)
 were deleted too; public/ holds only xSTQaO1jXsFNmuIhbSXL.
+Worker access + live tasks + date picker (owner 2026-10-01; backup tag backup-2026-10-01-before-datepicker):
+- Deleting a worker or marking them inactive removes their login from the company (members doc) and cancels their worker invites
+  (roles.ts workerAccess, data/workers.ts revokeWorkerAccess). The Auth account itself stays (no access; delete by hand if wanted).
+- useFirestoreReconnect (src/data/reconnect.ts, in the Shell): back from 15 s+ in the background / online / bfcache -> Firestore network
+  restart, so live lists catch up without a reload. useTaskInbox (src/data/taskInbox.ts): workers get a toast for a newly assigned task
+  and a Calendar badge until they open Calendar / Team (seen ids per device in localStorage). Demo lists now also update across tabs.
+- DatePicker (src/ui/DatePicker.tsx, shadcn style) replaces all 14 browser date inputs. Push notifications (app closed) not done yet.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

@@ -5,6 +5,7 @@ import { leadFormFor, normalizeTrade, questionsFor, serviceLabel } from "../../l
 import { safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import { PhoneInput } from "../../ui/PhoneInput";
 import "./LeadForm.css";
+import { DatePicker } from "../../ui/DatePicker";
 
 /** Public lead questionnaire: /request?c={companyId}&src=thumbtack&ref={clientId}. Always light, contractor-branded. */
 type Pub = { trade?: string; name?: string; phone?: string; website?: string; instagram?: string; reviews?: string; logoUrl?: string; brandColor?: string };
@@ -305,7 +306,7 @@ export default function LeadForm() {
       <h1>{t("When would you like it done?", "¿Para cuándo lo quiere?")}</h1><p className="lf-lead">{t("This helps us plan our calendar.", "Nos ayuda a planear el calendario.")}</p>
       <div className="lf-grid one">{Object.keys(whens).map((k) => <Opt key={k} on={f.when === k} title={whens[k]} onClick={() => set({ when: one(f.when, k) })} />)}</div>
       <div className="lf-box" style={{ marginTop: 14 }}><label className="lf-f"><span>{t("Preferred start date", "Fecha de inicio preferida")} <i>{t("(optional)", "(opcional)")}</i></span>
-        <input type="date" value={f.date} min={new Date().toISOString().slice(0, 10)} onChange={(e) => set({ date: e.target.value })} /></label></div>
+        <DatePicker value={f.date} min={new Date().toISOString().slice(0, 10)} clearable onChange={(v) => set({ date: v })} lang={lang} /></label></div>
     </>,
     photos: () => <>
       <h1>{t("Add photos", "Agregue fotos")}</h1><p className="lf-lead">{t("Photos let us price your project accurately without a visit.", "Con fotos le damos un precio exacto sin necesidad de visita.")}</p>

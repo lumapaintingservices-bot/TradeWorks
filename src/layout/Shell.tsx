@@ -17,6 +17,8 @@ import { useInvoices } from "../data/hooks";
 import { usePayLinkSync } from "../data/paylinks";
 import { useTeamPhotoSync } from "../data/teamPhotos";
 import { useChatInbox } from "../data/teamChat";
+import { useTaskInbox } from "../data/taskInbox";
+import { useFirestoreReconnect } from "../data/reconnect";
 import { useCrewSync } from "../data/crew";
 import { useDepositOnSign } from "../data/deposit";
 import { navFor, type NavItem } from "./nav";
@@ -108,14 +110,16 @@ function AdminBadges({ children }: { children: ReactNode }) {
   return <Badges.Provider value={badges}>{children}</Badges.Provider>;
 }
 
-/** Workers: only the Chats badge (their job chats with news). */
+/** Workers: the Chats badge (their job chats with news) and the Calendar badge (tasks the boss just assigned, with a toast). */
 function WorkerBadges({ children }: { children: ReactNode }) {
   const chats = useChatInbox();
-  return <Badges.Provider value={{ "/chats": chats }}>{children}</Badges.Provider>;
+  const tasks = useTaskInbox();
+  return <Badges.Provider value={{ "/chats": chats, "/calendar": tasks }}>{children}</Badges.Provider>;
 }
 
 export default function Shell() {
   const { role } = useAuth();
+  useFirestoreReconnect(); // back from the background: live lists catch up without a reload
   const body = <ShellBody />;
   // workers: keep their position fresh on the running clock (team map), only while clocked in and the app is open
   return role === "worker" ? <WorkerBadges><LocationPing />{body}</WorkerBadges> : <AdminBadges>{body}</AdminBadges>;

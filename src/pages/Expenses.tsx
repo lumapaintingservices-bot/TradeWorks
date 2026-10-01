@@ -24,6 +24,7 @@ import { ask } from "../ui/confirm";
 import { Combobox } from "../ui/Combobox";
 import { useTableSort } from "../ui/useTableSort";
 import "./Expenses.css";
+import { DatePicker } from "../ui/DatePicker";
 
 const FALLBACK_SOURCES = ["Thumbtack", "Google", "Referral", "Instagram", "Nextdoor", "Facebook", "Repeat client", "Walk-by / sign", "Other"];
 const RANGES: { k: RangeKey; en: string; es: string }[] = [
@@ -121,8 +122,8 @@ export default function Expenses() {
       </div>
       {range === "custom" && (
         <div className="ex-custom">
-          <label className="f">{t("From", "Desde")}<input type="date" value={custom.from} onChange={(e) => setCustom({ ...custom, from: e.target.value })} /></label>
-          <label className="f">{t("To", "Hasta")}<input type="date" value={custom.to} onChange={(e) => setCustom({ ...custom, to: e.target.value })} /></label>
+          <label className="f">{t("From", "Desde")}<DatePicker value={custom.from} onChange={(v) => setCustom({ ...custom, from: v })} /></label>
+          <label className="f">{t("To", "Hasta")}<DatePicker value={custom.to} onChange={(v) => setCustom({ ...custom, to: v })} /></label>
         </div>
       )}
 
@@ -282,7 +283,7 @@ function ExpenseModal({ exp, onClose }: { exp: Expense | null; onClose(): void }
       <div className="ex-form">
         <div className="grid2">
           <label className="f">{t("Amount ($)", "Monto ($)")}<input ref={amountRef} className="ex-amt" type="number" inputMode="decimal" step="0.01" min="0" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
-          <label className="f">{t("Date", "Fecha")}<input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+          <label className="f">{t("Date", "Fecha")}<DatePicker value={date} onChange={(v) => setDate(v)} /></label>
         </div>
         <label className="f">{t("Vendor", "Proveedor")}<input type="text" list="ex-vendors" value={vendor} onChange={(e) => setVendor(e.target.value)} onBlur={vendorDone} placeholder="Home Depot, Sherwin-Williams, Thumbtack…" />
           <datalist id="ex-vendors">{vendors.map((v) => <option key={v} value={v} />)}</datalist></label>

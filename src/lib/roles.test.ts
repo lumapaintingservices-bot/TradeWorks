@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAccess, canChangeRole, canInviteRole, canLinkWorker, can, decideInvite, homeFor, isEmail, navFilter, normEmail, redirectFor,
-  canRemoveMember, canCreateCompany, onboardingView, workerScope, type MemberLite,
+  canRemoveMember, canCreateCompany, onboardingView, workerAccess, workerScope, type MemberLite,
 } from "./roles";
 
 describe("route permissions", () => {
@@ -167,5 +167,15 @@ describe("who may create a company", () => {
   it("anyone may finish the setup of the company they are in, except workers", () => {
     expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "owner" })).toBe("wizard");
     expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "worker" })).toBe("home");
+  });
+});
+
+describe("removing a worker's access", () => {
+  const members = [{ uid: "u1", role: "worker", workerId: "w1" }, { uid: "u2", role: "worker", workerId: "w2" }, { uid: "u3", role: "admin", workerId: "w1" }, { uid: "u4", role: "worker" }];
+  const invites = [{ email: "a@x.com", role: "worker", workerId: "w1" }, { email: "b@x.com", role: "worker" }, { email: "c@x.com", role: "admin", workerId: "w1" }];
+  it("only the worker logins and worker invites of that record", () => {
+    expect(workerAccess(members, invites, "w1")).toEqual({ uids: ["u1"], emails: ["a@x.com"] });
+    expect(workerAccess(members, invites, "w9")).toEqual({ uids: [], emails: [] });
+    expect(workerAccess(members, invites, "")).toEqual({ uids: [], emails: [] });
   });
 });

@@ -29,6 +29,7 @@ import { Badge } from "../../ui/Badge";
 import { ask } from "../../ui/confirm";
 import { PhoneInput } from "../../ui/PhoneInput";
 import { Combobox } from "../../ui/Combobox";
+import { DatePicker } from "../../ui/DatePicker";
 
 const TABS = [
   ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
@@ -182,9 +183,9 @@ export default function EstimateEditor() {
           </div></div>
           <div className="card"><div className="card-h"><h2>{t("Schedule & source", "Calendario y origen")}</h2></div><div className="card-b">
             <div className="grid2">
-              <label className="f">{t("Estimate date", "Fecha")}<input type="date" value={e.date} onChange={(ev) => set({ date: ev.target.value })} /></label>
+              <label className="f">{t("Estimate date", "Fecha")}<DatePicker value={e.date} onChange={(v) => set({ date: v })} /></label>
               <label className="f">{t("Valid for (days)", "Válido por (días)")}<input type="number" min={0} value={e.validDays} onChange={(ev) => set({ validDays: Number(ev.target.value) || 0 })} /></label>
-              <label className="f">{t("Start date", "Fecha de inicio")}<input type="date" value={e.startDate} onChange={(ev) => set({ startDate: ev.target.value })} /></label>
+              <label className="f">{t("Start date", "Fecha de inicio")}<DatePicker value={e.startDate} clearable onChange={(v) => set({ startDate: v })} /></label>
               <label className="f">{t("Days on site", "Días en sitio")}<input type="number" min={1} value={e.days} onChange={(ev) => set({ days: Number(ev.target.value) || 1 })} /></label>
             </div>
             <label className="f">{t("Where the lead came from", "De dónde vino el cliente")}<input list="tw-lead-sources" value={e.leadSource} onChange={(ev) => set({ leadSource: ev.target.value })} /><datalist id="tw-lead-sources">{leadSourceList(s).map((x) => <option key={x} value={x} />)}</datalist></label>
