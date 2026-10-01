@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClock, useCrewJobs, useHours, useTasks, useWorkers } from "../../data/hooks";
-import { crewJobOptions, mergeJobOptions } from "../../lib/crew";
+import { crewJobOptions } from "../../lib/crew";
+import { fmtTime } from "../../lib/calendar";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { getLocation } from "../../lib/geo";
 import { num } from "../../lib/money";
-import { RANGE_KEYS, clockElapsed, clockTimes, rangeBounds, type RangeKey } from "../../lib/team";
-import { clockJobOptions, isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
+import { RANGE_KEYS, clockElapsed, clockFor, clockHHMM, clockTimes, hoursText, rangeBounds, type RangeKey } from "../../lib/team";
+import { clockTaskOptions, isMyTask, myHoursIn, myTasks, splitTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
 import { Link } from "react-router-dom";
 import { WorkerPhotos } from "./WorkerPhotos";
 import type { HourEntry } from "../../lib/types";
@@ -21,7 +22,7 @@ import { ask } from "../../ui/confirm";
 import "../Team.css";
 import "./worker.css";
 
-const hrs = (n: number) => n.toFixed(1) + " h";
+const hrs = hoursText;
 const RANGE_LABEL: Record<RangeKey, [string, string]> = {
   week: ["This week", "Esta semana"], month: ["This month", "Este mes"], lastMonth: ["Last month", "Mes pasado"],
   ytd: ["Year to date", "En lo que va del año"], lastYear: ["Last year", "Año pasado"], all: ["All", "Todo"],
@@ -60,19 +61,19 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const clock = clocks.find((c) => c.id === workerId);
 
   const [range, setRange] = useState<RangeKey>("week");
-  // the job for the next clock-in: the jobs I am on the crew of today, then my tasks' jobs for today (only one: picked by itself)
+  // the clock always runs for ONE of my tasks for today (owner rule); only one: picked by itself
   const { rows: crewJobs } = useCrewJobs();
-  const jobOpts = useMemo(() => mergeJobOptions(crewJobOptions(crewJobs, workerId, todayISO()), clockJobOptions(tasks, todayISO())), [crewJobs, tasks, workerId]);
+  const taskOpts = useMemo(() => clockTaskOptions(tasks, todayISO()), [tasks]);
   const photoJobs = useMemo(() => crewJobOptions(crewJobs, workerId, todayISO(), "near"), [crewJobs, workerId]);
-  const [jobPick, setJobPick] = useState("");
-  const job = jobOpts.find((o) => o.estId === jobPick) || (jobPick === "none" ? undefined : jobOpts[0]);
+  const [taskPick, setTaskPick] = useState("");
+  const task = taskOpts.find((k) => k.id === taskPick) || (taskOpts.length === 1 ? taskOpts[0] : undefined);
   const [modal, setModal] = useState(false);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     if (!clock) return;
     setNow(Date.now());
-    const i = setInterval(() => setNow(Date.now()), 30000);
+    const i = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(i);
   }, [clock]);
 
@@ -88,9 +89,9 @@ function WorkerBody({ workerId }: { workerId: string }) {
   };
   const noLoc = () => toast(t("Clocked. Your location is off: allow it for TradeWorks so your boss sees you at the job.", "Registrado. Tu ubicación está apagada: permítela para TradeWorks y tu jefe verá que estás en el trabajo."));
   const clockIn = () => guard("clk", async () => {
-    if (clock) return;
+    if (clock || !task) return;
     const loc = track ? await getLocation() : null;
-    await saveClock({ id: workerId, at: new Date().toISOString(), estId: job?.estId || "", ...(job ? { jobLabel: job.label } : {}), ...(loc ? { loc, last: loc } : {}) });
+    await saveClock({ id: workerId, ...clockFor(task, new Date().toISOString()), ...(loc ? { loc, last: loc } : {}) });
     if (track && !loc) noLoc(); else toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = () => guard("clk", async () => {
@@ -100,7 +101,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
     if (track && !outLoc) noLoc();
     await saveHours(entry as unknown as HourEntry);
     await removeClock(workerId);
-    toast(t(`${entry.hours} h saved.`, `${entry.hours} h guardadas.`));
+    toast(t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`));
   });
   const tick = (id: string, isDone: boolean) => {
     const k = tasks.find((x) => x.id === id);
@@ -115,19 +116,23 @@ function WorkerBody({ workerId }: { workerId: string }) {
       <section className="card wk-clock">
         <div className="wk-clock-t">
           <span className="wk-lbl">{t("Time clock", "Reloj de entrada")}</span>
-          {el ? <b className="wk-run">● {el.h}h {String(el.m).padStart(2, "0")}m</b> : <b>{t("Not clocked in", "Sin entrada")}</b>}
-          <small className="muted">{el ? t("Started at ", "Empezaste a las ") + new Date(clock!.at).toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }) : t("Tap when you start working.", "Toca cuando empieces a trabajar.")}</small>
-          {el && clock?.jobLabel && <small className="muted">{t("Job: ", "Trabajo: ")}{clock.jobLabel}</small>}
-          {!el && jobOpts.length > 1 && <label className="wk-job">{t("Job", "Trabajo")}
-            <select value={job?.estId || "none"} onChange={(e) => setJobPick(e.target.value)}>
-              {jobOpts.map((o) => <option key={o.estId} value={o.estId}>{o.label}</option>)}
-              <option value="none">{t("Other / no job", "Otro / sin trabajo")}</option>
-            </select></label>}
-          {!el && jobOpts.length === 1 && <small className="muted">{t("Job: ", "Trabajo: ")}{jobOpts[0].label}</small>}
+          {el ? <b className="wk-run" aria-label={hoursText(el.h + el.m / 60)}>● {clockHHMM(el)}<small>{t("h:min", "h:min")}</small></b> : <b>{t("Not clocked in", "Sin entrada")}</b>}
+          <small className="muted">{el ? hoursText(el.h + el.m / 60) + " · " + t("started at ", "empezaste a las ") + new Date(clock!.at).toLocaleTimeString(lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }) : t("Pick the task you are starting, then tap Clock in.", "Elige la tarea que vas a empezar y toca Entrada.")}</small>
+          {el && clock?.taskTitle && <small className="wk-on-task">{t("Task: ", "Tarea: ")}<b>{clock.taskTitle}</b>{clock.jobLabel ? " · " + clock.jobLabel : ""}</small>}
+          {el && !clock?.taskTitle && clock?.jobLabel && <small className="muted">{t("Job: ", "Trabajo: ")}{clock.jobLabel}</small>}
         </div>
+        {!el && (taskOpts.length === 0
+          ? <p className="wk-notask">{t("You have no tasks for today. Ask your boss to assign you one to clock in.", "No tienes tareas para hoy. Pídele a tu jefe que te asigne una para marcar entrada.")}</p>
+          : <div className="wk-pick" role="radiogroup" aria-label={t("Task", "Tarea")}>
+              {taskOpts.map((k) => (
+                <label key={k.id} className={"wk-opt" + (task?.id === k.id ? " on" : "")}>
+                  <input type="radio" name="clock-task" checked={task?.id === k.id} onChange={() => setTaskPick(k.id)} />
+                  <span className="wk-opt-t"><b>{k.title}</b>{(k.time || k.jobLabel) && <small>{[k.time ? fmtTime(k.time) : "", k.jobLabel || ""].filter(Boolean).join(" · ")}</small>}</span>
+                </label>))}
+            </div>)}
         {el
           ? <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockOut}><Icon name="clock" size={18} />{t("Clock out", "Salida")}</button>
-          : <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockIn}><Icon name="clock" size={18} />{t("Clock in", "Entrada")}</button>}
+          : <button className="btn pri wk-btn" disabled={busy.clk || !task} onClick={clockIn}><Icon name="clock" size={18} />{task ? t("Clock in", "Entrada") : taskOpts.length ? t("Pick a task", "Elige una tarea") : t("Clock in", "Entrada")}</button>}
         {track && <p className="wk-loc muted">📍 {t("Your location is saved when you clock in and out, and every few minutes while TradeWorks is open during your shift, so your boss can see you're at the job. Nothing is saved when you're clocked out.",
           "Tu ubicación se guarda al marcar entrada y salida, y cada pocos minutos mientras TradeWorks esté abierto en tu turno, para que tu jefe vea que estás en el trabajo. No se guarda nada cuando no estás trabajando.")}</p>}
       </section>

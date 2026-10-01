@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canAccess, canChangeRole, canInviteRole, canLinkWorker, can, decideInvite, homeFor, isEmail, navFilter, normEmail, redirectFor,
-  canRemoveMember, canCreateCompany, workerScope, type MemberLite,
+  canRemoveMember, canCreateCompany, onboardingView, workerScope, type MemberLite,
 } from "./roles";
 
 describe("route permissions", () => {
@@ -67,9 +67,13 @@ describe("invites", () => {
     expect(decideInvite({ ...base, invite: { companyId: "c1", role: "god" } })).toEqual({ kind: "invalid" });
     expect(decideInvite({ ...base, invite: { companyId: "", role: "admin" } })).toEqual({ kind: "invalid" });
   });
-  it("who may invite whom", () => {
-    expect(canInviteRole("owner", "admin")).toBe(true);
-    expect(canInviteRole("owner", "owner")).toBe(true);
+  it("who may invite whom: workers by owners / admins; owners and admins only by the platform admin", () => {
+    expect(canInviteRole("owner", "worker")).toBe(true);
+    expect(canInviteRole("owner", "admin")).toBe(false);
+    expect(canInviteRole("owner", "owner")).toBe(false);
+    expect(canInviteRole("owner", "owner", true)).toBe(true);
+    expect(canInviteRole("owner", "admin", true)).toBe(true);
+    expect(canInviteRole("admin", "owner", true)).toBe(false);
     expect(canInviteRole("admin", "worker")).toBe(true);
     expect(canInviteRole("admin", "admin")).toBe(false);
     expect(canInviteRole("worker", "worker")).toBe(false);
@@ -82,15 +86,18 @@ describe("role changes", () => {
   const members = [m("o1", "owner"), m("o2", "owner"), m("a1", "admin"), m("w1", "worker")];
   const solo = [m("o1", "owner"), m("w1", "worker")];
 
-  it("owner promotes and demotes freely", () => {
-    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "admin" })).toEqual({ ok: true });
+  it("owners demote; only the platform admin promotes to owner / admin", () => {
     expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "a1", newRole: "worker" })).toEqual({ ok: true });
-    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "owner" })).toEqual({ ok: true });
+    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "admin" })).toEqual({ ok: false, reason: "platform-only" });
+    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "owner" })).toEqual({ ok: false, reason: "platform-only" });
+    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "admin", isPlatformAdmin: true })).toEqual({ ok: true });
+    expect(canChangeRole({ actor: m("o1", "owner"), members, targetUid: "w1", newRole: "owner", isPlatformAdmin: true })).toEqual({ ok: true });
   });
   it("the last owner cannot be demoted, even by themselves", () => {
     expect(canChangeRole({ actor: m("o1", "owner"), members: solo, targetUid: "o1", newRole: "admin" })).toEqual({ ok: false, reason: "last-owner" });
     // with two owners one may step down
-    expect(canChangeRole({ actor: m("o2", "owner"), members, targetUid: "o2", newRole: "admin" })).toEqual({ ok: true });
+    expect(canChangeRole({ actor: m("o2", "owner"), members, targetUid: "o2", newRole: "admin", isPlatformAdmin: true })).toEqual({ ok: true });
+    expect(canChangeRole({ actor: m("o2", "owner"), members, targetUid: "o2", newRole: "worker" })).toEqual({ ok: true });
   });
   it("the company creator (primary owner) is untouchable", () => {
     expect(canChangeRole({ actor: m("o2", "owner"), members, targetUid: "o1", newRole: "admin", primaryOwnerUid: "o1" })).toEqual({ ok: false, reason: "primary-owner" });
@@ -136,12 +143,29 @@ describe("worker data scope", () => {
   });
 });
 
-describe("canCreateCompany", () => {
-  it("is false only when every company is as a worker", () => {
-    expect(canCreateCompany([])).toBe(true);
-    expect(canCreateCompany(["owner"])).toBe(true);
-    expect(canCreateCompany(["worker", "admin"])).toBe(true);
-    expect(canCreateCompany(["worker"])).toBe(false);
-    expect(canCreateCompany(["worker", "worker"])).toBe(false);
+describe("who may create a company", () => {
+  it("only a platform admin", () => {
+    expect(canCreateCompany(true)).toBe(true);
+    expect(canCreateCompany(false)).toBe(false);
+  });
+  const base = { invite: false, skipInvite: false, hasCompany: false, companies: 0, creating: false, isPlatformAdmin: false, role: null };
+  it("a stranger without an invitation cannot get in", () => {
+    expect(onboardingView(base)).toBe("no-access");
+    expect(onboardingView({ ...base, invite: true, skipInvite: true })).toBe("no-access");
+  });
+  it("an invited person sees the join prompt", () => {
+    expect(onboardingView({ ...base, invite: true })).toBe("join");
+    expect(onboardingView({ ...base, invite: true, isPlatformAdmin: true })).toBe("join");
+  });
+  it("a platform admin can create companies", () => {
+    expect(onboardingView({ ...base, isPlatformAdmin: true })).toBe("wizard");
+    expect(onboardingView({ ...base, isPlatformAdmin: true, companies: 2, creating: true, role: "owner" })).toBe("wizard");
+  });
+  it("an owner who is not a platform admin cannot start another company", () => {
+    expect(onboardingView({ ...base, companies: 1, creating: true, role: "owner" })).toBe("home");
+  });
+  it("anyone may finish the setup of the company they are in, except workers", () => {
+    expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "owner" })).toBe("wizard");
+    expect(onboardingView({ ...base, hasCompany: true, companies: 1, role: "worker" })).toBe("home");
   });
 });

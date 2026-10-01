@@ -101,7 +101,15 @@ export function jobOnSite(estimates: Estimate[], today: string = todayISO(), inv
 export function clockHours(atISO: string, nowMs: number = Date.now()): number {
   return Math.max(0.25, Math.round((nowMs - Date.parse(atISO)) / 3600000 * 4) / 4);
 }
-/** "2h 05m" style elapsed text for the running timer chip. */
+/** Hours as hours and minutes: 7.5 -> "7 h 30 min", 0.25 -> "15 min", 2 -> "2 h", 0 -> "0 min". */
+export function hoursText(n: number): string {
+  const mins = Math.max(0, Math.round(num(n) * 60)), h = Math.floor(mins / 60), m = mins % 60;
+  if (!h) return `${m} min`;
+  return m ? `${h} h ${String(m).padStart(2, "0")} min` : `${h} h`;
+}
+/** The running clock as "02:05" (hours:minutes). */
+export const clockHHMM = (el: { h: number; m: number }) => `${String(el.h).padStart(2, "0")}:${String(el.m).padStart(2, "0")}`;
+/** Elapsed hours and minutes of the running clock. */
 export function clockElapsed(atISO: string, nowMs: number = Date.now()): { h: number; m: number } {
   const mins = Math.max(0, Math.round((nowMs - Date.parse(atISO)) / 60000));
   return { h: Math.floor(mins / 60), m: mins % 60 };
@@ -109,11 +117,23 @@ export function clockElapsed(atISO: string, nowMs: number = Date.now()): { h: nu
 /** Local calendar day of the clock-in (the prototype used the UTC day, which is tomorrow for an evening shift in the US). */
 const localDay = (atISO: string) => { const d = new Date(atISO); return isNaN(d.getTime()) ? String(atISO).slice(0, 10) : `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`; };
 /** The hours entry a clock-out creates. The id is derived from worker + clock-in time, so two devices clocking out the same shift write the same record. */
-export function clockEntry(clock: { at: string; estId?: string; jobLabel?: string }, worker: Worker, note: string, nowMs: number = Date.now()): HourEntry {
+export function clockEntry(clock: ClockTask, worker: Worker, note: string, nowMs: number = Date.now()): HourEntry {
   return {
     id: `h-clk-${worker.id}-${Date.parse(clock.at) || 0}`, workerId: worker.id, date: localDay(clock.at),
-    hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note, rate: num(worker.rate),
-    start: clock.at, end: new Date(nowMs).toISOString(), ...(clock.jobLabel ? { jobLabel: clock.jobLabel } : {}),
+    hours: clockHours(clock.at, nowMs), estId: clock.estId || "", note: clock.taskTitle || note, rate: num(worker.rate),
+    start: clock.at, end: new Date(nowMs).toISOString(), ...clockCarry(clock),
+  };
+}
+/** What a clock-in carries into the hours entry: the job name and the task. */
+export type ClockTask = { at: string; estId?: string; jobLabel?: string; taskId?: string; taskTitle?: string };
+export const clockCarry = (c: ClockTask) => ({
+  ...(c.jobLabel ? { jobLabel: c.jobLabel } : {}), ...(c.taskId ? { taskId: c.taskId } : {}), ...(c.taskTitle ? { taskTitle: c.taskTitle } : {}),
+});
+/** A clock-in for one task: the task's job comes with it (workers can't read estimates, so the job name travels too). */
+export function clockFor(task: { id: string; title: string; estId?: string; jobLabel?: string }, atISO: string): ClockTask {
+  return {
+    at: atISO, estId: task.estId || "", taskId: task.id, taskTitle: String(task.title || "").slice(0, 120),
+    ...(task.jobLabel ? { jobLabel: String(task.jobLabel).slice(0, 120) } : {}),
   };
 }
 

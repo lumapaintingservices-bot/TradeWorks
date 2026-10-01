@@ -60,7 +60,7 @@ const CompanyLogo = ({ name, logoUrl }: { name?: string; logoUrl?: string }) => 
 function WorkspaceList({ onDone, signOut }: { onDone(): void; signOut?: boolean }) {
   const t = useT();
   const nav = useNavigate();
-  const { companies, company, switchCompany, createCompany } = useAuth();
+  const { companies, company, switchCompany, createCompany, isPlatformAdmin } = useAuth();
   const pick = async (id: string, role: Role) => {
     onDone();
     if (id === company?.id) return;
@@ -77,7 +77,7 @@ function WorkspaceList({ onDone, signOut }: { onDone(): void; signOut?: boolean 
           {c.id === company?.id && <span className="ws-check"><Icon name="check" size={16} /></span>}
         </button>
       ))}
-      {canCreateCompany(companies.map((c) => c.role)) && <button className="ws-opt add" onClick={() => { onDone(); createCompany(); nav("/onboarding"); }}>
+      {canCreateCompany(isPlatformAdmin) && <button className="ws-opt add" onClick={() => { onDone(); createCompany(); nav("/onboarding"); }}>
         <span className="ws-logo add"><Icon name="plus" size={16} /></span>
         <span className="ws-opt-name">{t("New company", "Nueva empresa")}</span>
       </button>}

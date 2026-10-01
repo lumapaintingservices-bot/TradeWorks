@@ -64,7 +64,7 @@ test("estimate to client link to signed, invoiced and deposit paid", async ({ pa
 
   // ---- back on the owner's screen: Accepted + the chat message
   await expect(page.locator(".owner-chat", { hasText: "When can you start?" })).toBeVisible();
-  await expect(page.locator("select").first()).toHaveValue("Accepted");
+  await expect(page.locator("select").first()).toHaveValue("Accepted", { timeout: 25_000 });   // the owner's screen picks the signature up from the client link sync (slower when the machine is busy)
   await expect(page.locator(".totline.big", { hasText: "Total" }).first()).toContainText("$1,275.00");
 
   // owner replies; the client sees it

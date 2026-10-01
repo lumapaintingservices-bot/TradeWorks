@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { byJob, paymentsIn, paySummary, periodSeries, timesheetDays, weekStart } from "./timesheet";
-import { clockJobOptions } from "./workerView";
+import { clockJobOptions, clockTaskOptions } from "./workerView";
 import type { HourEntry, Payout, Worker } from "./types";
 
 const w: Worker = { id: "w1", name: "Carlos", rate: 20 };
@@ -57,5 +57,14 @@ describe("clock-in job options", () => {
       { date: "2026-10-01", estId: "e3", jobLabel: "EST-3", title: "x" },
     ];
     expect(clockJobOptions(tasks, "2026-09-30")).toEqual([{ estId: "e1", label: "EST-1 · Ana" }, { estId: "e2", label: "Pick up paint" }]);
+  });
+});
+
+describe("clock-in tasks", () => {
+  it("today's open tasks, by time then title", () => {
+    const k = (id: string, date: string, time = "", done = false, title = id) => ({ id, date, time, done, title });
+    const tasks = [k("late", "2026-09-30", "14:00"), k("old", "2026-09-29"), k("done", "2026-09-30", "08:00", true), k("b", "2026-09-30", "08:00"), k("a", "2026-09-30", "08:00"), k("tomorrow", "2026-10-01")];
+    expect(clockTaskOptions(tasks, "2026-09-30").map((x) => x.id)).toEqual(["a", "b", "late"]);
+    expect(clockTaskOptions([], "2026-09-30")).toEqual([]);
   });
 });

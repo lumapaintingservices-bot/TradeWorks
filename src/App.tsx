@@ -3,7 +3,7 @@ import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react
 import { useAuth } from "./auth/AuthProvider";
 import { backend } from "./auth/backend";
 import { JoinPrompt } from "./auth/InviteBanner";
-import { can, canAccess, canCreateCompany, homeFor, redirectFor } from "./lib/roles";
+import { can, canAccess, homeFor, onboardingView, redirectFor } from "./lib/roles";
 import { useT } from "./i18n";
 import { Logo } from "./ui/Logo";
 import Shell from "./layout/Shell";
@@ -86,18 +86,47 @@ function Bare() {
   return <Outlet key={company.id} />;
 }
 
+/** Back to the app from /onboarding; a "new company" that may not be created is cancelled first (else the Gate sends us back here). */
+function LeaveOnboarding({ to }: { to: string }) {
+  const { creating, cancelCreateCompany } = useAuth();
+  useEffect(() => { if (creating) cancelCreateCompany(); }, [creating, cancelCreateCompany]);
+  return creating ? <LoadingScreen /> : <Navigate to={to} replace />;
+}
+
+/** Signed in, but not in any company and not invited: TradeWorks accounts are by invitation only. */
+function NoAccess() {
+  const t = useT();
+  const { user, retryLoad } = useAuth();
+  return (
+    <div className="auth">
+      <div className="auth-card card">
+        <div className="auth-top"><Logo size={40} /><b>TradeWorks</b></div>
+        <h1>{t("You need an invitation", "Necesitas una invitación")}</h1>
+        <p className="muted" style={{ marginBottom: 10 }}>{t("TradeWorks accounts are by invitation. Ask your company to invite this e-mail:", "Las cuentas de TradeWorks son por invitación. Pídele a tu empresa que invite este correo:")}</p>
+        <p style={{ fontWeight: 600, marginBottom: 16, overflowWrap: "anywhere" }}>{user?.email}</p>
+        <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>{t("Already invited? Make sure you signed up with exactly the e-mail they invited, then check again.", "¿Ya te invitaron? Asegúrate de haberte registrado con el mismo correo que invitaron y vuelve a revisar.")}</p>
+        <button className="btn pri" style={{ width: "100%", height: 42 }} onClick={retryLoad}>{t("Check again", "Revisar otra vez")}</button>
+        <div className="auth-links"><button className="link-btn" onClick={() => backend.signOut()}>{t("Sign out", "Salir")}</button></div>
+      </div>
+    </div>
+  );
+}
+
 /** /onboarding: the create-company wizard, plus (a) the "You were invited" prompt for accounts with an invite and no company,
  *  (b) a way back when this is an ADDITIONAL company being created (the existing company is never touched). */
 function OnboardingRoute() {
   const t = useT();
   const nav = useNavigate();
-  const { ready, user, company, companies, activeCompanyId, creating, invite, cancelCreateCompany, switchCompany, loadError } = useAuth();
+  const { ready, user, company, companies, activeCompanyId, creating, invite, cancelCreateCompany, switchCompany, loadError, isPlatformAdmin, role } = useAuth();
   const [skipInvite, setSkipInvite] = useState(false);
   if (!ready) return <LoadingScreen />;
-  if (user && loadError) return <LoadFailed />;
-  if (user && invite && !company && !creating && !skipInvite) return <JoinPrompt onSkip={() => setSkipInvite(true)} />;
-  // a plain worker never sets up a company of their own: back to their calendar
-  if (user && companies.length > 0 && !canCreateCompany(companies.map((c) => c.role))) return <Navigate to={homeFor(companies.find((c) => c.id === activeCompanyId)?.role ?? "worker")} replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (loadError) return <LoadFailed />;
+  // only a TradeWorks platform admin creates companies; everyone else gets in by invitation (rules enforce the same)
+  const view = onboardingView({ invite: !!invite, skipInvite, hasCompany: !!company, companies: companies.length, creating, isPlatformAdmin, role: role ?? companies.find((c) => c.id === activeCompanyId)?.role ?? null });
+  if (view === "join") return <JoinPrompt onSkip={() => setSkipInvite(true)} />;
+  if (view === "no-access") return <NoAccess />;
+  if (view === "home") return <LeaveOnboarding to={homeFor(companies.find((c) => c.id === activeCompanyId)?.role ?? "worker")} />;
   // creating: go back to the company that stays active underneath; a half-finished new company: go to any other one
   const target = creating ? companies.find((c) => c.id === activeCompanyId) : companies.find((c) => c.id !== company?.id);
   const back = () => {

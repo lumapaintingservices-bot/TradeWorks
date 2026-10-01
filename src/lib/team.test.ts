@@ -3,7 +3,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { blankEstimate } from "./estimate";
 import {
-  clockElapsed, clockEntry, clockHours, clockTimes, hourAmount, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats,
+  clockElapsed, clockEntry, clockFor, clockHHMM, clockHours, clockTimes, hourAmount, hoursText, inBounds, jobLabor, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats,
 } from "./team";
 import { defaultSettings } from "./settings";
 import { SERVICES } from "./services.data";
@@ -131,6 +131,24 @@ describe("clock in / out", () => {
     for (const min of [1, 7, 13, 44, 61, 119, 250, 481, 777]) expect(m(min)).toBe(Math.max(0.25, Math.round((min * 60000) / 3600000 * 4) / 4));
   });
   it("elapsed text", () => { expect(clockElapsed(at, ms + 125 * 60000)).toEqual({ h: 2, m: 5 }); expect(clockElapsed(at, ms - 5000)).toEqual({ h: 0, m: 0 }); });
+  it("shows hours as hours and minutes", () => {
+    expect(clockHHMM({ h: 2, m: 5 })).toBe("02:05");
+    expect(clockHHMM({ h: 12, m: 40 })).toBe("12:40");
+    expect(hoursText(7.5)).toBe("7 h 30 min");
+    expect(hoursText(8.75)).toBe("8 h 45 min");
+    expect(hoursText(0.25)).toBe("15 min");
+    expect(hoursText(2)).toBe("2 h");
+    expect(hoursText(1 + 5 / 60)).toBe("1 h 05 min");
+    expect(hoursText(0)).toBe("0 min");
+    expect(hoursText(-1)).toBe("0 min");
+  });
+  it("a clock-in is for one task and carries its job; the hours entry keeps the task", () => {
+    const c = clockFor({ id: "t1", title: "Prep the kitchen", estId: "e5", jobLabel: "EST-1005 · Ana" }, at);
+    expect(c).toEqual({ at, estId: "e5", taskId: "t1", taskTitle: "Prep the kitchen", jobLabel: "EST-1005 · Ana" });
+    expect(clockFor({ id: "t2", title: "Errand" }, at)).toEqual({ at, estId: "", taskId: "t2", taskTitle: "Errand" });
+    const en = clockEntry(c, { id: "w9", name: "Ana", rate: 20 }, "Clock in/out", ms + 2 * 3600000);
+    expect(en).toMatchObject({ taskId: "t1", taskTitle: "Prep the kitchen", note: "Prep the kitchen", estId: "e5", jobLabel: "EST-1005 · Ana", hours: 2 });
+  });
   it("creates the hours entry with the worker's rate and the clocked job", () => {
     const w: Worker = { id: "w9", name: "Ana", rate: 21.5 };
     const en = clockEntry({ at, estId: "e5" }, w, "Clock in/out", ms + 3 * 3600000);

@@ -91,7 +91,7 @@ Marketing: spend, leads, cost per lead, cost per job, return per $1. Export CSVs
 
 ## Team (/team)
 Range pills; tiles (hours, labor cost, paid, owed); workers table (rate, hours, earned, paid, owed,
-**clock in/out**, pay, WhatsApp, edit); hours log; labor by job (logged vs planned); payments; assigned tasks.
+**clock in/out** (always for one of the worker's tasks for today: a window to pick it, or add one), pay, WhatsApp, edit); hours log; labor by job (logged vs planned); payments; assigned tasks.
 
 ## Notes (/notes, owners / admins only)
 Board of notes (idea from the studio-admin Kanban): columns Ideas / To do / Doing / Done by default, renamed, reordered, added

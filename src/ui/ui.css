@@ -189,3 +189,11 @@ html.tw-dark .thsw button.on{background:var(--surface-2)}
 .ig input+.ig-a{padding-left:0}
 .ig.off{background:var(--surface-2);box-shadow:none}
 .ig.off input{color:var(--ink-3)}
+/* Password field with show / hide (PasswordInput.tsx) */
+.pwf{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:14px}
+.pwf>label{display:block}
+.pwf .ig{margin-top:6px}
+.pwf .ig input{font-weight:400;font-size:15px;color:var(--ink)}
+.ig-btn{flex:none;align-self:stretch;width:40px;display:grid;place-items:center;border:0;background:none;color:var(--ink-3);cursor:pointer}
+.ig-btn:hover{color:var(--ink)}
+.ig-btn:focus-visible{outline:2px solid var(--acc);outline-offset:-4px;color:var(--ink);border-radius:8px}

@@ -12,7 +12,7 @@ service cloud.firestore {
     match /users/{uid} { allow read, write: if signedIn() && request.auth.uid == uid; }
 
     match /companies/{cid} {
-      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if isPlatformAdmin() && request.resource.data.ownerUid == request.auth.uid;   // admins/{uid} exists (see firestore.rules)
       allow read: if member(cid);
       allow update: if admin(cid);
       match /members/{uid} { allow read: if member(cid); allow write: if admin(cid); }

@@ -8,7 +8,7 @@ import { clientNameOf } from "../../lib/calendar";
 import { todayISO } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { money, num } from "../../lib/money";
-import { RANGE_KEYS, clockTimes, rangeBounds, type RangeKey } from "../../lib/team";
+import { RANGE_KEYS, clockTimes, hoursText, rangeBounds, type RangeKey } from "../../lib/team";
 import { byJob, paymentsIn, paySummary, periodSeries, timesheetDays } from "../../lib/timesheet";
 import type { HourEntry, Payout, Worker } from "../../lib/types";
 import { useUi } from "../../store/ui";
@@ -17,7 +17,7 @@ import { EmptyState } from "../../ui/EmptyState";
 import "../Team.css";
 import "./timesheet.css";
 
-const hrs = (n: number) => `${Math.round(num(n) * 100) / 100} h`;
+const hrs = (n: number) => hoursText(num(n));
 const RANGE_LABEL: Record<RangeKey, [string, string]> = {
   week: ["This week", "Esta semana"], month: ["This month", "Este mes"], lastMonth: ["Last month", "Mes pasado"],
   ytd: ["Year to date", "En lo que va del año"], lastYear: ["Last year", "Año pasado"], all: ["All", "Todo"],

@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useClients, useClock, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
 import { useT } from "../i18n";
-import { clientNameOf, jobStatus } from "../lib/calendar";
+import { clientNameOf, fmtTime, jobStatus } from "../lib/calendar";
+import { clockTaskOptions } from "../lib/workerView";
 import { calcEstimate, todayISO, uid } from "../lib/estimate";
 import { fmtDate, waLink } from "../lib/format";
 import { money, num, r2 } from "../lib/money";
 import {
-  PAY_METHODS, RANGE_KEYS, clockElapsed, clockEntry, clockTimes, hourAmount, inBounds, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats, type RangeKey,
+  PAY_METHODS, RANGE_KEYS, clockElapsed, clockEntry, clockFor, clockTimes, hourAmount, hoursText, inBounds, jobOnSite, laborByJob, rangeBounds, teamTotals, workerStats, type RangeKey,
 } from "../lib/team";
 import type { Estimate, HourEntry, Payout, Task, Worker } from "../lib/types";
 import { useUi } from "../store/ui";
@@ -33,9 +34,10 @@ type ModalState =
   | { kind: "worker"; id?: string }
   | { kind: "hours"; id?: string; workerId?: string }
   | { kind: "pay"; workerId?: string }
-  | { kind: "task"; id?: string };
+  | { kind: "task"; id?: string; workerId?: string; thenClock?: boolean }
+  | { kind: "clock"; workerId: string };
 
-const hrs = (n: number) => n.toFixed(1) + " h";
+const hrs = hoursText;
 
 /**
  * Team page. Owners / admins get the full page (OwnerTeam). A worker gets WorkerTeam, a separate component tree, so a
@@ -98,10 +100,13 @@ function OwnerTeam() {
     setBusy((x) => ({ ...x, [key]: true }));
     try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); } finally { setBusy((x) => ({ ...x, [key]: false })); }
   };
-  const clockIn = (w: Worker) => guard("clk" + w.id, async () => {
+  // the clock always runs for one task (owner rule): pick which of the worker's tasks for today
+  const clockIn = (w: Worker) => { if (!clocks.some((c) => c.id === w.id)) setModal({ kind: "clock", workerId: w.id }); };
+  const clockInTask = (w: Worker, k: Task) => guard("clk" + w.id, async () => {
     if (clocks.some((c) => c.id === w.id)) return;
-    const job = jobOnSite(ests, todayISO(), invoices);
-    await saveClock({ id: w.id, at: new Date().toISOString(), estId: job ? job.id : "", ...(job ? { jobLabel: jobLabel(job) } : {}) });
+    const c = clockFor({ ...k, jobLabel: k.jobLabel || (k.estId ? jobLabel(estById(k.estId)) : "") }, new Date().toISOString());
+    await saveClock({ id: w.id, ...c });
+    setModal(null);
     toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = (w: Worker) => guard("clk" + w.id, async () => {
@@ -110,15 +115,16 @@ function OwnerTeam() {
     const entry = clockEntry(c, w, t("Clock in/out", "Entrada/salida"));
     await saveHours(entry);
     await removeClock(w.id);
-    toast(t(`${entry.hours} h saved.`, `${entry.hours} h guardadas.`));
+    toast(t(`${hoursText(entry.hours)} saved.`, `${hoursText(entry.hours)} guardadas.`));
   });
   const clockBtn = (w: Worker) => {
     const c = clocks.find((x) => x.id === w.id);
     if (!c) return <button className="btn sm" disabled={busy["clk" + w.id]} onClick={() => clockIn(w)}>{t("Clock in", "Entrada")}</button>;
     const el = clockElapsed(c.at, now), job = estById(c.estId);
+    const what = [c.taskTitle, c.jobLabel || (job ? jobLabel(job) : "")].filter(Boolean).join(" · ");
     return (
       <>
-        <span className="tm-clk" title={job ? jobLabel(job) : undefined}>● {el.h}h {el.m}m</span>
+        <span className="tm-clk" title={what || undefined}>● {hoursText(el.h + el.m / 60)}</span>
         <button className="btn sm pri" disabled={busy["clk" + w.id]} onClick={() => clockOut(w)}>{t("Clock out", "Salida")}</button>
       </>
     );
@@ -317,11 +323,15 @@ function OwnerTeam() {
           onClose={() => setModal(null)}
           onSave={async (p) => { await savePay(p); setModal(null); toast(t("Payment saved.", "Pago guardado.")); }} />
       )}
+      {modal?.kind === "clock" && wById(modal.workerId) && (
+        <ClockTaskModal worker={wById(modal.workerId)!} tasks={tasks.filter((k) => k.workerId === modal.workerId)} busy={!!busy["clk" + modal.workerId]}
+          onPick={(k) => clockInTask(wById(modal.workerId)!, k)} onNewTask={() => setModal({ kind: "task", workerId: modal.workerId, thenClock: true })} onClose={() => setModal(null)} />
+      )}
       {modal?.kind === "task" && (
-        <TaskModal task={tasks.find((k) => k.id === modal.id)} workers={activeWorkers}
+        <TaskModal task={tasks.find((k) => k.id === modal.id)} workers={activeWorkers} startWorker={modal.workerId}
           jobs={jobOptions(ests, invoices, tasks.find((k) => k.id === modal.id)?.estId).map((e) => ({ id: e.id, label: jobLabel(e) }))}
           onClose={() => setModal(null)}
-          onSave={async (k) => { await saveTask({ ...k, jobLabel: k.estId ? jobLabel(estById(k.estId)) : "" }); setModal(null); toast(t("Task saved.", "Tarea guardada.")); }}
+          onSave={async (k) => { await saveTask({ ...k, jobLabel: k.estId ? jobLabel(estById(k.estId)) : "" }); setModal(modal.thenClock && k.workerId ? { kind: "clock", workerId: k.workerId } : null); toast(t("Task saved.", "Tarea guardada.")); }}
           onDelete={async (id) => { const gone = tasks.find((k) => k.id === id); await removeTask(id); setModal(null); toast(t("Task deleted.", "Tarea eliminada."), gone ? { undo: () => saveTask(gone) } : undefined); }} />
       )}
     </div>
@@ -346,6 +356,34 @@ function JobSelect({ value, jobs, onChange, label }: { value: string; jobs: Job[
     <label className="f">{label}
       <Combobox value={value} onChange={onChange} none={t("No job", "Sin trabajo")} placeholder={t("Search jobs…", "Buscar trabajos…")}
         options={jobs.map((j) => ({ value: j.id, label: j.label }))} /></label>
+  );
+}
+
+/** Clock a worker in: always for one of their open tasks for today (owner rule). */
+function ClockTaskModal({ worker, tasks, busy, onPick, onNewTask, onClose }: {
+  worker: Worker; tasks: Task[]; busy: boolean; onPick(k: Task): void; onNewTask(): void; onClose(): void;
+}) {
+  const t = useT();
+  const opts = clockTaskOptions(tasks, todayISO());
+  const [pick, setPick] = useState(opts.length === 1 ? opts[0].id : "");
+  const k = opts.find((x) => x.id === pick);
+  return (
+    <Modal title={t(`Clock in ${worker.name}`, `Entrada de ${worker.name}`)} onClose={onClose}>
+      {opts.length === 0 ? <>
+        <p className="muted" style={{ marginTop: 0 }}>{t(`${worker.name} has no open tasks for today. The clock always runs for a task: add one first.`, `${worker.name} no tiene tareas abiertas para hoy. El reloj siempre corre para una tarea: agrega una primero.`)}</p>
+        <div className="tm-actions"><button className="btn pri" onClick={onNewTask}><Icon name="plus" size={16} />{t("New task", "Nueva tarea")}</button></div>
+      </> : <>
+        <p className="muted" style={{ marginTop: 0 }}>{t("Which task is the time for?", "¿Para qué tarea es el tiempo?")}</p>
+        <div className="wk-pick tm-clk-pick" role="radiogroup" aria-label={t("Task", "Tarea")}>
+          {opts.map((x) => (
+            <label key={x.id} className={"wk-opt" + (pick === x.id ? " on" : "")}>
+              <input type="radio" name="owner-clock-task" checked={pick === x.id} onChange={() => setPick(x.id)} />
+              <span className="wk-opt-t"><b>{x.title}</b>{(x.time || x.jobLabel) && <small>{[x.time ? fmtTime(x.time) : "", x.jobLabel || ""].filter(Boolean).join(" · ")}</small>}</span>
+            </label>))}
+        </div>
+        <div className="tm-actions"><button className="btn pri" disabled={!k || busy} onClick={() => k && onPick(k)}><Icon name="clock" size={16} />{t("Clock in", "Entrada")}</button></div>
+      </>}
+    </Modal>
   );
 }
 
@@ -484,12 +522,12 @@ function PayModal({ workers, startWorker, owedOf, onSave, onClose }: {
   );
 }
 
-function TaskModal({ task, workers, jobs, onSave, onDelete, onClose }: {
-  task?: Task; workers: Worker[]; jobs: Job[]; onSave(k: Task): Promise<void>; onDelete(id: string): Promise<void>; onClose(): void;
+function TaskModal({ task, workers, jobs, startWorker, onSave, onDelete, onClose }: {
+  task?: Task; workers: Worker[]; jobs: Job[]; startWorker?: string; onSave(k: Task): Promise<void>; onDelete(id: string): Promise<void>; onClose(): void;
 }) {
   const t = useT(), toast = useUi((s) => s.toast);
   const isNew = !task;
-  const [k, setK] = useState<Task>(() => task || { id: uid("task"), title: "", date: todayISO(), time: "", note: "", estId: "", workerId: workers[0]?.id || "", done: false });
+  const [k, setK] = useState<Task>(() => task || { id: uid("task"), title: "", date: todayISO(), time: "", note: "", estId: "", workerId: startWorker || workers[0]?.id || "", done: false });
   const [saving, setSaving] = useState(false);
   const run = async (fn: () => Promise<void>) => { if (saving) return; setSaving(true); try { await fn(); } catch { toast(t("Couldn't save. Try again.", "No se pudo guardar. Intenta otra vez.")); setSaving(false); } };
   const save = () => {
