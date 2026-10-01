@@ -35,3 +35,4 @@
   .ts-ent .ts-job{grid-column:1/2;grid-row:2;font-size:12.5px}
   .ts-ent .ts-h{grid-row:1/3;grid-column:2;align-self:center}
 }
+.ts-name{display:flex;align-items:center;gap:12px;min-width:0;overflow-wrap:anywhere}

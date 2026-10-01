@@ -144,3 +144,23 @@ html.tw-dark .thsw button.on{background:var(--surface-2)}
 .thsw.sm{height:26px}
 .thsw.sm button{width:26px;height:26px}
 .thsw.sm button svg{width:14px;height:14px}
+/* Avatar (Avatar.tsx), idea from shadcn's Avatar: photo or initials, status badge, overlapping group */
+.avt{--avt:34px;position:relative;display:inline-grid;place-items:center;flex:none;width:var(--avt);height:var(--avt);border-radius:50%;background:var(--avt-bg,var(--surface-2));color:var(--avt-ink,var(--ink-2));font-size:calc(var(--avt) * .36);font-weight:700;line-height:1;letter-spacing:.01em;user-select:none;vertical-align:middle}
+.avt.sq{border-radius:28%}
+.avt-f{display:block;white-space:nowrap}
+.avt>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;background:var(--surface-2)}
+.avt-xs{--avt:20px;font-size:8.5px}.avt-sm{--avt:26px;font-size:10.5px}.avt-default{--avt:34px}.avt-lg{--avt:46px;font-size:16px}.avt-xl{--avt:64px;font-size:22px}
+.avt.t-gray{--avt-bg:var(--surface-2);--avt-ink:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line)}
+.avt.t-acc{--avt-bg:var(--acc-soft);--avt-ink:var(--acc-ink)}
+.avt.t-ink{--avt-bg:var(--ink);--avt-ink:var(--bg)}
+.avt.t-blue{--avt-bg:var(--tile-blue);--avt-ink:var(--icon-blue)}.avt.t-purple{--avt-bg:var(--tile-purple);--avt-ink:var(--icon-purple)}
+.avt.t-green{--avt-bg:var(--tile-green);--avt-ink:var(--icon-green)}.avt.t-orange{--avt-bg:var(--tile-orange);--avt-ink:var(--icon-orange)}
+.avt.t-pink{--avt-bg:var(--tile-pink);--avt-ink:var(--icon-pink)}.avt.t-teal{--avt-bg:var(--tile-teal);--avt-ink:var(--icon-teal)}
+.avt-b{position:absolute;right:-1px;bottom:-1px;width:max(8px,calc(var(--avt) * .28));height:max(8px,calc(var(--avt) * .28));border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--avt-ring,var(--surface));display:grid;place-items:center;color:var(--surface)}
+.avt-b.b-warn{background:var(--warn)}.avt-b.b-bad{background:var(--bad)}.avt-b.b-gray{background:var(--ink-3)}.avt-b.b-acc{background:var(--acc)}
+.avt-b.ic{width:max(14px,calc(var(--avt) * .4));height:max(14px,calc(var(--avt) * .4));right:-3px;bottom:-3px}
+.avt-b.ic svg{width:70%;height:70%;stroke-width:3}
+.avt-g{display:inline-flex;align-items:center;flex:none}
+.avt-g>.avt{box-shadow:0 0 0 2px var(--avt-ring,var(--surface))}
+.avt-g>.avt+.avt{margin-left:calc(var(--avt) * -.12)}
+.avt-cnt .avt-f{font-size:.92em;letter-spacing:-.02em}

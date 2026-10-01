@@ -20,6 +20,7 @@ import TeamMap from "./team/TeamMap";
 import { WorkerTeam } from "./team/WorkerTeam";
 import "./Team.css";
 import { Badge } from "../ui/Badge";
+import { Avatar } from "../ui/Avatar";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
 import { Combobox } from "../ui/Combobox";
@@ -139,6 +140,9 @@ function OwnerTeam() {
     );
   };
   const sub = (w: Worker) => [w.role, w.phone].filter(Boolean).join(" · ") || "—";
+  // green dot = on the clock right now
+  const face = (w: Worker, size?: "sm") => { const on = clocks.some((c) => c.id === w.id);
+    return <Avatar name={w.name} size={size} badge={on ? "ok" : null} badgeLabel={on ? t("On the clock", "Trabajando ahora") : undefined} />; };
   const owedCell = (owed: number) => <b className={owed > 0.005 ? "tm-owed" : ""}>{money(owed)}</b>;
 
   const section = (title: string, action: ReactNode, empty: string, has: boolean, table: ReactNode, cards: ReactNode, hint?: string) => (
@@ -199,7 +203,7 @@ function OwnerTeam() {
               <thead><tr><th>{t("Name", "Nombre")}</th><th className="r">{t("Rate", "Tarifa")}</th><th className="r">{t("Hours", "Horas")}</th><th className="r">{t("Earned", "Ganado")}</th><th className="r">{t("Paid", "Pagado")}</th><th className="r">{t("Owed", "Se le debe")}</th><th /></tr></thead>
               <tbody>{workers.map((w) => { const st = stats.get(w.id)!; return (
                 <tr key={w.id} className={w.active === false ? "tm-off" : ""}>
-                  <td><b>{w.name}</b>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}<div className="muted tm-sub">{sub(w)}</div></td>
+                  <td><div className="tm-who">{face(w)}<div><b>{w.name}</b>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}<div className="muted tm-sub">{sub(w)}</div></div></div></td>
                   <td className="r nw">{money(num(w.rate))}/h</td><td className="r nw">{hrs(st.h)}</td><td className="r nw">{money(st.earned)}</td><td className="r nw">{money(st.paid)}</td>
                   <td className="r nw">{owedCell(st.owed)}</td>
                   <td className="r">{workerActions(w)}</td>
@@ -207,7 +211,7 @@ function OwnerTeam() {
             </table>,
             workers.map((w) => { const st = stats.get(w.id)!; return (
               <div key={w.id} className={"tm-card" + (w.active === false ? " tm-off" : "")}>
-                <div className="l1"><span>{w.name}{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}</span><span>{owedCell(st.owed)}</span></div>
+                <div className="l1"><span className="tm-who">{face(w, "sm")}<span>{w.name}</span>{w.active === false && <Badge variant="outline" size="sm" className="tm-inact">{t("Inactive", "Inactivo")}</Badge>}</span><span>{owedCell(st.owed)}</span></div>
                 <div className="l2"><span>{sub(w)}</span><span>{t("owed", "se le debe")}</span></div>
                 <div className="tm-stats">
                   <div><span>{t("Rate", "Tarifa")}</span><b>{money(num(w.rate))}/h</b></div><div><span>{t("Hours", "Horas")}</span><b>{hrs(st.h)}</b></div>

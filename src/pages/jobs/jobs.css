@@ -47,3 +47,5 @@
   .mj-days{padding:0 10px 10px}
   .mj-it em{max-width:40%}
 }
+.mj-row .mj-crew{margin-left:auto;align-self:center}
+.mj-row>div:not(.mj-crew){min-width:0}

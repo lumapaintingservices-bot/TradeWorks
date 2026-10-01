@@ -6,7 +6,6 @@
 .chat-row:hover{background:var(--surface-2)}
 .chat-row.on{background:var(--surface-2);box-shadow:inset 3px 0 0 var(--acc)}
 .chat-av{width:38px;height:38px;flex:none;border-radius:50%;background:var(--acc-soft);color:var(--acc-ink);display:grid;place-items:center;font-size:12px;font-weight:700}
-.chat-av.sm{width:26px;height:26px;font-size:10.5px}
 .chat-row-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .chat-row-t .l1,.chat-row-t .l2{display:flex;align-items:center;gap:8px;min-width:0}
 .chat-row-t .l1 b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -91,3 +90,4 @@
 .chat-ups{padding:8px 12px 0;border-top:1px solid var(--line);background:var(--surface)}
 .chat-ups+.chat-comp{border-top:0}
 @media(hover:none){.chat-del{opacity:.75}}
+.chat-top-g{flex:none}

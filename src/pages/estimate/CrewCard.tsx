@@ -9,8 +9,8 @@ import { progress } from "../../lib/jobday";
 import type { Estimate } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { Icon } from "../../ui/Icon";
+import { Avatar } from "../../ui/Avatar";
 
-const initials = (s: string) => (s.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2) || "?").toUpperCase();
 
 /**
  * Job day tab > Crew: who works this job. The crew sees it on their phone (My jobs): dates, address with directions,
@@ -43,7 +43,7 @@ export function CrewCard({ e, set }: { e: Estimate; set(p: Partial<Estimate>): v
             {active.map((w) => {
               const on = crew.includes(w.id);
               return <button key={w.id} type="button" className={"crew-chip" + (on ? " on" : "")} aria-pressed={on} onClick={() => toggle(w.id)}>
-                <span className="crew-av">{on ? <Icon name="check" size={14} /> : initials(w.name)}</span>{w.name}</button>;
+                <Avatar name={w.name} size="sm" badge={on ? "acc" : null} badgeIcon="check" />{w.name}</button>;
             })}
           </div>
         )}
