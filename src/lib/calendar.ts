@@ -150,3 +150,44 @@ export function downloadICS(ev: CalEvent, name = "TradeWorks"): void {
   a.download = (String(ev.title).replace(/[^\p{L}\p{N}_\- ]+/gu, "").slice(0, 40).trim() || "event") + ".ics";
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
+
+/* ---------- month / week grid layout (Calendar.tsx) ---------- */
+
+/** Sunday on or before `iso`. */
+export function weekStartISO(iso: string): string {
+  const p = iso.split("-");
+  return addDaysISO(iso, -new Date(num(p[0]), num(p[1]) - 1, num(p[2])).getDay());
+}
+/** The 7 dates of the week that starts on `start`. */
+export const weekDays = (start: string): string[] => Array.from({ length: 7 }, (_, i) => addDaysISO(start, i));
+/** The weeks (Sunday first) shown for a month "YYYY-MM": from the week of the 1st to the week of the last day. */
+export function monthWeeks(month: string): string[][] {
+  const first = month + "-01", y = num(month.slice(0, 4)), m = num(month.slice(5, 7));
+  const last = `${month}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+  const out: string[][] = [];
+  for (let s = weekStartISO(first); s <= last; s = addDaysISO(s, 7)) out.push(weekDays(s));
+  return out;
+}
+
+export type Seg<T> = { item: T; from: number; to: number; lane: number; cutL: boolean; cutR: boolean };
+/**
+ * Bars for one week row: every item that touches the week becomes one bar from its first to its last day in that week,
+ * on the first free lane (row). Longer bars first so they stay on top. cutL / cutR = it goes on before / after this week.
+ */
+export function weekSegments<T>(days: string[], items: { item: T; dates: string[] }[]): { segs: Seg<T>[]; lanes: number } {
+  const segs: Seg<T>[] = [];
+  for (const it of items) {
+    const idx = days.map((d, i) => (it.dates.includes(d) ? i : -1)).filter((i) => i >= 0);
+    if (!idx.length) continue;
+    const from = idx[0], to = idx[idx.length - 1], sorted = [...it.dates].sort();
+    segs.push({ item: it.item, from, to, lane: 0, cutL: sorted[0] < days[from], cutR: sorted[sorted.length - 1] > days[to] });
+  }
+  segs.sort((a, b) => a.from - b.from || (b.to - b.from) - (a.to - a.from));
+  const ends: number[] = [];
+  for (const s of segs) {
+    let lane = ends.findIndex((e) => e < s.from);
+    if (lane === -1) { lane = ends.length; ends.push(s.to); } else ends[lane] = s.to;
+    s.lane = lane;
+  }
+  return { segs, lanes: ends.length };
+}

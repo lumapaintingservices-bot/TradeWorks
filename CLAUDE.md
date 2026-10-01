@@ -157,6 +157,9 @@ InvoiceDoc) and PaySend (PayParts.tsx; replaced PayLinkModal). No download butto
 Merged (PR #26). Code backup before the next steps: tag backup-2026-09-30-before-notes-calendar + branch backup/2026-09-30-before-notes-calendar.
 Notes board (/notes, sidebar after Chats, More sheet): src/lib/notes.ts (+ test), src/pages/notes/Notes.tsx + NoteEditor.tsx; notes collection
 (owners / admins only: no workerScope, generic rules already deny workers; rules test added), columns in settings.noteCols; in the backup file.
+Merged (PR #27).
+Calendar redesign (owner): toolbar with Show / Person filters + Month / Week, multi-day job bars (WeekRow.tsx, weekSegments / monthWeeks
+in src/lib/calendar.ts), phone week = day list. Worker calendar (WorkerCalendar.tsx) unchanged, still uses the old .cal-grid styles.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
