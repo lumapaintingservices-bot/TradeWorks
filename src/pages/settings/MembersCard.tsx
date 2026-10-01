@@ -12,6 +12,7 @@ import {
 import { useUi } from "../../store/ui";
 import { RoleBadge } from "../../auth/RoleBadge";
 import { mailtoHref } from "../../lib/safeUrl";
+import { sendInviteEmail } from "../../data/inviteMail";
 import { ask } from "../../ui/confirm";
 import { Avatar } from "../../ui/Avatar";
 
@@ -37,6 +38,8 @@ export default function MembersCard() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [share, setShare] = useState<Invite | null>(null);
+  // what happened to the invitation e-mail (shown in the "Send this" box): sending, sent, or why not
+  const [mail, setMail] = useState<{ email: string; state: "sending" | "sent" | "demo" | "error"; note?: string } | null>(null);
   const cid = company?.id;
 
   const load = useCallback(async () => {
@@ -70,6 +73,19 @@ export default function MembersCard() {
     catch { toast(t("Select the text and copy it", "Selecciona el texto y cópialo")); }
   };
 
+  /** TradeWorks e-mails the invitation (Resend, functions/api/invite/send.js); the message to copy stays as a fallback. */
+  const emailInvite = async (inv: Invite) => {
+    setShare(inv); setMail({ email: inv.email, state: "sending" });
+    try {
+      const r = await sendInviteEmail(inv.email, lang);
+      setMail({ email: inv.email, state: r });
+      if (r === "sent") toast(t(`Invitation e-mailed to ${inv.email}`, `Invitación enviada por correo a ${inv.email}`));
+    } catch (e) {
+      const m = String((e as Error).message || "");
+      setMail({ email: inv.email, state: "error", note: m === "not-setup" ? t("E-mail isn't set up yet.", "El correo todavía no está configurado.") : m });
+    }
+  };
+
   const sendInvite = async () => {
     setErr("");
     const e = normEmail(email);
@@ -83,8 +99,9 @@ export default function MembersCard() {
         ...(inviteRole === "worker" && workerId ? { workerId } : {}), invitedBy: user.uid, invitedByName: user.name || undefined,
       };
       await backend.saveInvite(inv);
-      setShare(inv); setEmail(""); setWorkerId("");
+      setEmail(""); setWorkerId("");
       await load();
+      emailInvite(inv);
     } catch { setErr(t("Could not save the invite. That email may already have an invite from another company.", "No se pudo guardar la invitación. Ese correo quizá ya tiene una invitación de otra empresa.")); }
     finally { setBusy(false); }
   };
@@ -113,14 +130,14 @@ export default function MembersCard() {
   };
 
   return (
-    <div className="card">
+    <div className="card mb-card">
       <div className="card-h"><h2>{t("Team & access", "Equipo y acceso")}</h2><span className="muted" style={{ fontSize: 12.5 }}>{t("who can open this company", "quién puede abrir esta empresa")}</span></div>
       <div className="card-b">
         <div className="mb-note">
           <span aria-hidden>✉</span>
           <span>{t(
-            "TradeWorks cannot send emails yet. After you create an invite, copy the message and send it yourself (WhatsApp, text...). The person must create their account with that exact email; then they tap Join.",
-            "TradeWorks todavía no envía correos. Después de crear la invitación, copia el mensaje y envíaselo tú (WhatsApp, texto...). La persona debe crear su cuenta con ese mismo correo y luego toca Unirme.")}</span>
+            "TradeWorks e-mails the invitation when you create it (and you can also send the message by WhatsApp or text). The person must create their account with that exact email; then they tap Join.",
+            "TradeWorks manda la invitación por correo al crearla (y también puedes mandar el mensaje por WhatsApp o texto). La persona debe crear su cuenta con ese mismo correo y luego toca Unirme.")}</span>
         </div>
 
         <div className="mb-h" style={{ marginTop: 0 }}>{t("Members", "Miembros")}</div>
@@ -171,7 +188,8 @@ export default function MembersCard() {
                 <div><div className="mb-lbl">{t("Role", "Rol")}</div><RoleBadge role={inv.role} /></div>
                 <div>{inv.role === "worker" ? <span className="muted">{workerName(inv.workerId) || t("Not linked", "Sin vincular")}</span> : <span className="muted">—</span>}</div>
                 <div className="mb-acts">
-                  <button className="btn sm" onClick={() => setShare(share?.email === inv.email ? null : inv)}>{t("Message", "Mensaje")}</button>
+                  <button className="btn sm" disabled={mail?.email === inv.email && mail.state === "sending"} onClick={() => emailInvite(inv)}>{t("E-mail again", "Enviar otra vez")}</button>
+                  <button className="btn sm" onClick={() => { setShare(share?.email === inv.email ? null : inv); setMail(null); }}>{t("Message", "Mensaje")}</button>
                   {(role === "owner" || inv.role === "worker") && <button className="btn sm danger" onClick={() => revoke(inv)}>{t("Cancel", "Cancelar")}</button>}
                 </div>
               </div>
@@ -181,7 +199,12 @@ export default function MembersCard() {
 
         {share && (
           <div className="mb-share">
-            <h3>{t(`Send this to ${share.email}`, `Envía esto a ${share.email}`)}</h3>
+            {mail?.email === share.email && <p className={"mb-mail " + mail.state} role="status">{
+              mail.state === "sending" ? t("Sending the invitation by e-mail…", "Enviando la invitación por correo…")
+              : mail.state === "sent" ? "✓ " + t(`Invitation e-mailed to ${share.email}. You can also send them this message.`, `Invitación enviada por correo a ${share.email}. También puedes mandarle este mensaje.`)
+              : mail.state === "demo" ? t("Demo mode: no e-mail is sent. Copy the message below.", "Modo demo: no se manda correo. Copia el mensaje de abajo.")
+              : t(`The e-mail could not be sent (${mail.note}). Send this message yourself.`, `No se pudo mandar el correo (${mail.note}). Manda este mensaje tú mismo.`)}</p>}
+            <h3>{t(`Or send this to ${share.email}`, `O envía esto a ${share.email}`)}</h3>
             <textarea readOnly rows={6} value={message(share)} onFocus={(e) => e.currentTarget.select()} />
             <div className="row">
               <button className="btn pri sm" onClick={() => copy(message(share))}>{t("Copy message", "Copiar mensaje")}</button>

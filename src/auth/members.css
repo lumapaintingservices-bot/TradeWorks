@@ -21,6 +21,15 @@
 .mb-share textarea{height:auto;min-height:130px;font-size:13px;line-height:1.5;background:var(--surface)}
 .mb-share .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
 .mb-lbl{display:none;font-size:11.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+/* the card is narrow (phone, or the Settings column on a small laptop): one column, labels shown */
+.mb-card .card-b{container-type:inline-size}
+@container (max-width:620px){
+  .mb-row{grid-template-columns:1fr;gap:10px;padding:14px}
+  .mb-lbl{display:block}
+  .mb-acts{justify-content:flex-start}
+  .mb-form{grid-template-columns:1fr}
+  .mb-form .btn{width:100%}
+}
 @media(max-width:640px){
   .mb-row{grid-template-columns:1fr;gap:10px;padding:14px}
   .mb-lbl{display:block}
@@ -28,3 +37,6 @@
   .mb-form{grid-template-columns:1fr}
   .mb-form .btn{width:100%}
 }
+.mb-mail{margin:0 0 10px;padding:9px 12px;border-radius:10px;font-size:13px;line-height:1.45;background:var(--surface-2);color:var(--ink-2)}
+.mb-mail.sent{background:var(--tile-green);color:var(--icon-green);font-weight:500}
+.mb-mail.error{background:var(--tile-red);color:var(--bad)}

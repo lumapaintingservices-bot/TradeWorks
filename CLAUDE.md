@@ -207,6 +207,10 @@ Worker access + live tasks + date picker (owner 2026-10-01; backup tag backup-20
   restart, so live lists catch up without a reload. useTaskInbox (src/data/taskInbox.ts): workers get a toast for a newly assigned task
   and a Calendar badge until they open Calendar / Team (seen ids per device in localStorage). Demo lists now also update across tabs.
 - DatePicker (src/ui/DatePicker.tsx, shadcn style) replaces all 14 browser date inputs. Push notifications (app closed) not done yet.
+Merged (PR #35). Invitation e-mails (owner 2026-10-01): functions/api/invite/send.js + functions/_lib/inviteMail.js (tests): caller must be owner / admin
+of the invite's company (platform admin for owner / admin invites); 1 per minute, 5 per invite (invite.emailedAt / emailCount, server-written);
+Resend from "<Company>" <invites@lumapaintingservices.com>, reply-to the inviter; EN / ES by the inviter's language; link /signup?email= (prefilled).
+MembersCard e-mails on create + "E-mail again"; copy-the-message box stays. Needs Pages secret RESEND_API_KEY (owner adds it). Members card stacks when narrow.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

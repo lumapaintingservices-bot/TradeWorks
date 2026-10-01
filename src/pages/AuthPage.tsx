@@ -15,7 +15,8 @@ export default function AuthPage({ mode }: { mode: "signin" | "signup" | "reset"
   const { lang, setLang } = useUi();
   const { user, loadingAccount } = useAuth();
   const loc = useLocation();
-  const [name, setName] = useState(""); const [email, setEmail] = useState(""); const [pw, setPw] = useState("");
+  const [name, setName] = useState(""); const [email, setEmail] = useState(() => { const e = new URLSearchParams(window.location.search).get("email") || ""; return /^[^s@]+@[^s@]+.[^s@]{2,}$/.test(e) ? e.slice(0, 254) : ""; }); const [pw, setPw] = useState("");
+  // email: the invitation e-mail links to /signup?email=... so it comes already typed
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [sent, setSent] = useState(false);
   if (user) return <Navigate to={(loc.state as { from?: string } | null)?.from || "/"} replace />;
   if (loadingAccount) return <LoadingScreen />;
