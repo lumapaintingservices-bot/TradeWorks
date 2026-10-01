@@ -173,6 +173,9 @@ Settings > General and the user menu; sidebar bottom like shadcn dashboard-01 (S
 Settings, Language & appearance, theme, Sign out; src/layout/NavUser.tsx; footer sticky). The EN/ES button is gone from the sidebar and
 the phone top bar: app language only in Settings (login, onboarding and client pages keep their own). Phone More sheet ends with the
 user, theme and Sign out. Workers: Settings shows only language & appearance (no section menu).
+Merged (PR #30). Avatars (owner asked 2026-10-01, shadcn Avatar): src/ui/Avatar.tsx (+ AvatarGroup) and src/lib/avatar.ts (+ test) replace every
+in-app initials circle (see docs/02-components.md); the signed-in user's Google photo is used (User.photo, CSP allows lh3.googleusercontent.com).
+Same PR: the red confirm button stays red on hover.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

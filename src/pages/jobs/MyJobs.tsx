@@ -11,6 +11,7 @@ import { fmtDate } from "../../lib/format";
 import type { CrewJob } from "../../lib/types";
 import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
+import { AvatarGroup } from "../../ui/Avatar";
 import { Icon } from "../../ui/Icon";
 import { WorkerPhotos } from "../team/WorkerPhotos";
 import "./jobs.css";
@@ -124,7 +125,8 @@ export function JobDetail() {
         <div className="mj-row"><Icon name="user" size={18} /><div><small>{t("Client", "Cliente")}</small><b>{j.client}</b></div></div>
         <div className="mj-row"><Icon name="calendar" size={18} /><div><small>{t("Days on site", "Días en el trabajo")}</small>
           <b>{dates.length ? dates.map((d) => fmtDate(d, lang)).join(" · ") : t("Not scheduled yet", "Sin fecha todavía")}</b></div></div>
-        <div className="mj-row"><Icon name="team" size={18} /><div><small>{t("Crew", "Equipo")}</small><b>{[t("You", "Tú"), ...coworkers].join(", ")}</b></div></div>
+        <div className="mj-row"><Icon name="team" size={18} /><div><small>{t("Crew", "Equipo")}</small><b>{[t("You", "Tú"), ...coworkers].join(", ")}</b></div>
+          <AvatarGroup className="mj-crew" people={j.crewNames.filter(Boolean)} max={5} /></div>
       </section>
 
       {j.note && <section className="card mj-note"><div className="card-h"><h2>{t("Notes from your boss", "Notas de tu jefe")}</h2></div><p>{j.note}</p></section>}

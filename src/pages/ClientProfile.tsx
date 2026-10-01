@@ -9,7 +9,7 @@ import { jobStatus, todayISO } from "../lib/followups";
 import { EXP_METHODS, METHOD_ES } from "../lib/expenses";
 import { markRewardPaid, programOn, referralRows, rewardAmount, rewardExpense } from "../lib/referrals";
 import type { Client } from "../lib/types";
-import { fmtDate, initials } from "../lib/format";
+import { fmtDate } from "../lib/format";
 import { digitsOnly, waUrl } from "../lib/messages";
 import { money } from "../lib/money";
 import { useUi } from "../store/ui";
@@ -21,6 +21,7 @@ import { ClientForm } from "./ClientForm";
 import "./ClientProfile.css";
 import { Badge } from "../ui/Badge";
 import { ask } from "../ui/confirm";
+import { Avatar } from "../ui/Avatar";
 
 export default function ClientProfile() {
   const t = useT();
@@ -101,7 +102,7 @@ export default function ClientProfile() {
     <div className="page cp">
       <div className="cp-head">
         <div className="cp-who">
-          <span className="cp-av">{initials(client.name)}</span>
+          <Avatar name={client.name} size="xl" />
           <div className="cp-name">
             <h1>{client.name || "—"}</h1>
             {contactLine(client) && <p className="muted">{contactLine(client)}</p>}

@@ -1,7 +1,7 @@
 import type { Role } from "../lib/roles";
 export type { Role };
 
-export type User = { uid: string; name: string; email: string; emailVerified?: boolean };
+export type User = { uid: string; name: string; email: string; emailVerified?: boolean; /** profile photo (Google sign-in) */ photo?: string };
 export type Company = {
   id: string; name: string; phone: string; email: string; website: string; area: string; logoUrl: string;
   brandColor: string; trade: string; ownerUid: string;

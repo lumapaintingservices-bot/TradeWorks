@@ -12,6 +12,7 @@ import { useUi } from "../../store/ui";
 import { RoleBadge } from "../../auth/RoleBadge";
 import { mailtoHref } from "../../lib/safeUrl";
 import { ask } from "../../ui/confirm";
+import { Avatar } from "../../ui/Avatar";
 
 const ORDER: Record<Role, number> = { owner: 0, admin: 1, worker: 2 };
 
@@ -130,8 +131,9 @@ export default function MembersCard() {
             return (
               <div className="mb-row" key={m.uid}>
                 <div className="mb-who">
-                  <b><span>{m.name || (self ? user.name : "") || m.email || t("(no name)", "(sin nombre)")}</span>{self && <span className="mb-you">{t("you", "tú")}</span>}</b>
-                  <small>{m.email || (self ? user.email : "") || "—"}</small>
+                  <Avatar name={m.name || (self ? user.name : "") || m.email} src={self ? user.photo : undefined} />
+                  <div><b><span>{m.name || (self ? user.name : "") || m.email || t("(no name)", "(sin nombre)")}</span>{self && <span className="mb-you">{t("you", "tú")}</span>}</b>
+                  <small>{m.email || (self ? user.email : "") || "—"}</small></div>
                 </div>
                 <div>
                   <div className="mb-lbl">{t("Role", "Rol")}</div>

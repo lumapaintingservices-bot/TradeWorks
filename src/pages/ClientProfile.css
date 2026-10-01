@@ -1,7 +1,6 @@
 /* Client profile. Tokens only. */
 .cp-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
 .cp-who{display:flex;align-items:center;gap:14px;min-width:0}
-.cp-av{width:46px;height:46px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center;font-size:16px;font-weight:700;flex:none}
 .cp-name{min-width:0}
 .cp-name h1{font-size:var(--fs-h1);font-weight:600;letter-spacing:var(--tracking-tight);overflow-wrap:anywhere}
 .cp-name p{margin-top:3px;font-size:13px;overflow-wrap:anywhere}

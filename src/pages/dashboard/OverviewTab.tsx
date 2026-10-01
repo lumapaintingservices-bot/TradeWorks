@@ -13,6 +13,7 @@ import {
 } from "../../lib/metrics";
 import { money } from "../../lib/money";
 import { useUi } from "../../store/ui";
+import { Avatar } from "../../ui/Avatar";
 import { Icon } from "../../ui/Icon";
 import { FollowUpList } from "../FollowUps";
 import GoalCard from "./GoalCard";
@@ -20,7 +21,6 @@ import { anyKpiDef, fmtKpi, kpiResult } from "../../lib/kpis";
 import KpiLibrary, { dashCardsOf } from "./KpiLibrary";
 import "./dashboard.css";
 
-const initialsOf = (nm: string) => nm.split(/\s+/).filter((w) => /[A-Za-zÁÉÍÓÚÑáéíóúñ]/.test(w)).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join("") || "·";
 const shortDate = (iso: string, lang: "en" | "es") => fmtDate(iso, lang).replace(/,? \d{4}$/, "");
 const pl0 = (): Period => { try { const v = localStorage.getItem("tw.glPl"); if (v === "month" || v === "lastmonth" || v === "ytd" || v === "lastyear") return v; } catch { /* ignore */ } return "lastmonth"; };
 
@@ -112,7 +112,7 @@ export default function OverviewTab() {
                 const nm = nameOf(ctx, x.e), paid = jobCosts(ctx, x.e).paid;
                 return (
                   <button key={x.e.id} className="db-owe" onClick={() => nav(`/estimates/${x.e.id}`)}>
-                    <span className={`db-av c${i % 6}`}>{initialsOf(nm)}</span>
+                    <Avatar name={nm} />
                     <span className="nm"><b>{nm}</b><span>{x.e.number} · {jobTypeLabel(jobTypeOf(x.e), es)}{paid > 0 && <i className="db-dep">{t("deposit in", "depósito")}</i>}</span></span>
                     <span className="amt">{money(x.v)}</span>
                     <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="m9 6 6 6-6 6" /></svg>

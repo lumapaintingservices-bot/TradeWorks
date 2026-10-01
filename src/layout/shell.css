@@ -15,14 +15,6 @@
 .nav-item.on{background:var(--active-nav);color:#fff;font-weight:600;box-shadow:0 2px 6px rgba(11,13,18,.18)}
 .nav-item.on svg{color:#fff}
 .sb-foot{margin-top:auto;padding:14px 16px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:12px}
-.sb-foot .row{display:flex;align-items:center;justify-content:space-between}
-.cloud{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:4px 10px}
-.cloud i{width:7px;height:7px;border-radius:50%;background:var(--ok)}
-.me{display:flex;align-items:center;gap:10px}
-.me>div{min-width:0;flex:1}
-.me b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.me span:not(.av){display:block;font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.av{width:34px;height:34px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
 .main{margin-left:var(--sidebar-w);min-height:100vh}
 
 /* sidebar head: brand + fold button */
@@ -109,7 +101,7 @@
 .nav-user{display:flex;align-items:center;gap:10px;width:calc(100% - 24px);margin:0 12px;padding:8px;border:0;border-radius:10px;background:none;color:var(--ink);text-align:left;cursor:pointer}
 .nav-user:hover,.nav-user.open{background:var(--surface-2)}
 .nav-user:focus-visible{outline:0;box-shadow:var(--focus-ring)}
-.nav-user .av,.nu-head .av{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.nav-user:hover .avt,.nav-user.open .avt{--avt-ring:var(--surface-2)}
 .nu-txt{flex:1;min-width:0;display:flex;flex-direction:column}
 .nu-txt b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nu-txt span{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

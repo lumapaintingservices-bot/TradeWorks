@@ -34,6 +34,15 @@ Every checkbox: 18px rounded square (radius 5), filled with a check when on (bas
 Containers color it with --chk (fill) and --chk-ink (check): checklists green (--ok), chat members accent. Indeterminate,
 disabled and focus ring supported.
 
+## Avatar [.avt] → /src/ui/Avatar.tsx (idea from shadcn/ui Avatar)
+`<Avatar name src? size? tone? badge? badgeIcon? square? />`: the photo, or the initials (src/lib/avatar.ts: first + last word, e-mails
+use the part before @) on a soft color that stays the same for a name (blue, purple, green, orange, pink, teal; or gray / acc / ink).
+Sizes xs 20 · sm 26 · default 34 · lg 46 · xl 64. A broken photo falls back to the initials. badge = dot on the bottom-right (ok / warn /
+bad / gray / acc), badgeIcon puts an icon in it. AvatarGroup = overlapping circles, "+N" past max (AvatarGroupCount).
+Used: user menu (Google photo, green dot = cloud on, orange = demo), Settings members, Team workers (green dot = on the clock),
+worker timesheet, client profile, Still to collect, Crew chips (check badge when on the job), chat members + header group,
+worker job page crew. Client-facing pages keep their own (contractor branding).
+
 ## Pills / chips [.pill, .badge, .dep-chip, .exp-cat]
 Radius 999. Pill on = black bg white text. Status badges: soft bg + dot. Category chips colored by category.
 
@@ -49,15 +58,15 @@ White, border-right 1px --line. Top: TradeWorks logo 34px + "TradeWorks" 18/700 
 Workspace chip (company logo + name) → settings. "+ New estimate" black button full width.
 Section labels WORK / BUSINESS. Items: icon 20 + label 14/500, radius 10, hover --surface-2.
 **Active item: black gradient block (--active-nav), white text/icon, shadow.** Count badges blue pills.
-Footer: cloud status chip, EN/ES switch, user avatar + name + email.
+Footer: Settings + the user menu (see User menu).
 **Fold to icons** (desktop, idea from shadcn/ui sidebar-07): panel button next to the logo, or Ctrl/Cmd+B. The sidebar
 becomes a 72px rail (--sidebar-mini): icons only, section labels turn into thin dividers, badges sit on the icon corner,
 names show as a dark tooltip beside the icon on hover / focus, the company list opens beside the rail. Remembered per
 device (localStorage tw.sbMini, useUi().sbMini). Phones keep the bottom bar.
 
 ## Mobile shell [.v4-mtop, .v4-bnav, .v4-more]
-Top bar 56: logo + name, cloud chip, EN/ES, "+ New". Bottom nav 64: Home, Pipeline, Calendar, Estimates,
-Invoices, More (sheet with Clients, Expenses, Reports, Team, Settings). Active = ink label, blue icon.
+Top bar 56: logo + name, search, "+ New". Bottom nav 64: Home, Pipeline, Calendar, Estimates,
+Invoices, More (sheet with Clients, Expenses, Reports, Team, Settings, then the user, theme and Sign out). Active = ink label, blue icon.
 
 ## Line chart [.lc] → /components/LineChart.tsx
 Monotone cubic curve (no overshoot), main series blue with vertical gradient fill (22% → 0%),

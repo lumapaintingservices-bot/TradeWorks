@@ -52,8 +52,8 @@ export interface Backend {
   acceptInvite(user: User, inv: Invite): Promise<void>;
 }
 
-const toUser = (u: { uid: string; displayName: string | null; email: string | null; emailVerified: boolean }): User =>
-  ({ uid: u.uid, name: u.displayName || "", email: u.email || "", emailVerified: u.emailVerified });
+const toUser = (u: { uid: string; displayName: string | null; email: string | null; emailVerified: boolean; photoURL?: string | null }): User =>
+  ({ uid: u.uid, name: u.displayName || "", email: u.email || "", emailVerified: u.emailVerified, ...(u.photoURL ? { photo: u.photoURL } : {}) });
 const clean = <T extends object>(o: T): T => JSON.parse(JSON.stringify(o));
 // billing fields are written only by the Stripe webhook; a stale browser copy must never write them back
 // written only by the server (firestore.rules billingUntouched): never sent back, or a stale copy would be refused
