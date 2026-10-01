@@ -69,3 +69,24 @@ export function prepareLogo(file: File, trim = true, maxDim = 600): Promise<stri
     img.src = url;
   });
 }
+
+/** A profile photo: the middle square of the image, `size` px, as a JPEG data URL (small enough for 1 MB uploads). */
+export function squareImage(file: File, size = 320, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) { reject(new Error("bad image")); return; }
+      const side = Math.min(w, h), out = Math.min(size, side), c = document.createElement("canvas");
+      c.width = out; c.height = out;
+      const x = c.getContext("2d")!;
+      x.fillStyle = "#fff"; x.fillRect(0, 0, out, out); // transparent PNGs get a white background, not black
+      x.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
+      resolve(c.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("bad image")); };
+    img.src = url;
+  });
+}

@@ -126,7 +126,7 @@ export function JobDetail() {
         <div className="mj-row"><Icon name="calendar" size={18} /><div><small>{t("Days on site", "Días en el trabajo")}</small>
           <b>{dates.length ? dates.map((d) => fmtDate(d, lang)).join(" · ") : t("Not scheduled yet", "Sin fecha todavía")}</b></div></div>
         <div className="mj-row"><Icon name="team" size={18} /><div><small>{t("Crew", "Equipo")}</small><b>{[t("You", "Tú"), ...coworkers].join(", ")}</b></div>
-          <AvatarGroup className="mj-crew" people={j.crewNames.filter(Boolean)} max={5} /></div>
+          <AvatarGroup className="mj-crew" people={j.crewNames.map((name, i) => ({ name, src: j.crewPhotos?.[i] || undefined })).filter((p) => p.name)} max={5} /></div>
       </section>
 
       {j.note && <section className="card mj-note"><div className="card-h"><h2>{t("Notes from your boss", "Notas de tu jefe")}</h2></div><p>{j.note}</p></section>}

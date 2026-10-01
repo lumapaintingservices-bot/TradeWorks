@@ -175,7 +175,11 @@ the phone top bar: app language only in Settings (login, onboarding and client p
 user, theme and Sign out. Workers: Settings shows only language & appearance (no section menu).
 Merged (PR #30). Avatars (owner asked 2026-10-01, shadcn Avatar): src/ui/Avatar.tsx (+ AvatarGroup) and src/lib/avatar.ts (+ test) replace every
 in-app initials circle (see docs/02-components.md); the signed-in user's Google photo is used (User.photo, CSP allows lh3.googleusercontent.com).
-Same PR: the red confirm button stays red on hover.
+Same PR: the red confirm button stays red on hover. Merged (PR #31).
+Profile photos (owner 2026-10-01, change or remove like shadcn): AvatarPicker (src/ui/AvatarPicker.tsx) in Settings > General > Your profile
+and Team > Edit worker. Workers: workers/{id}.photo (rules: a worker may change only the photo of their own record; Storage
+companies/{cid}/avatars/{wid}/); owners / admins: users/{uid}.avatar (Storage users/{uid}/avatar/). Crew copy carries crewPhotos for coworkers.
+Font changed to Figtree (owner request). Backup tag backup-2026-10-01-before-profile-photos. Needs Firestore + Storage rules published.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

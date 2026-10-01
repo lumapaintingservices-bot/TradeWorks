@@ -4,7 +4,7 @@ html:has(.lf),body:has(.lf){background:#f5f3ef}
   --ink:#111111;--ink-2:#4b4d52;--ink-3:#8b8e94;--line:#e7e5e0;--line-2:#f0eeea;--bg:#f5f3ef;--card:#ffffff;
   --acc-2:color-mix(in srgb,var(--acc) 12%,#fff);--acc-ink:color-mix(in srgb,var(--acc) 78%,#000);--acc-on:color-mix(in srgb,var(--acc) 5%,#fff);--bad:#b3261e;
   --r:18px;--shadow:0 1px 2px rgba(17,17,17,.04),0 8px 28px rgba(17,17,17,.06);
-  min-height:100vh;background:var(--bg);color:var(--ink);font:15.5px/1.5 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;letter-spacing:normal;-webkit-font-smoothing:antialiased;color-scheme:light;
+  min-height:100vh;background:var(--bg);color:var(--ink);font:15.5px/1.5 "Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;letter-spacing:normal;-webkit-font-smoothing:antialiased;color-scheme:light;
 }
 .lf *{box-sizing:border-box}
 :where(.lf) :is(h1,h2,h3,p){margin:0}

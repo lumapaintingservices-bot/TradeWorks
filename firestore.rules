@@ -82,6 +82,13 @@ service cloud.firestore {
         && p.url.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/?#]+/o/' + p.path.replace('/', '%2F') + '[?].*')
         && (!('kind' in p) || (p.kind is string && p.kind.size() <= 10));
     }
+    // a worker's profile photo on their own worker record: removed (null) or { url, path } of a JPEG in their avatars folder
+    function avatarOk(p, cid, wid) {
+      return p == null || (p is map && p.keys().hasOnly(['url', 'path'])
+        && p.url is string && p.url.size() <= 2000
+        && p.path is string && p.path.matches('companies/' + cid + '/avatars/' + wid + '/[A-Za-z0-9_-]+[.]jpg')
+        && p.url.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/?#]+/o/' + p.path.replace('/', '%2F') + '[?].*'));
+    }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
     function isInvitee(email) { return signedIn() && myEmail() != '' && myEmail() == email; }
@@ -212,6 +219,10 @@ service cloud.firestore {
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'doneBy', 'updatedAt'])
                 && request.resource.data.get('done', {}) is map && request.resource.data.get('done', {}).size() <= 500
                 && request.resource.data.get('doneBy', {}) is map && request.resource.data.get('doneBy', {}).size() <= 500)
+            // my own worker record: only my profile photo (Settings > Your profile)
+            || (col == 'workers' && id == myWorkerId(cid)
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo', 'updatedAt'])
+                && avatarOk(request.resource.data.get('photo', null), cid, id))
             // tick a task assigned to me as done (nothing else on it may change)
             || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))

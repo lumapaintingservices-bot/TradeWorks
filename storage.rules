@@ -15,11 +15,23 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.role == 'worker'
         && firestore.get(/databases/(default)/documents/companies/$(cid)/members/$(request.auth.uid)).data.get('workerId', '') == wid;
     }
+    // the signed-in person's own profile photo (owners / admins; users/{uid}.avatar): only them, small JPEGs
+    match /users/{uid}/avatar/{file} {
+      allow get, delete: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 1024 * 1024 && request.resource.contentType == 'image/jpeg';
+    }
     // before / after photos a worker takes: they add new JPEGs to their own folder and see them; never overwrite or delete
     // (a photo the owner shows in "Our recent work" must not break). Owners / admins: the rule below.
     match /companies/{cid}/jobphotos/{wid}/{file} {
       allow get: if workerOf(cid, wid);
       allow create: if workerOf(cid, wid) && request.resource.size < 5 * 1024 * 1024 && request.resource.contentType == 'image/jpeg';
+    }
+    // a worker's profile photo (Settings > Your profile): their own folder, small JPEGs; they may replace / remove it.
+    // Owners / admins: the rule below. Others see it through its download URL (crew, chats, Team).
+    match /companies/{cid}/avatars/{wid}/{file} {
+      allow get, delete: if workerOf(cid, wid);
+      allow create: if workerOf(cid, wid) && request.resource.size < 1024 * 1024 && request.resource.contentType == 'image/jpeg';
     }
     // receipts, photos, logos: only members of that company
     match /companies/{cid}/{allPaths=**} {

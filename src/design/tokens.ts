@@ -12,7 +12,7 @@ export const tokens = {
   },
   space: { 1:4, 2:8, 3:12, 4:16, 5:24, 6:32 },
   radius: { sm:8, md:10, lg:12, card:16, modal:18, pill:999 },
-  font: { family:'"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif',
+  font: { family:'"Figtree",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif',
           size:{ xs:11.5, sm:12.5, md:14, lg:15, h1:24, kpi:30 }, weight:{ regular:400, medium:500, semibold:600, bold:700 } },
   layout: { sidebarW:260, contentMax:1240, topbarH:56, bottomNavH:64, phoneBreakpoint:640, tabletBreakpoint:900 },
 } as const;

@@ -4,6 +4,7 @@ import { backend } from "../../auth/backend";
 import type { Invite, Member } from "../../auth/types";
 import "../../auth/members.css";
 import { useWorkers } from "../../data/hooks";
+import { useMyPhoto } from "../../data/avatar";
 import { useT } from "../../i18n";
 import {
   can, canChangeRole, canInviteRole, canLinkWorker, canRemoveMember, denialText, isEmail, normEmail, roleLabel, ROLES, type Role,
@@ -27,6 +28,7 @@ export default function MembersCard() {
   const toast = useUi((s) => s.toast);
   const { user, company, role } = useAuth();
   const { rows: workerRows } = useWorkers();
+  const myPhoto = useMyPhoto().url;
   const [members, setMembers] = useState<Member[] | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [email, setEmail] = useState("");
@@ -131,7 +133,7 @@ export default function MembersCard() {
             return (
               <div className="mb-row" key={m.uid}>
                 <div className="mb-who">
-                  <Avatar name={m.name || (self ? user.name : "") || m.email} src={self ? user.photo : undefined} />
+                  <Avatar name={m.name || (self ? user.name : "") || m.email} src={self ? myPhoto : workerRows.find((w) => w.id === m.workerId)?.photo?.url} />
                   <div><b><span>{m.name || (self ? user.name : "") || m.email || t("(no name)", "(sin nombre)")}</span>{self && <span className="mb-you">{t("you", "tú")}</span>}</b>
                   <small>{m.email || (self ? user.email : "") || "—"}</small></div>
                 </div>

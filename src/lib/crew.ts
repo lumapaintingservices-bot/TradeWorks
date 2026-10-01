@@ -14,7 +14,7 @@ export const CREW_LANG = "es" as const;
 export const jobLabelOf = (e: Estimate, clients: Client[] = [], lang: "en" | "es" = "en") => `${e.number} · ${clientNameOf(e, clients, lang)}`.slice(0, 120);
 
 /** What the crew sees of a job (everything but the ticks). */
-export function crewSnapshot(e: Estimate, clients: Client[], workers: Pick<Worker, "id" | "name">[]): Omit<CrewJob, "done" | "doneBy"> {
+export function crewSnapshot(e: Estimate, clients: Client[], workers: Pick<Worker, "id" | "name" | "photo">[]): Omit<CrewJob, "done" | "doneBy"> {
   const crew = (e.crew || []).filter(Boolean);
   const cl = checklistFor(e, CREW_LANG);
   const titles: Record<string, string> = {};
@@ -22,6 +22,7 @@ export function crewSnapshot(e: Estimate, clients: Client[], workers: Pick<Worke
   return {
     id: e.id, estId: e.id, jobLabel: jobLabelOf(e, clients),
     crew, crewNames: crew.map((id) => workers.find((w) => w.id === id)?.name || "").map((n) => n.slice(0, 80)),
+    crewPhotos: crew.map((id) => { const u = workers.find((w) => w.id === id)?.photo?.url || ""; return u.length <= 2000 ? u : ""; }),
     start: e.startDate || "", days: Math.max(1, Math.round(num(e.days) || 1)),
     address: String(e.address || "").slice(0, 300), client: clientNameOf(e, clients).slice(0, 120),
     note: String(e.crewNote || "").slice(0, 2000),
@@ -31,7 +32,7 @@ export function crewSnapshot(e: Estimate, clients: Client[], workers: Pick<Worke
   };
 }
 
-const PICK = ["jobLabel", "crew", "crewNames", "start", "days", "address", "client", "note", "checklist", "titles", "colors"] as const;
+const PICK = ["jobLabel", "crew", "crewNames", "crewPhotos", "start", "days", "address", "client", "note", "checklist", "titles", "colors"] as const;
 /** Does the crew copy need rewriting? (ticks are not compared: the crew owns them) */
 export function snapshotChanged(doc: Partial<CrewJob> | undefined, snap: Omit<CrewJob, "done" | "doneBy">): boolean {
   if (!doc) return true;
