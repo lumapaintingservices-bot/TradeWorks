@@ -74,7 +74,10 @@ Publish again every time these two files change in GitHub.
 
 1. Firebase > **Authentication > Templates**.
 2. Open **Email address verification** and **Password reset**: click the pencil, set **Sender name** (your company), and change the language to **Español** if you prefer (top right of the template). Save.
-3. Team invitations need the invited person to verify their e-mail once (the app sends the verification e-mail when they create the account, and shows "I verified my email").
+3. Invitation e-mails (POST /api/invite/send, functions/api/invite/send.js) need the Pages secret RESEND_API_KEY (the Resend key; the domain
+   lumapaintingservices.com is verified there) next to FIREBASE_SERVICE_ACCOUNT. Optional text variable INVITE_FROM_ADDRESS (default
+   invites@lumapaintingservices.com). Without the key the app says "E-mail isn't set up yet" and the copy-the-message box still works.
+4. Team invitations need the invited person to verify their e-mail once (the app sends the verification e-mail when they create the account, and shows "I verified my email").
 4. Optional but recommended: **Authentication > Settings > User actions** > turn on **Email enumeration protection**.
 
 ## Step 7 - Calendar and billing (optional, later)
