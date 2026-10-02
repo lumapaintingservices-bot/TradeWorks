@@ -261,7 +261,8 @@ Workers' records (owner 2026-10-01; backup tag backup-2026-10-01-before-worker-l
   deletedBy, softDelete / restoreEntry, Team > Hours "Deleted (n)" with Restore); useHours().rows leaves deleted entries out of every total.
 - Overtime (FLSA): 1.5x past 40 h in a Monday-Sunday week, extra = 0.5 x the week's regular rate (straight pay / hours) x overtime hours,
   spread over the week's entries (team.ts overtime / entryPay); in Team totals, owed, hours table ("+OT"), labor by job, timesheets, dashboard
-  and reports. Per worker switch worker.overtime (default on; off for contractors / exempt). RULES MUST BE PUBLISHED after merge.
+  and reports. Per worker switch worker.overtime (default on; off for contractors / exempt).
+  Merged together with the phone fixes below (PR #41, 2026-10-02); Firestore rules published by the owner 2026-10-02.
 
 Phone fixes + shadcn-style responsive layout (owner 2026-10-02, from the iPhone; owner said NOT to build the legal items for now —
 the license-number field and 3-day cancellation notice were proposed and dropped):
@@ -273,6 +274,7 @@ the license-number field and 3-day cancellation notice were proposed and dropped
 - Layout like shadcn dashboard-01: phone < 768px = top bar + bottom bar (was < 900); tablet 768-1199 = icon rail always, its button /
   Ctrl+B opens the full menu over the page (sb-peek, src/ui/useMedia.ts); >= 1200 = full sidebar (foldable as before). From 768px up the
   page sits in an inset rounded panel (.main) on the sidebar color.
+- Rules can't be published from a cloud session (no Firebase login there): the owner pastes firestore.rules in the Firebase console.
 
 Job expenses in Costs & profit (owner 2026-10-02: "an expense linked to an estimate doesn't show in Costs & profit, fake profit"; likely cause
 too: the iPhone job picker bug saved expenses with no job). lib/expenses.ts jobSpend (materials / labor = subcontractors / other, per job);
