@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
-import { useJobExpenses } from "../../data/jobExpenses";
+import { useJobSpend } from "../../data/jobExpenses";
 import { nextEstimateNumber, useClients, useEstimates, useInvoices, useSettings } from "../../data/hooks";
 import type { InvoiceRec } from "../../lib/invoices";
 import { useT } from "../../i18n";
@@ -109,9 +109,9 @@ export default function EstimateEditor() {
     syncTimer.current = setTimeout(() => { publishPortal(e, s, company, invRows as unknown as InvoiceRec[]).catch(() => {}); }, 800);
   }, [e, s, company, invRows]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const listedMat = useJobExpenses(id || "", e);
+  const spent = useJobSpend(id || "", e);
   if (!e) return <div className="page">{loading ? null : <><p>{t("Estimate not found.", "No se encontró el presupuesto.")}</p><Link to="/estimates">{t("All estimates", "Todos los presupuestos")}</Link></>}</div>;
-  const x = jobEconomics(e, s, listedMat), tot = x.t;
+  const x = jobEconomics(e, s, spent), tot = x.t;
   const pickClient = (cid: string) => {
     const c = clients.find((k) => k.id === cid);
     if (c) set({ clientId: c.id, clientName: c.name, phone: c.phone, email: c.email, address: c.address, docLang: c.lang || e.docLang, leadSource: c.source || e.leadSource });
