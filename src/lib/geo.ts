@@ -4,7 +4,7 @@
  * A web page cannot track a phone in the background: with the app closed, the last known position stays.
  */
 import { jobDates, jobStatus } from "./calendar";
-import type { Estimate, Invoice } from "./types";
+import type { Estimate, HourEntry, Invoice, Worker } from "./types";
 
 /** A position as stored on clock/{workerId} (loc = at clock-in, last = latest) and on hours entries (inLoc, outLoc). */
 export type Loc = { lat: number; lng: number; acc: number; at: string };
@@ -15,6 +15,22 @@ export type Where = { kind: "none" } | { kind: "on" | "away"; site: Site; mi: nu
 export const ON_SITE_MI = 0.25;
 /** While clocked in and the app is open, the position is refreshed this often. */
 export const PING_MS = 5 * 60_000;
+
+/* ---------- the worker's consent and how long positions are kept ---------- */
+/** Version of the location notice the worker answered (a new version asks again). */
+export const LOC_CONSENT_V = "loc-2026-10-01";
+/** Positions on hours entries (inLoc / outLoc) are removed after this many days (the owner's app does it, src/data/locRetention.ts). */
+export const LOC_KEEP_DAYS = 90;
+/** Has the worker answered the current notice? */
+export const locAnswered = (w: Pick<Worker, "locConsent"> | null | undefined) => !!w?.locConsent && w.locConsent.v === LOC_CONSENT_V;
+/** May the app save this worker's position? Only when the owner turned it on AND the worker said yes to the current notice. */
+export const locAllowed = (trackLocation: boolean | undefined, w: Pick<Worker, "locConsent"> | null | undefined) => !!trackLocation && locAnswered(w) && !!w!.locConsent!.on;
+/** Hours entries whose positions are past LOC_KEEP_DAYS (by the entry's day): their inLoc / outLoc must go. */
+export const locExpired = (hours: HourEntry[], today: string) => {
+  const d = new Date(today + "T12:00:00"); d.setDate(d.getDate() - LOC_KEEP_DAYS);
+  const cut = d.toISOString().slice(0, 10);
+  return hours.filter((h) => (h.inLoc || h.outLoc) && String(h.date || "") < cut);
+};
 
 const r5 = (n: number) => Math.round(n * 1e5) / 1e5; // ~1 m
 export const toLoc = (c: { latitude: number; longitude: number; accuracy?: number }, at: string = new Date().toISOString()): Loc =>

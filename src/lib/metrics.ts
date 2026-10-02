@@ -30,7 +30,7 @@ import {
 import { addDaysISO, daysBetween, dayOf, jobStatus as statusOf, todayISO } from "./followups";
 import { coSignedTotal } from "./invoices";
 import { num, r2 } from "./money";
-import { hourAmount } from "./team";
+import { entryPay, overtime } from "./team";
 import type { Client, EstStatus, Estimate, Expense, HourEntry, Invoice, Payout, Settings, Worker } from "./types";
 
 export type { Bounds };
@@ -64,7 +64,10 @@ const invoicesOfJob = (c: Ctx, estId: string) => c.invoices.filter((v) => v.estI
 const paidOfJob = (c: Ctx, estId: string) => invoicesOfJob(c, estId).reduce((t, v) => t + (v.status === "Paid" ? num(v.amount) : 0), 0);
 const totalOf = (c: Ctx, e: Estimate) => calcEstimate(e, c.settings).total;
 const workerOf = (c: Ctx, id: string) => c.workers.find((w) => w.id === id);
-const hourCost = (c: Ctx, h: HourEntry) => hourAmount(h, workerOf(c, h.workerId));
+// labor cost of an entry = straight time + its share of the week's overtime (computed once per hours list)
+const otCache = new WeakMap<HourEntry[], Map<string, number>>();
+const otOf = (c: Ctx) => { let m = otCache.get(c.hours); if (!m) { m = overtime(live(c.hours), c.workers).byEntry; otCache.set(c.hours, m); } return m; };
+const hourCost = (c: Ctx, h: HourEntry) => entryPay(h, workerOf(c, h.workerId), otOf(c));
 const clientOf = (c: Ctx, id?: string) => (id ? c.clients.find((x) => x.id === id) : undefined);
 
 /** Prototype nameOf: linked client first, then the record's own snapshot. Works for estimates and invoices. */

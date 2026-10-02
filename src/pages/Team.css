@@ -104,3 +104,19 @@
 .tm-who>div{min-width:0}
 .tm-tbl .tm-today{max-width:210px}
 .tm-tbl .tm-act{flex-wrap:wrap;max-width:300px;margin-left:auto}
+/* overtime, edited and deleted hours */
+.tm-otl{display:block;font-size:11.5px;color:var(--acc-ink);font-weight:600}
+.tm-ot{margin-left:6px;font-size:11px;font-weight:700;color:var(--acc-ink);background:var(--acc-soft);border-radius:999px;padding:1px 6px;vertical-align:1px}
+.tm-edited{margin-right:6px;vertical-align:1px}
+.tm-del{display:grid;gap:8px;max-height:60vh;overflow:auto}
+.tm-del-it{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);font-size:13.5px}
+/* hours history (HourHistory.tsx) */
+.hh{margin:6px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface-2);font-size:12.5px;display:grid;gap:6px}
+.hh-h{font-weight:600;color:var(--ink-2)}
+.hh-it{display:grid;gap:1px}
+.hh-who{color:var(--ink-3)}
+.hh.compact{margin:6px 0 0;padding:6px 10px;font-size:12px}
+.wm-sw{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;font-size:13.5px;font-weight:500;cursor:pointer}
+.wm-sw span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wm-sw small{font-size:12.5px;font-weight:400;color:var(--ink-3);line-height:1.4}
+.wm-loc{font-size:12.5px;line-height:1.5;margin:0 0 14px}

@@ -39,7 +39,7 @@
 .sb-search span{flex:1}
 .sb-search kbd{font-family:inherit;font-size:11px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
 .mtop .icon-only{width:36px;height:36px;padding:0;justify-content:center}
-@media(min-width:900px){
+@media(min-width:768px){
   .sb-mini .sb-new-row{margin:2px 12px 8px;width:48px}
   .sb-mini .sb-qc{display:none}
   .sb-mini .sb-new-row .sb-new{margin:0;width:48px;flex:none}

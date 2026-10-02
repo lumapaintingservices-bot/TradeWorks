@@ -25,11 +25,16 @@ export function Popover({ trigger, label, triggerClass = "", align = "start", di
     pop.current?.querySelector<HTMLElement>("button:not(:disabled), input, [tabindex='0']")?.focus({ preventScroll: true });
     const away = (e: MouseEvent) => { if (!pop.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node)) close(); };
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") { e.stopPropagation(); close(); btn.current?.focus(); } };
-    const scroll = (e: Event) => { if (!(e.target instanceof Node) || !pop.current?.contains(e.target)) close(); };
+    // page scrolled / resized (on phones also the keyboard or browser bar): follow the button, close only when it is off screen
+    const move = (e: Event) => {
+      if (e.target instanceof Node && pop.current?.contains(e.target)) return;
+      const r = btn.current?.getBoundingClientRect();
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) close(); else open();
+    };
     document.addEventListener("mousedown", away); document.addEventListener("keydown", key, true);
-    window.addEventListener("resize", close); window.addEventListener("scroll", scroll, true);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key, true); window.removeEventListener("resize", close); window.removeEventListener("scroll", scroll, true); };
-  }, [pos]);
+    window.addEventListener("resize", move); window.addEventListener("scroll", move, true);
+    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key, true); window.removeEventListener("resize", move); window.removeEventListener("scroll", move, true); };
+  }, [!!pos]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <span className="pop-wrap" onClick={(e) => e.stopPropagation()}>
       <button ref={btn} type="button" className={"pop-btn " + triggerClass} disabled={disabled} aria-haspopup="dialog" aria-expanded={!!pos} aria-label={label} title={label}

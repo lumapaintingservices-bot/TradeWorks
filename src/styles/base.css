@@ -39,7 +39,9 @@ html.tw-dark .tabs{background:var(--surface-2)}
 .seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px}
 .seg button{border:0;background:none;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--ink-3)}
 .seg button.on{background:var(--ink);color:var(--bg)}
-@media(max-width:640px){.page{padding:16px 16px calc(var(--bottomnav-h) + 24px)}.card-b{padding:16px}.page-h h1{font-size:22px}}
+@media(max-width:640px){.page{padding:16px 16px calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)}.card-b{padding:16px}.page-h h1{font-size:22px}}
+/* the bottom bar shows up to 767px: keep the end of every page above it */
+@media(min-width:641px) and (max-width:767px){.page{padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 32px)}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 @media(max-width:640px){.grid2{grid-template-columns:1fr}}

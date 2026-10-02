@@ -56,7 +56,7 @@
 .chat-checks label:has(input:checked){border-color:var(--acc);background:var(--acc-soft)}
 .chat-checks input{width:18px;height:18px;padding:0;flex:none;--chk:var(--acc);--chk-ink:#fff}
 
-@media(max-width:899px){
+@media(max-width:767px){
   .chat-wrap{grid-template-columns:1fr;height:auto;min-height:0}
   .chat-none{display:none}
   .chat-list{overflow:visible}

@@ -36,7 +36,15 @@ export const useInvoices = () => useCollection<Invoice & Rec>("invoices");
 export const useTasks = () => useCollection<Task & Rec>("tasks");
 export const useExpenses = () => useCollection<Expense & Rec>("expenses");
 export const useWorkers = () => useCollection<Worker & Rec>("workers");
-export const useHours = () => useCollection<HourEntry & Rec>("hours");
+/**
+ * Hours entries. `rows` leaves out the ones the owner deleted (they are kept as records: wage-hour law), so no total ever
+ * counts them; `all` has them too (the owner's "Deleted hours" list, the location clean-up).
+ */
+export function useHours() {
+  const c = useCollection<HourEntry & Rec>("hours");
+  const rows = useMemo(() => c.rows.filter((h) => !h.deleted), [c.rows]);
+  return { ...c, rows, all: c.rows };
+}
 export const usePayouts = () => useCollection<Payout & Rec>("payouts");
 export const useClock = () => useCollection<ClockRec & Rec>("clock");
 export const useEstimates = () => useCollection<Estimate & Rec>("estimates");

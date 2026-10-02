@@ -139,6 +139,14 @@ export function WorkerModal({ worker, access, takenEmails, hasRecords, onSave, o
         </div>
       )}
 
+      <label className="wm-sw"><input type="checkbox" role="switch" className="sw" checked={w.overtime !== false} onChange={(e) => setW({ ...w, overtime: e.target.checked })} />
+        <span>{t("Overtime pay", "Pago de horas extra")}<small>{w.overtime !== false
+          ? t("1.5× for the hours past 40 in a week (Monday to Sunday), as the law requires for employees paid by the hour.", "1.5× por las horas pasadas las 40 en una semana (lunes a domingo), como exige la ley para empleados por hora.")
+          : t("Off: a contractor or an exempt worker. Ask your accountant if you're not sure.", "Apagado: contratista o trabajador exento. Pregúntale a tu contador si no estás seguro.")}</small></span></label>
+      {!isNew && company?.trackLocation && (
+        <p className="muted wm-loc">📍 {t("Location while on the clock: ", "Ubicación mientras trabaja: ")}<b>{w.locConsent?.on ? t("allowed", "permitida") : w.locConsent ? t("not allowed", "no permitida") : t("not answered yet", "todavía no responde")}</b>
+          {w.locConsent?.at ? " · " + new Date(w.locConsent.at).toLocaleDateString(lang === "es" ? "es-US" : "en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
+          <br />{t("Only they can answer, on their phone. It is never saved without a yes.", "Solo él o ella puede responder, en su teléfono. Nunca se guarda sin un sí.")}</p>)}
       {!isNew && <label className="tm-check"><input type="checkbox" checked={w.active !== false} onChange={(e) => setW({ ...w, active: e.target.checked })} /> {t("Active (shows when logging hours)", "Activo (sale al anotar horas)")}</label>}
       <div className="tm-actions">
         <button className="btn pri" disabled={saving} onClick={save}>{email.trim() && access.state === "none" ? t("Save and invite", "Guardar e invitar") : t("Save", "Guardar")}</button>

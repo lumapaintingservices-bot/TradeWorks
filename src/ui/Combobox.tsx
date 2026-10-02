@@ -3,6 +3,9 @@ import { fold } from "../lib/search";
 import { useUi } from "../store/ui";
 import "./ui.css";
 
+/** Mouse / trackpad: focus the search box at once. Touch: don't, or the keyboard pops up and covers the list. */
+const FINE = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(pointer: fine)").matches;
+
 export type ComboOpt = { value: string; label: string; sub?: string };
 
 /**
@@ -29,8 +32,8 @@ export function Combobox({ value, options, onChange, none, placeholder, ariaLabe
   const place = () => {
     const r = btn.current?.getBoundingClientRect();
     if (!r) return;
-    const below = window.innerHeight - r.bottom;
-    setPos(below < 300 && r.top > below ? { bottom: window.innerHeight - r.top + 4, left: r.left, width: r.width } : { top: r.bottom + 4, left: r.left, width: r.width });
+    const vh = window.innerHeight, below = vh - r.bottom;
+    setPos(below < 300 && r.top > below ? { bottom: vh - r.top + 4, left: r.left, width: r.width } : { top: r.bottom + 4, left: r.left, width: r.width });
   };
   const show = () => { place(); setQ(""); setAt(Math.max(0, shown.findIndex((o) => o.value === value))); setOpen(true); };
   const pick = (v: string) => { onChange(v); setOpen(false); btn.current?.focus(); };
@@ -38,8 +41,13 @@ export function Combobox({ value, options, onChange, none, placeholder, ariaLabe
   useEffect(() => {
     if (!open) return;
     const away = (e: MouseEvent) => { if (!pop.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node)) setOpen(false); };
-    // a resize comes from the window (not a Node): always close; a scroll inside the list keeps it open
-    const move = (e: Event) => { if (!(e.target instanceof Node) || !pop.current?.contains(e.target)) setOpen(false); };
+    // the page scrolled or resized (on phones also when the keyboard or the browser bar shows / hides): follow the button,
+    // close only when it went off screen. Closing on every scroll / resize made the list flash and vanish on iPhone.
+    const move = (e: Event) => {
+      if (e.target instanceof Node && pop.current?.contains(e.target)) return;
+      const r = btn.current?.getBoundingClientRect();
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) setOpen(false); else place();
+    };
     document.addEventListener("mousedown", away);
     window.addEventListener("resize", move); window.addEventListener("scroll", move, true);
     return () => { document.removeEventListener("mousedown", away); window.removeEventListener("resize", move); window.removeEventListener("scroll", move, true); };
@@ -65,7 +73,7 @@ export function Combobox({ value, options, onChange, none, placeholder, ariaLabe
       </button>
       {open && (
         <div ref={pop} className="cbx-pop" style={{ position: "fixed", ...pos }} onKeyDown={onKey} onClick={(e) => e.preventDefault()}>
-          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder || (es ? "Buscar…" : "Search…")} aria-label={es ? "Buscar" : "Search"} />
+          <input autoFocus={FINE} value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder || (es ? "Buscar…" : "Search…")} aria-label={es ? "Buscar" : "Search"} />
           <div className="cbx-list" role="listbox" ref={list}>
             {shown.length === 0 && <div className="cbx-none">{es ? "Nada coincide" : "Nothing matches"}</div>}
             {shown.map((o, i) => (
