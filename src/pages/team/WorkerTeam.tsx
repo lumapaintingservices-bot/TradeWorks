@@ -6,7 +6,8 @@ import { fmtTime } from "../../lib/calendar";
 import { useT } from "../../i18n";
 import { todayISO, uid } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
-import { getLocation } from "../../lib/geo";
+import { getLocation, LOC_CONSENT_V, LOC_KEEP_DAYS, locAllowed, locAnswered } from "../../lib/geo";
+import { HourHistory } from "./HourHistory";
 import { num } from "../../lib/money";
 import { RANGE_KEYS, clockElapsed, clockFor, clockHHMM, clockTimes, hoursText, rangeBounds, type RangeKey } from "../../lib/team";
 import { isMyTask, myHoursIn, myTasks, sumHours, workerClockEntry, workerHoursEntry } from "../../lib/workerView";
@@ -21,7 +22,6 @@ import { useUi } from "../../store/ui";
 import { EmptyState } from "../../ui/EmptyState";
 import { Icon } from "../../ui/Icon";
 import { Modal } from "../../ui/Modal";
-import { ask } from "../../ui/confirm";
 import "../Team.css";
 import "./worker.css";
 import { DatePicker } from "../../ui/DatePicker";
@@ -56,11 +56,19 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const { company } = useAuth();
   const track = !!company?.trackLocation; // the owner turned on "location at clock-in" (Team > map)
   const lang = useUi((s) => s.lang), toast = useUi((s) => s.toast);
-  const { rows: hours, save: saveHours, remove: removeHours } = useHours();
+  const { rows: hours, save: saveHours } = useHours();
   const { rows: clocks, save: saveClock, remove: removeClock } = useClock();
   const { rows: taskRows, patch: patchTask } = useTasks();
-  const { rows: workerRows } = useWorkers();
+  const { rows: workerRows, patch: patchWorker } = useWorkers();
   const me = workerRows.find((w) => w.id === workerId) || null; // my own record (the rate is used silently, never shown)
+  // location: only with the worker's own yes to the current notice (and only while the owner has it on)
+  const allowLoc = locAllowed(track, me), askLoc = track && !!me && !locAnswered(me);
+  const [locAsk, setLocAsk] = useState(false); // the notice, opened by "Clock in" while it has no answer
+  const answerLoc = (on: boolean) => guard("loc", async () => {
+    await patchWorker(workerId, { locConsent: { on, at: new Date().toISOString(), v: LOC_CONSENT_V } });
+    setLocAsk(false);
+    toast(on ? t("Thanks. Your location is saved only while you're on the clock.", "Gracias. Tu ubicación se guarda solo mientras estás trabajando.") : t("OK. Your location is not saved.", "Listo. Tu ubicación no se guarda."));
+  });
   const tasks = useMemo(() => myTasks(taskRows, workerId), [taskRows, workerId]);
   const clock = clocks.find((c) => c.id === workerId);
 
@@ -96,15 +104,16 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const noLoc = () => toast(t("Clocked. Your location is off: allow it for TradeWorks so your boss sees you at the job.", "Registrado. Tu ubicación está apagada: permítela para TradeWorks y tu jefe verá que estás en el trabajo."));
   const clockIn = () => guard("clk", async () => {
     if (clock || !task) return;
-    const loc = track ? await getLocation() : null;
+    if (askLoc) { setLocAsk(true); return; } // answer the location notice first
+    const loc = allowLoc ? await getLocation() : null;
     await saveClock({ id: workerId, ...clockFor(task, new Date().toISOString()), ...(loc ? { loc, last: loc } : {}) });
-    if (track && !loc) noLoc(); else toast(t("Clocked in.", "Entrada registrada."));
+    if (allowLoc && !loc) noLoc(); else toast(t("Clocked in.", "Entrada registrada."));
   });
   const clockOut = () => guard("clk", async () => {
     if (!clock) return;
-    const outLoc = track ? await getLocation() : null;
+    const outLoc = allowLoc ? await getLocation() : null;
     const entry = { ...workerClockEntry(clock, workerId, me, t("Clock in/out", "Entrada/salida")), ...(clock.loc ? { inLoc: clock.loc } : {}), ...(outLoc ? { outLoc } : {}) };
-    if (track && !outLoc) noLoc();
+    if (allowLoc && !outLoc) noLoc();
     // exactly the minutes on the clock (no rounding); under a minute nothing is saved
     if (entry.hours > 0) await saveHours(entry as unknown as HourEntry);
     await removeClock(workerId);
@@ -127,7 +136,6 @@ function WorkerBody({ workerId }: { workerId: string }) {
   const comingUp = work.filter((k) => k.date > today && k.date <= later && !k.done).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 40);
   const doneTasks = work.filter((k) => k.kind === "task" && k.done && k.date !== today).reverse().slice(0, 10);
   const openToday = todayWork.filter((k) => !k.done).length;
-  const delHours = async (id: string) => { if (await ask(t("Delete these hours?", "¿Borrar estas horas?"))) guard("h" + id, () => removeHours(id)); };
 
   const el = clock ? clockElapsed(clock.at, now) : null;
   const row = (k: WorkItem) => (
@@ -162,8 +170,11 @@ function WorkerBody({ workerId }: { workerId: string }) {
         {el
           ? <button className="btn pri wk-btn" disabled={busy.clk} onClick={clockOut}><Icon name="clock" size={18} />{t("Clock out", "Salida")}</button>
           : <button className="btn pri wk-btn" disabled={busy.clk || !task} onClick={clockIn}><Icon name="clock" size={18} />{task ? t("Clock in", "Entrada") : taskOpts.length ? t("Pick a task", "Elige una tarea") : t("Clock in", "Entrada")}</button>}
-        {track && <p className="wk-loc muted">📍 {t("Your location is saved when you clock in and out, and every few minutes while TradeWorks is open during your shift, so your boss can see you're at the job. Nothing is saved when you're clocked out.",
-          "Tu ubicación se guarda al marcar entrada y salida, y cada pocos minutos mientras TradeWorks esté abierto en tu turno, para que tu jefe vea que estás en el trabajo. No se guarda nada cuando no estás trabajando.")}</p>}
+        {track && (askLoc ? <LocNotice busy={!!busy.loc} onAnswer={answerLoc} />
+          : <p className="wk-loc muted">📍 {allowLoc
+            ? <>{t(`Your location is saved when you clock in and out, and every 5 minutes while TradeWorks is open during your shift. Never when you're clocked out. Deleted after ${LOC_KEEP_DAYS} days.`, `Tu ubicación se guarda al marcar entrada y salida, y cada 5 minutos mientras TradeWorks esté abierto en tu turno. Nunca cuando no estás trabajando. Se borra a los ${LOC_KEEP_DAYS} días.`)}
+              {" "}<button type="button" className="linkish" disabled={busy.loc} onClick={() => answerLoc(false)}>{t("Stop saving my location", "Dejar de guardar mi ubicación")}</button></>
+            : <>{t("Your location is not saved.", "Tu ubicación no se guarda.")} <button type="button" className="linkish" disabled={busy.loc} onClick={() => answerLoc(true)}>{t("Allow it while I'm on the clock", "Permitirla mientras trabajo")}</button></>}</p>)}
       </section>
 
       <WorkerPhotos workerId={workerId} tasks={tasks} clock={clock} extraJobs={photoJobs} />
@@ -183,11 +194,10 @@ function WorkerBody({ workerId }: { workerId: string }) {
           <>
             <div className="only-desk tbl-wrap">
               <table className="tbl tm-tbl">
-                <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("In – out", "Entrada – salida")}</th><th className="r">{t("Hours", "Horas")}</th><th>{t("Note", "Nota")}</th><th /></tr></thead>
+                <thead><tr><th>{t("Date", "Fecha")}</th><th>{t("In – out", "Entrada – salida")}</th><th className="r">{t("Hours", "Horas")}</th><th>{t("Note", "Nota")}</th></tr></thead>
                 <tbody>{list.slice(0, 80).map((h) => (
                   <tr key={h.id}>
-                    <td className="nw">{fmtDate(h.date, lang)}</td><td className="nw">{clockTimes(h, lang) || <span className="muted">—</span>}</td><td className="r nw">{hrs(num(h.hours))}</td><td className="muted tm-note">{h.note || ""}</td>
-                    <td className="r"><button className="btn sm danger" disabled={busy["h" + h.id]} onClick={() => delHours(h.id)} aria-label={t("Delete", "Borrar")} title={t("Delete", "Borrar")}>×</button></td>
+                    <td className="nw">{fmtDate(h.date, lang)}</td><td className="nw">{clockTimes(h, lang) || <span className="muted">—</span>}</td><td className="r nw">{hrs(num(h.hours))}</td><td className="muted tm-note">{h.note || ""}{h.edits?.length ? <HourHistory h={h} compact /> : null}</td>
                   </tr>))}</tbody>
               </table>
             </div>
@@ -195,8 +205,10 @@ function WorkerBody({ workerId }: { workerId: string }) {
               <div key={h.id} className="tm-card">
                 <div className="l1"><span>{fmtDate(h.date, lang)}</span><span>{hrs(num(h.hours))}</span></div>
                 {clockTimes(h, lang) && <div className="l2"><span>🕒 {clockTimes(h, lang)}</span></div>}
-                <div className="l2"><span>{h.note || "—"}</span><button className="btn sm danger" disabled={busy["h" + h.id]} onClick={() => delHours(h.id)} aria-label={t("Delete", "Borrar")}>×</button></div>
+                <div className="l2"><span>{h.note || "—"}</span></div>
+                {h.edits?.length ? <HourHistory h={h} compact /> : null}
               </div>))}</div>
+            <p className="muted wk-hnote">{t("Only your boss can change or delete hours; you see here what they changed. If something is wrong, tell them.", "Solo tu jefe puede cambiar o borrar horas; aquí ves lo que cambió. Si algo está mal, avísale.")}</p>
           </>
         )}
       </section>
@@ -215,6 +227,11 @@ function WorkerBody({ workerId }: { workerId: string }) {
         )}
       </section>
 
+      {locAsk && askLoc && (
+        <Modal title={t("Your location at work", "Tu ubicación en el trabajo")} onClose={() => setLocAsk(false)}>
+          <LocNotice busy={!!busy.loc} onAnswer={(on) => { answerLoc(on); }} inModal />
+        </Modal>
+      )}
       {modal && (
         <WorkerHoursModal onClose={() => setModal(false)}
           onSave={async (f) => { await saveHours(workerHoursEntry(uid("h"), workerId, me, f) as unknown as HourEntry); setModal(false); toast(t("Hours saved.", "Horas guardadas.")); }} />
@@ -245,5 +262,26 @@ function WorkerHoursModal({ onSave, onClose }: { onSave(f: { date: string; hours
       <label className="f">{t("Note (optional)", "Nota (opcional)")}<input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("Sanding, priming, spraying…", "Lijado, primer, sprayado…")} /></label>
       <div className="tm-actions"><button className="btn pri" disabled={saving} onClick={save}>{t("Save", "Guardar")}</button></div>
     </Modal>
+  );
+}
+
+/** The location notice (the worker's own yes / no, kept on their record with the date and the notice version). */
+function LocNotice({ busy, onAnswer, inModal }: { busy: boolean; onAnswer(on: boolean): void; inModal?: boolean }) {
+  const t = useT();
+  return (
+    <div className={"wk-locq" + (inModal ? " in" : "")}>
+      {!inModal && <b>📍 {t("Your location at work", "Tu ubicación en el trabajo")}</b>}
+      <p>{t("Your boss would like TradeWorks to save your phone's location while you are on the clock, to see that you are at the job.", "Tu jefe quiere que TradeWorks guarde la ubicación de tu teléfono mientras trabajas, para ver que estás en el trabajo.")}</p>
+      <ul>
+        <li>{t("When: when you clock in and out, and every 5 minutes while TradeWorks is open during your shift. Never when you're clocked out or the app is closed.", "Cuándo: al marcar entrada y salida, y cada 5 minutos mientras TradeWorks esté abierto en tu turno. Nunca cuando no estás trabajando o la app está cerrada.")}</li>
+        <li>{t("Who sees it: your boss and the company's admins, on the team map and your hours.", "Quién la ve: tu jefe y los administradores de la empresa, en el mapa del equipo y en tus horas.")}</li>
+        <li>{t(`How long: deleted after ${LOC_KEEP_DAYS} days.`, `Cuánto tiempo: se borra a los ${LOC_KEEP_DAYS} días.`)}</li>
+        <li>{t("You can change your answer at any time on this page. You can clock in either way.", "Puedes cambiar tu respuesta cuando quieras en esta página. Puedes marcar entrada de las dos formas.")}</li>
+      </ul>
+      <div className="wk-locq-b">
+        <button className="btn pri" disabled={busy} onClick={() => onAnswer(true)}>{t("I agree", "Acepto")}</button>
+        <button className="btn" disabled={busy} onClick={() => onAnswer(false)}>{t("No, don't save it", "No, no la guarden")}</button>
+      </div>
+    </div>
   );
 }

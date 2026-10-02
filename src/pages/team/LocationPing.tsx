@@ -1,16 +1,22 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "../../auth/AuthProvider";
-import { useClock } from "../../data/hooks";
-import { getLocation, shouldPing } from "../../lib/geo";
+import { useClock, useWorkers } from "../../data/hooks";
+import { getLocation, locAllowed, shouldPing } from "../../lib/geo";
 
 /**
  * Mounted in the Shell for workers: while they are clocked in and TradeWorks is open on screen, refresh their position on the
  * clock (clock/{workerId}.last) every few minutes, for the owner's team map. Nothing runs when the owner has not turned on
- * location at clock-in, when the worker is clocked out, or when the app is in the background.
+ * location at clock-in, when the worker has not said yes to it (Team page notice), when they are clocked out, or when the app
+ * is in the background.
  */
 export default function LocationPing() {
   const { company, workerId } = useAuth();
-  return company?.trackLocation && workerId ? <Ping workerId={workerId} /> : null;
+  return company?.trackLocation && workerId ? <Gate workerId={workerId} /> : null;
+}
+function Gate({ workerId }: { workerId: string }) {
+  const { company } = useAuth();
+  const { rows } = useWorkers(); // a worker reads only their own record
+  return locAllowed(company?.trackLocation, rows.find((w) => w.id === workerId)) ? <Ping workerId={workerId} /> : null;
 }
 
 function Ping({ workerId }: { workerId: string }) {

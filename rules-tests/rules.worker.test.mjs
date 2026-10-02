@@ -57,7 +57,10 @@ await ok("clock out: hours entry with rate (saveRec shape)", () => setDoc(doc(wr
 await ok("clock out: hours entry WITHOUT rate", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-2"), { workerId: "w1", date: "2026-05-04", hours: 2, estId: "", note: "n", companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await ok("clock out: same entry written twice (2nd device)", () => setDoc(doc(wrk, C + "/hours/h-clk-w1-1"), { workerId: "w1", date: "2026-05-04", hours: 2, estId: "", note: "n", rate: 20, companyId: "c1", createdAt: ts, updatedAt: serverTimestamp() }));
 await ok("clock out: delete clock", () => deleteDoc(doc(wrk, C + "/clock/w1")));
-await ok("delete own hours", () => deleteDoc(doc(wrk, C + "/hours/h-clk-w1-2")));
+await no("delete own hours (only the owner deletes, kept as a record)", () => deleteDoc(doc(wrk, C + "/hours/h-clk-w1-2")));
+await no("change own hours", () => updateDoc(doc(wrk, C + "/hours/h-clk-w1-1"), { hours: 9, updatedAt: serverTimestamp() }));
+await no("undelete / edit history of own hours", () => updateDoc(doc(wrk, C + "/hours/h-clk-w1-1"), { deleted: false, updatedAt: serverTimestamp() }));
+await no("new hours with an edit history", () => setDoc(doc(wrk, C + "/hours/hz"), { workerId: "w1", date: "2026-05-04", hours: 1, estId: "", note: "", edits: [], companyId: "c1", createdAt: serverTimestamp(), updatedAt: serverTimestamp() }));
 await no("delete other's hours", () => deleteDoc(doc(wrk, C + "/hours/h2")));
 await no("hours for another worker", () => setDoc(doc(wrk, C + "/hours/hx"), { workerId: "w2", hours: 1 }));
 // tick done: patchRec = updateDoc({done, updatedAt})
@@ -79,6 +82,12 @@ await no("photo from another worker's folder", () => updateDoc(doc(wrk, C + "/wo
 await no("photo from another site", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: { url: "https://evil.example/x.jpg", path: "companies/c1/avatars/w1/a.jpg" }, updatedAt: serverTimestamp() }));
 await no("photo with extra fields", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: { ...ph("w1"), x: 1 }, updatedAt: serverTimestamp() }));
 await no("photo + rate together", () => updateDoc(doc(wrk, C + "/workers/w1"), { photo: ph("w1"), rate: 99, updatedAt: serverTimestamp() }));
+// the location notice: my own yes / no on my own record
+await ok("answer the location notice", () => updateDoc(doc(wrk, C + "/workers/w1"), { locConsent: { on: true, at: "2026-10-01T12:00:00Z", v: "loc-2026-10-01" }, updatedAt: serverTimestamp() }));
+await ok("say no to location", () => updateDoc(doc(wrk, C + "/workers/w1"), { locConsent: { on: false, at: "2026-10-01T12:00:00Z", v: "loc-2026-10-01" }, updatedAt: serverTimestamp() }));
+await no("location answer with extra fields", () => updateDoc(doc(wrk, C + "/workers/w1"), { locConsent: { on: true, at: "x", v: "v", by: "boss" }, updatedAt: serverTimestamp() }));
+await no("answer for another worker", () => updateDoc(doc(wrk, C + "/workers/w2"), { locConsent: { on: true, at: "x", v: "v" }, updatedAt: serverTimestamp() }));
+await no("location answer + overtime off together", () => updateDoc(doc(wrk, C + "/workers/w1"), { locConsent: { on: true, at: "x", v: "v" }, overtime: false, updatedAt: serverTimestamp() }));
 await no("unlinked worker sets a photo", () => updateDoc(doc(wnl, C + "/workers/w1"), { photo: ph("w1"), updatedAt: serverTimestamp() }));
 // the notes board is for owners / admins only
 await no("read the notes board", () => getDocs(C1(wrk, C + "/notes")));
