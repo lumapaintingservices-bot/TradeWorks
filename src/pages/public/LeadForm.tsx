@@ -5,6 +5,7 @@ import { leadFormFor, normalizeTrade, questionsFor, serviceLabel } from "../../l
 import { safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import { PhoneInput } from "../../ui/PhoneInput";
 import "./LeadForm.css";
+import { privacyPath } from "../../lib/legal";
 import { DatePicker } from "../../ui/DatePicker";
 
 /** Public lead questionnaire: /request?c={companyId}&src=thumbtack&ref={clientId}. Always light, contractor-branded. */
@@ -343,7 +344,8 @@ export default function LeadForm() {
         </div>
         <h2>{t("Your request", "Su solicitud")}</h2>
         <div className="lf-box lf-sum">{rows.map((r, i) => <div key={i}><span>{r[0]}</span><b>{r[1]}</b></div>)}</div>
-        <div className="lf-fine">{t(`By sending, you agree that ${pub?.name || "the company"} may contact you about your project by phone, text or email.`, `Al enviar, acepta que ${pub?.name || "la empresa"} lo contacte sobre su proyecto por teléfono, mensaje o correo.`)}</div>
+        <div className="lf-fine">{t(`By sending, you agree that ${pub?.name || "the company"} may contact you about your project by phone, text or email.`, `Al enviar, acepta que ${pub?.name || "la empresa"} lo contacte sobre su proyecto por teléfono, mensaje o correo.`)}
+          {cid && <> <a href={privacyPath(cid, lang)} target="_blank" rel="noopener noreferrer">{t("Privacy policy", "Política de privacidad")}</a></>}</div>
       </>;
     },
   };

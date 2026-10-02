@@ -8,6 +8,7 @@ import { isTrustedRedirect, mailtoHref, safeImgSrc, safeUrl } from "../../lib/sa
 import { PayMethods } from "./PayMethods";
 import { TwMark } from "./PortalPage";
 import "./portal.css";
+import { privacyPath } from "../../lib/legal";
 
 const now = () => new Date().toISOString();
 const initialsOf = (s: string) => { const w = String(s || "").trim().split(/\s+/).filter(Boolean); return ((w[0] || "?").charAt(0) + (w.length > 1 ? w[w.length - 1].charAt(0) : "")).toUpperCase(); };
@@ -141,7 +142,7 @@ export default function PayPage() {
           {b.phone && <><a className="btn" href={`tel:${wa}`}>{T("Call", "Llamar")}</a><a className="btn wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}
           {mailtoHref(b.email) && <a className="btn" href={mailtoHref(b.email)}>{b.email}</a>}
           {paidNow && reviews && <a className="btn" href={reviews} target="_blank" rel="noopener noreferrer">★ {T("Leave us a review", "Déjenos una reseña")} ↗</a>}
-          <div className="pt-fine">{b.name || ""}{b.area ? ` · ${b.area}` : ""}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div>
+          <div className="pt-fine">{b.name || ""}{b.area ? ` · ${b.area}` : ""}{doc.owner ? <> · <a className="pt-priv" href={privacyPath(doc.owner, L)} target="_blank" rel="noopener noreferrer">{T("Privacy policy", "Política de privacidad")}</a></> : null}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div>
         </footer>
       </div>
       {toast && <div className="toast" role="status">{toast}</div>}

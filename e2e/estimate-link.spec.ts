@@ -46,6 +46,17 @@ test("estimate to client link to signed, invoiced and deposit paid", async ({ pa
   await client.getByRole("button", { name: /Crown molding/ }).click();
   await expect(bigTotal).toHaveText("$1,275.00");
 
+  // the company's privacy policy, linked next to the e-sign consent, in English and Spanish
+  const privUrl = await client.getByRole("link", { name: "Privacy policy" }).first().getAttribute("href");
+  expect(privUrl).toMatch(/^\/privacy\//);
+  const pp = await context.newPage();
+  await pp.goto(privUrl!);
+  await expect(pp.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
+  await expect(pp.getByRole("heading", { name: "9. Electronic signatures and records" })).toBeVisible();
+  await pp.getByRole("button", { name: "ES", exact: true }).click();
+  await expect(pp.getByRole("heading", { name: "Política de privacidad" })).toBeVisible();
+  await pp.close();
+
   await client.getByLabel("Your full name").fill("Ana Ruiz");
   await sign(client.getByLabel("Signature"));
   await client.getByRole("button", { name: /^Accept estimate/ }).click();

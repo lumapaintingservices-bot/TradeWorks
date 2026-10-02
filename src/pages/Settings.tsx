@@ -11,6 +11,8 @@ import { useSettings } from "../data/hooks";
 import { useT } from "../i18n";
 import { Icon } from "../ui/Icon";
 import { useUi, type ThemePref } from "../store/ui";
+import { fmtDate } from "../lib/format";
+import { CLIENT_PRIVACY_DATE, privacyPath } from "../lib/legal";
 import BillingCard from "./settings/BillingCard";
 import MembersCard from "./settings/MembersCard";
 import BackupCard from "./settings/BackupCard";
@@ -287,6 +289,28 @@ function RequestLinkCard() {
   );
 }
 
+/** The privacy policy your clients see (/privacy/:cid), linked from the request form, estimate link, payment link and e-mails. */
+function PrivacyCard() {
+  const t = useT();
+  const lang = useUi((s) => s.lang);
+  const { company } = useAuth();
+  if (!company) return null;
+  const url = location.origin + privacyPath(company.id);
+  const missing = [!company.address && t("address", "dirección"), !company.email && t("e-mail", "correo")].filter(Boolean) as string[];
+  return (
+    <div className="card">
+      <div className="card-h"><h2>{t("Privacy policy for your clients", "Política de privacidad para tus clientes")}</h2></div>
+      <div className="card-b">
+        <p className="muted" style={{ marginTop: 0 }}>{t("Your clients see it from the request form, the estimate link, the payment link and the e-mails. It says what you collect, why, who helps you (TradeWorks, Google, Stripe…) and how they can ask for a copy or to stop e-mails. English and Spanish.",
+          "Tus clientes la ven desde el formulario, el enlace del presupuesto, el enlace de pago y los correos. Dice qué datos guardas, para qué, quién te ayuda (TradeWorks, Google, Stripe…) y cómo pueden pedir una copia o que dejes de escribirles. En inglés y español.")}</p>
+        <LinkRow label={t("Your privacy policy", "Tu política de privacidad")} url={url} />
+        {missing.length > 0 && <p className="muted" style={{ fontSize: 12.5 }}>⚠ {t(`Add your company's ${missing.join(" and ")} in General: the policy shows them as your contact.`, `Agrega el ${missing.join(" y el ")} de tu empresa en General: la política los muestra como tu contacto.`)}</p>}
+        <p className="muted" style={{ marginBottom: 0, fontSize: 12.5 }}>{t(`Effective ${fmtDate(CLIENT_PRIVACY_DATE, lang)}. Have a lawyer read it once.`, `Vigente desde el ${fmtDate(CLIENT_PRIVACY_DATE, lang)}. Que un abogado la lea una vez.`)}</p>
+      </div>
+    </div>
+  );
+}
+
 function BusinessGate() { return can(useRole(), "settings.business") ? <BusinessCard /> : null; }
 function OwnerOnly({ children }: { children: ReactNode }) { return can(useRole(), "billing") ? <>{children}</> : null; }
 
@@ -305,7 +329,7 @@ const SECTIONS: Section[] = [
   { id: "leads", icon: "tag", en: "Leads & messages", es: "Clientes y mensajes", descEn: "Where your clients come from and the messages you send them.", descEs: "De dónde vienen tus clientes y los mensajes que les mandas.",
     body: () => <><LeadSourcesCard /><ReferralCard /><AutoEmailCard /><MessageTemplatesCard /></> },
   { id: "client", icon: "send", en: "Client link & payments", es: "Enlace del cliente y pagos", descEn: "What your client sees: how to pay you, request form and your recent work.", descEs: "Lo que ve tu cliente: cómo pagarte, formulario de solicitud y tus trabajos recientes.",
-    body: () => <><DepositCard /><ClientLinkCard /><CardPayCard /><RequestLinkCard /><ShowcaseCard /></> },
+    body: () => <><DepositCard /><ClientLinkCard /><CardPayCard /><RequestLinkCard /><PrivacyCard /><ShowcaseCard /></> },
   { id: "calendar", icon: "calendar", en: "Calendar", es: "Calendario", descEn: "Your jobs and tasks in Google, Outlook or Apple calendar.", descEs: "Tus trabajos y tareas en el calendario de Google, Outlook o Apple.",
     body: () => <CalendarCard /> },
   { id: "team", icon: "team", en: "Team & plan", es: "Equipo y plan", descEn: "Who can use your company, and your TradeWorks plan.", descEs: "Quién puede usar tu empresa y tu plan de TradeWorks.",

@@ -62,8 +62,10 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
 
   const showcase = settings.showcase || [];
   const caption = (ph: PhotoRef) => showcaseCaption(e, ph, jobTypeLabel(jobTypeOf(e), es));
+  // our privacy policy promises the client's permission before their photos go on "Our recent work"
+  const mayShow = !!e.photoOk;
   const setInWork = async (ph: PhotoRef, on: boolean) => {
-    if (on && !ph.url) return;
+    if (on && (!ph.url || !mayShow)) return;
     try {
       await update({ showcase: on ? addShowcase(showcase, [{ id: ph.id, url: ph.url!, caption: caption(ph) }]) : removeShowcase(showcase, ph.id) });
       patch(ph.id, { inWork: on });
@@ -72,6 +74,7 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
   };
   const afterOnes = photos.filter((p) => p.kind === "after" && !p.inWork && p.url);
   const sendAfters = async () => {
+    if (!mayShow) return;
     if (!afterOnes.length) { toast(t("These after photos are already in your recent work.", "Estas fotos ya están en tus trabajos recientes.")); return; }
     try {
       await update({ showcase: addShowcase(showcase, afterOnes.map((p) => ({ id: p.id, url: p.url!, caption: caption(p) }))) });
@@ -121,15 +124,20 @@ export default function PhotosTab({ e, set, lang }: TabProps) {
                       {KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}</select>
                     <button type="button" className="btn sm danger" onClick={() => remove(ph)} title={t("Remove photo", "Quitar foto")} aria-label={t("Remove photo", "Quitar foto")}>×</button>
                   </div>
-                  <label className="ph-work"><input type="checkbox" checked={!!ph.inWork} disabled={!ph.url} onChange={(ev) => setInWork(ph, ev.target.checked)} />{t("Our recent work", "Trabajos recientes")}</label>
+                  <label className="ph-work" title={mayShow || ph.inWork ? undefined : t("First tick that the client allows it (below the photos)", "Primero marca que el cliente lo permite (debajo de las fotos)")}><input type="checkbox" checked={!!ph.inWork} disabled={!ph.url || (!mayShow && !ph.inWork)} onChange={(ev) => setInWork(ph, ev.target.checked)} />{t("Our recent work", "Trabajos recientes")}</label>
                   {ph.teamId && <label className="ph-work" title={t("Photos from your team stay private until you share them", "Las fotos de tu equipo son privadas hasta que las compartas")}>
                     <input type="checkbox" checked={!!ph.toClient} onChange={(ev) => patch(ph.id, { toClient: ev.target.checked })} />{t("Show to the client", "Mostrar al cliente")}</label>}
                 </div>
               </div>))}</div>}
 
+          {photos.length > 0 && (
+            <label className="ph-ok"><input type="checkbox" checked={mayShow} onChange={(ev) => set({ photoOk: ev.target.checked })} />
+              <span><b>{t("The client allows us to show photos of the finished work", "El cliente nos permite mostrar fotos del trabajo terminado")}</b>
+                <small>{t("Needed before a photo goes on “Our recent work” (every client link shows them). Never with their name or address. Ask them first, by text or in person.", "Hace falta antes de poner una foto en “Trabajos recientes” (salen en todos los enlaces de clientes). Nunca con su nombre ni su dirección. Pregúntale primero, por mensaje o en persona.")}</small></span></label>)}
+
           {photos.some((p) => p.kind === "after") && (
             <div className="jd-tools">
-              <button type="button" className="btn sm" onClick={sendAfters} disabled={!afterOnes.length}>
+              <button type="button" className="btn sm" onClick={sendAfters} disabled={!afterOnes.length || !mayShow}>
                 {t(`Send after photos to “Our recent work” (${afterOnes.length})`, `Mandar fotos del después a “Trabajos recientes” (${afterOnes.length})`)}</button>
               <span className="muted" style={{ fontSize: 12.5, alignSelf: "center" }}>{t(`Shown on every client link · ${showcase.length}/${SHOWCASE_MAX}`, `Se muestra en todos los enlaces · ${showcase.length}/${SHOWCASE_MAX}`)}</span>
             </div>)}

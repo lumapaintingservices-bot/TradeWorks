@@ -44,6 +44,8 @@ export type Estimate = {
   photos?: PhotoRef[]; showPhotos?: boolean; check?: Record<string, string>; jobTasks?: JobTask[]; colors?: ColorRow[];
   /** The workers on this job (worker ids) and notes for them; their copy of the job is crewjobs/{id} (src/lib/crew.ts). */
   crew?: string[]; crewNote?: string;
+  /** The client said yes to showing photos of the finished work (no name or address): needed before "Our recent work" (privacy policy). */
+  photoOk?: boolean;
   /** Who does each checklist line (line key -> worker ids); a line nobody has is for the whole crew (src/lib/crew.ts assignees). */
   assign?: Record<string, string[]>;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
@@ -110,6 +112,8 @@ export type ChatMsg = { from: "client" | "owner"; text: string; at: string };
 export type Client = {
   id: string; name: string; phone: string; email: string; address: string; source: string; lang: "en" | "es";
   note: string; lead?: boolean; archived?: boolean; archivedAt?: string; snooze?: Record<string, string>; createdAt?: unknown; updatedAt?: unknown; companyId?: string;
+  /** The client asked us to stop automatic e-mails (reminders, review requests): the daily worker skips them (src/lib/autoEmail.ts). */
+  noAutoEmail?: boolean;
   web?: { id?: string; service?: string; city?: string; message?: string; heard?: string; at?: string; details?: { types?: string[] } & Record<string, unknown> };
   referredBy?: string;
   /** On a referred client: the reward their referrer got for them (see src/lib/referrals.ts). */

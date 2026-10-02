@@ -49,9 +49,13 @@ export type PlanInput = {
   now?: Date;
 };
 
-const footer = (b: Business, es: boolean) => "\n\n—\n" + (es
-  ? `Mensaje enviado por ${b.name} con TradeWorks. Para responder, conteste este correo.`
-  : `Sent by ${b.name} with TradeWorks. To answer, just reply to this e-mail.`);
+/** How to answer, how to stop these e-mails (the privacy policy says clients may ask) and the company's privacy policy. */
+const footer = (inp: Pick<PlanInput, "business" | "companyId" | "origin">, es: boolean) => {
+  const b = inp.business, priv = inp.companyId && inp.origin ? `${inp.origin}/privacy/${inp.companyId}` : "";
+  return "\n\n—\n" + (es
+    ? `Mensaje enviado por ${b.name} con TradeWorks. Para responder, conteste este correo. ¿No quiere recibir estos correos? Responda “stop”.` + (priv ? `\nPolítica de privacidad: ${priv}` : "")
+    : `Sent by ${b.name} with TradeWorks. To answer, just reply to this e-mail. Don't want these e-mails? Reply “stop”.` + (priv ? `\nPrivacy policy: ${priv}` : ""));
+};
 
 function messageOf(f: FollowUp, inp: PlanInput, inv: InvoiceRec | undefined, payUrl: string) {
   const e = inp.estimates.find((x) => x.id === f.estId) || null;
@@ -63,6 +67,14 @@ function messageOf(f: FollowUp, inp: PlanInput, inv: InvoiceRec | undefined, pay
   }, todayISO(inp.now));
 }
 
+/** The client asked to stop automatic e-mails (client profile switch): by their client record, or any record with the same e-mail. */
+export function optedOut(f: Pick<FollowUp, "estId" | "clientId" | "email">, inp: Pick<PlanInput, "estimates" | "clients">): boolean {
+  const e = f.estId ? inp.estimates.find((x) => x.id === f.estId) : undefined;
+  const cid = e?.clientId || f.clientId;
+  const mail = String(f.email || "").trim().toLowerCase();
+  return inp.clients.some((c) => c.noAutoEmail && ((!!cid && c.id === cid) || (!!mail && String(c.email || "").trim().toLowerCase() === mail)));
+}
+
 /** The e-mails to send today for one company, most urgent first, at most MAX_PER_RUN. */
 export function planEmails(inp: PlanInput): PlannedEmail[] {
   if (!autoEmailOn(inp.settings)) return [];
@@ -70,14 +82,14 @@ export function planEmails(inp: PlanInput): PlannedEmail[] {
   const items = followUps({ estimates: inp.estimates, clients: inp.clients, settings: inp.settings, invoices: inp.invoices, now: inp.now, lang: "en" });
   const out: PlannedEmail[] = [];
   for (const f of items) {
-    if (!f.tpl || f.open || !kinds.has(f.tpl) || !isEmail(f.email) || inp.sent.has(autoEmailId(f.id))) continue;
+    if (!f.tpl || f.open || !kinds.has(f.tpl) || !isEmail(f.email) || inp.sent.has(autoEmailId(f.id)) || optedOut(f, inp)) continue;
     const inv0 = f.invId ? inp.invoices.find((v) => v.id === f.invId) : undefined;
     const inv = inv0 ? asInv(inv0) : undefined;
     const token = inv?.pay?.token;
     const payUrl = token ? `${inp.origin}/pay/${token}` : "";
     const m = messageOf(f, inp, inv, payUrl);
     out.push({ id: autoEmailId(f.id), kind: f.tpl, estId: f.estId, invId: f.invId, to: f.email.trim(), lang: f.lang,
-      subject: m.subject, body: m.body + footer(inp.business, f.lang === "es"), needsPayLink: !!inv && !token && ["deposit", "balance", "overdue"].includes(f.tpl) });
+      subject: m.subject, body: m.body + footer(inp, f.lang === "es"), needsPayLink: !!inv && !token && ["deposit", "balance", "overdue"].includes(f.tpl) });
     if (out.length >= MAX_PER_RUN) break;
   }
   return out;
@@ -90,5 +102,5 @@ export function withPayLink(p: PlannedEmail, inp: PlanInput, token: string): Pla
   const inv0 = p.invId ? inp.invoices.find((v) => v.id === p.invId) : undefined;
   if (!f || !inv0) return p;
   const m = messageOf(f, inp, asInv(inv0), `${inp.origin}/pay/${token}`);
-  return { ...p, subject: m.subject, body: m.body + footer(inp.business, p.lang === "es"), needsPayLink: false };
+  return { ...p, subject: m.subject, body: m.body + footer(inp, p.lang === "es"), needsPayLink: false };
 }

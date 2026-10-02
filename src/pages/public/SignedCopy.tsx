@@ -9,11 +9,12 @@ import { effective, modelSettings, type PortalModel } from "../../lib/portal";
 import { safeImgSrc } from "../../lib/safeUrl";
 import { TwMark } from "./PortalPage";
 import "./portal.css";
+import { privacyPath } from "../../lib/legal";
 
 /** portal/{token}/signed/{id}: written only by the server when the client signed (functions/api/portal/sign.js). */
 type Copy = {
   kind: "est" | "co"; coId?: string; coN?: number; name: string; img: string; at: string; amount: number; picks?: Record<string, boolean>;
-  data: string; dataTooBig?: boolean; hash: string; ip?: string; ua?: string; tz?: string; lang?: "en" | "es"; number?: string; emailedTo?: string; emailedAt?: string;
+  data: string; dataTooBig?: boolean; hash: string; ip?: string; ua?: string; tz?: string; lang?: "en" | "es"; number?: string; emailedTo?: string; emailedAt?: string; owner?: string;
 };
 
 const W = {
@@ -89,7 +90,7 @@ export default function SignedCopy() {
 
         {sheet && <section className="pt-sec">{copy.kind === "co" && <h2>{T.doc}</h2>}<div className="pt-docin sc-doc">{sheet}</div></section>}
 
-        <footer className="pt-foot"><div className="pt-fine">{b?.name || ""}{b?.area ? ` · ${b.area}` : ""}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div></footer>
+        <footer className="pt-foot"><div className="pt-fine">{b?.name || ""}{b?.area ? ` · ${b.area}` : ""}{copy.owner ? <> · <a className="pt-priv" href={privacyPath(copy.owner, L)} target="_blank" rel="noopener noreferrer">{es ? "Política de privacidad" : "Privacy policy"}</a></> : null}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div></footer>
       </div>
     </div>
   );

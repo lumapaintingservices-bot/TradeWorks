@@ -149,6 +149,10 @@ export default function ClientProfile() {
           <div className="card-b">
             <textarea rows={5} value={note} onChange={(e) => { dirty.current = true; setNote(e.target.value); }}
               placeholder={t("Gate code, pets, who decides, preferred days…", "Código del portón, mascotas, quién decide, días preferidos…")} />
+            {/* our privacy policy lets clients ask us to stop reminders and review requests */}
+            <label className="cp-mail"><input type="checkbox" role="switch" className="sw" checked={!client.noAutoEmail}
+              onChange={(e) => save({ ...client, noAutoEmail: !e.target.checked })} />
+              <span>{t("Automatic e-mails", "Correos automáticos")}<small>{client.noAutoEmail ? t("Off: the client asked us to stop. No reminders or review requests are e-mailed to them.", "Apagado: el cliente pidió que paremos. No se le envían recordatorios ni pedidos de reseña.") : t("Reminders and review requests. Turn off if the client asks you to stop.", "Recordatorios y pedidos de reseña. Apágalo si el cliente pide que paremos.")}</small></span></label>
           </div>
         </section>
         <section className="card">
