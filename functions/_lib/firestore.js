@@ -1,4 +1,4 @@
-// Minimal Firestore REST client (service-account authenticated). Only what billing needs.
+// Minimal Firestore REST client (service-account authenticated). Only what the functions need.
 import { getServiceAccountToken, parseServiceAccount } from "./jwt.js";
 
 /** JS value -> Firestore REST value. Dates become timestamps; integers integerValue; other numbers doubleValue. */
@@ -38,6 +38,19 @@ export function projectIdOf(env) {
 
 const segs = (path) => path.split("/").map(encodeURIComponent).join("/");
 
+/** A field path for updateMask: dotted segments, each one quoted with backticks unless it is a plain name (ids like "co-1"). */
+export const maskPath = (dotted) => dotted.split(".").map((k) => (/^[A-Za-z_][A-Za-z_0-9]*$/.test(k) ? k : "`" + k.replace(/[`\\]/g, (c) => "\\" + c) + "`")).join(".");
+/** { "client.sign": v, "audit": w } -> nested object { client: { sign: v }, audit: w } (for the request body). */
+export function nestPaths(fields) {
+  const out = {};
+  for (const [path, v] of Object.entries(fields)) {
+    const ks = path.split("."); let o = out;
+    for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]] = o[ks[i]] && typeof o[ks[i]] === "object" ? o[ks[i]] : {};
+    o[ks[ks.length - 1]] = v;
+  }
+  return out;
+}
+
 /** A tiny client bound to one env. `fetchImpl` can be injected in tests. */
 export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {}) {
   const projectId = projectIdOf(env);
@@ -46,13 +59,26 @@ export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {
 
   return {
     projectId,
-    /** -> { id, data } or null when the document does not exist */
+    /** -> { id, data, updateTime } or null when the document does not exist */
     async get(path) {
       const res = await fetchImpl(`${base}/${segs(path)}`, { headers: await auth() });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error(`Firestore get ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
       const doc = await res.json();
-      return { id: doc.name.split("/").pop(), data: fromFsFields(doc.fields) };
+      return { id: doc.name.split("/").pop(), data: fromFsFields(doc.fields), updateTime: doc.updateTime };
+    },
+    /**
+     * Sets nested fields by dotted path ({ "client.sign": {...} }) and leaves the rest of the document alone. With updateTime
+     * the write only happens if nobody changed the document since it was read: -> false when it changed (read it again).
+     */
+    async update(path, fields, { updateTime } = {}) {
+      const mask = Object.keys(fields).map((k) => "updateMask.fieldPaths=" + encodeURIComponent(maskPath(k))).join("&");
+      const pre = updateTime ? "currentDocument.updateTime=" + encodeURIComponent(updateTime) : "currentDocument.exists=true";
+      const res = await fetchImpl(`${base}/${segs(path)}?${mask}&${pre}`, { method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(nestPaths(fields)) }) });
+      if (res.ok) return true;
+      const txt = await res.text();
+      if (updateTime && (res.status === 400 || res.status === 409 || res.status === 412) && /FAILED_PRECONDITION|ABORTED|precondition/i.test(txt)) return false;
+      throw new Error(`Firestore update ${path}: ${res.status} ${txt.slice(0, 200)}`);
     },
     /** Updates ONLY the given fields (updateMask); fails if the document does not exist. */
     async patch(path, data) {
@@ -61,6 +87,11 @@ export function firestore(env, { fetchImpl = fetch, now = () => Date.now() } = {
         method: "PATCH", headers: await auth(), body: JSON.stringify({ fields: toFsFields(data) }),
       });
       if (!res.ok) throw new Error(`Firestore patch ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
+    },
+    /** Deletes a document (no error when it is not there). */
+    async remove(path) {
+      const res = await fetchImpl(`${base}/${segs(path)}`, { method: "DELETE", headers: await auth() });
+      if (!res.ok && res.status !== 404) throw new Error(`Firestore delete ${path}: ${res.status} ${(await res.text()).slice(0, 200)}`);
     },
     /** Every document of a collection path (e.g. "companies" or "companies/x/invoices") -> [{ id, data }], all pages. */
     async list(path, { pageSize = 300, max = 20000 } = {}) {

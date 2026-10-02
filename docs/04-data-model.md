@@ -71,6 +71,11 @@ companies/{cid}/autoemails/{itemId}  { item, kind, estId, invId, to, subject, st
 
 portal/{token}                       { owner(cid), estId, data (snapshot JSON), updatedAt, client:{ views[], picks{}, sign{}, chat[], paid{}, co{} } }
 portal/{token}/photos/{id}           { owner, data }
+portal/{token}/signed/{id}           the copy of exactly what the client signed, written ONLY by functions/api/portal/sign.js (service account):
+                                     { kind est|co, coId?, coN?, name, img, at (server time), amount, picks, data (the published snapshot),
+                                       hash (SHA-256), ip, ua, tz, lang, number, owner, estId, emailedTo?, emailedAt? }; id est-{ms} / co-{coId}-{ms}.
+                                     client.sign / client.coSign.{id} = { name, img, at, server: true, copy: id (+ total) }, also written by the server.
+                                     Public page /p/:token/signed/:id (src/pages/public/SignedCopy.tsx); the estimate keeps signature.copy / co.sigCopy.
 paylink/{token}                      { owner(cid), invId, data (PayModel JSON: invoice lines/totals EN+ES, branding, ways to pay), updatedAt,
                                        client:{ views[], paid{method,at,note}|null }, online{status,at,amount,method} (Stripe webhook only) }
                                                                             invoice payment link /pay/:token (src/lib/paylink.ts)

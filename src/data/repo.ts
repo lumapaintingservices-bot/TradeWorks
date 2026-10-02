@@ -95,6 +95,13 @@ export async function getTop<T>(col: string, id: string): Promise<T | null> {
   if (hasFirebase) { const s = await getDoc(doc(db, col, id)); return s.exists() ? ({ ...s.data(), id: s.id } as T) : null; }
   return readTop<T>(col, id);
 }
+/** One document of a subcollection of a top-level doc (e.g. portal/{token}/signed/{id}); demo mode: this browser's copy. */
+export const demoSubKey = (col: string, id: string, sub: string, sid: string) => `tw.demo.sub.${col}.${id}.${sub}.${sid}`;
+export async function getTopSub<T>(col: string, id: string, sub: string, sid: string): Promise<T | null> {
+  if (!hasFirebase) { try { const v = localStorage.getItem(demoSubKey(col, id, sub, sid)); return v ? ({ ...JSON.parse(v), id: sid } as T) : null; } catch { return null; } }
+  const s = await getDoc(doc(db, col, id, sub, sid));
+  return s.exists() ? ({ ...s.data(), id: s.id } as T) : null;
+}
 /** Writes (or merges into) col/id. */
 export async function setTop(col: string, id: string, data: Record<string, unknown>, merge = true): Promise<void> {
   const clean = JSON.parse(JSON.stringify(data));

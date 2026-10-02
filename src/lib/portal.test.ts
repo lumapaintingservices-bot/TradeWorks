@@ -154,3 +154,15 @@ describe("portalApply: the link is written by anyone holding the token, so clien
     expect(portalApply(a.e, c).changed).toBe(false);
   });
 });
+
+describe("portalApply: signatures written by the server", () => {
+  it("keep the id of the signed copy and that the server recorded them", () => {
+    const e = { ...est(), changeOrders: [{ id: "co-1", n: 1, desc: "Wall", amount: 150, status: "sent" }] };
+    const img = "data:image/png;base64,AAAA";
+    const r = portalApply(e, { sign: { name: "Ana", img, at: "2026-10-01T19:22:00.000Z", total: 900, server: true, copy: "est-1790882520000" }, coSign: { "co-1": { name: "Ana", img, at: "2026-10-01T19:30:00.000Z", server: true, copy: "co-co-1-1" } } });
+    expect(r.e.signature).toMatchObject({ name: "Ana", via: "link", copy: "est-1790882520000", server: true });
+    expect(r.e.changeOrders[0]).toMatchObject({ status: "signed", sigCopy: "co-co-1-1" });
+    // a copy id that is not a plain id is ignored
+    expect(portalApply(est(), { sign: { name: "Ana", img, at: "x", total: 900, copy: "../evil" } }).e.signature?.copy).toBeUndefined();
+  });
+});

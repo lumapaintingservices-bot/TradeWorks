@@ -158,8 +158,11 @@ const fbBackend: Backend = {
       const s = await getDocs(query(collection(db, col), where("owner", "==", cid))).catch(() => null);
       if (!s) continue;
       for (const d of s.docs) {
-        const ph = await getDocs(collection(db, col, d.id, "photos")).catch(() => null);
-        if (ph) for (const p of ph.docs) await deleteDoc(p.ref).catch(() => {});
+        // their photos and signed copies (subcollections) first: the rules check the company on the parent doc
+        for (const sub of ["photos", "signed"]) {
+          const ph = await getDocs(collection(db, col, d.id, sub)).catch(() => null);
+          if (ph) for (const p of ph.docs) await deleteDoc(p.ref).catch(() => {});
+        }
         await deleteDoc(d.ref).catch(() => {});
       }
     }
