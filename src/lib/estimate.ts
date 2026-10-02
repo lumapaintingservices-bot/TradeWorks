@@ -215,21 +215,29 @@ export function crewCost(e: Estimate, h: { rows: HourRow[]; total: number }, s: 
 }
 
 /** @param actualMat materials really bought for this job (0 = use the calculator's estimate). */
-export function jobEconomics(e: Estimate, s: Settings, actualMat = 0) {
+/**
+ * `actual`: the real material spend (number, as in the prototype), or what was spent on the job by kind (expenses.ts jobSpend):
+ * real materials replace the estimate, subcontractor (labor) and other job expenses are added to the cost.
+ */
+export function jobEconomics(e: Estimate, s: Settings, actual: number | { mat: number; labor?: number; other?: number } = 0) {
   const p = s.production, t = calcEstimate(e, s), h = jobHours(e, s), mode = laborModeFor(e, s);
+  const spent = typeof actual === "number" ? { mat: actual, labor: 0, other: 0 } : actual;
+  const actualMat = num(spent.mat);
   const act = actualMat > 0 ? actualMat : num(e.actualMaterialCost);
-  const mat = r2(act > 0 ? act : calcMaterials(e, s).totalCost);
+  const matEst = calcMaterials(e, s).totalCost;
+  const mat = r2(act > 0 ? act : matEst);
+  const sub = r2(num(spent.labor)), other = r2(num(spent.other));
   const co = r2((e.changeOrders || []).reduce((a, c) => a + (c.status === "signed" ? num(c.amount) : 0), 0));
   const revenue = r2(t.afterDisc + co);
   const labor = mode === "crew" ? crewCost(e, h, s) : 0;
-  const cost = r2(labor + mat), profit = r2(revenue - cost);
+  const cost = r2(labor + mat + sub + other), profit = r2(revenue - cost);
   const tm = Math.min(90, Math.max(0, num(p.targetMargin))), th = num(p.targetHourly);
   const people = mode === "crew" ? Math.max(1, num(p.crewSize)) : 1;
   return {
-    t, h, mode, labor, mat, matReal: act > 0, co, revenue, cost, profit,
+    t, h, mode, labor, mat, matEst, matReal: act > 0, sub, other, co, revenue, cost, profit,
     margin: revenue > 0 ? (profit / revenue) * 100 : 0, target: tm, targetHourly: th,
     perHour: h.total > 0 ? profit / h.total : 0,
-    suggested: mode === "crew" ? (cost > 0 ? Math.round(cost / (1 - tm / 100)) : 0) : h.total > 0 ? Math.round(mat + h.total * th) : 0,
+    suggested: mode === "crew" ? (cost > 0 ? Math.round(cost / (1 - tm / 100)) : 0) : h.total > 0 ? Math.round(mat + sub + other + h.total * th) : 0,
     days: h.total / (people * Math.max(1, num(p.hoursPerDay))), people,
   };
 }

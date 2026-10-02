@@ -130,6 +130,21 @@ export function jobExpensesTotal(expenses: Expense[], estId: string, legacy: { a
   for (const x of expenses) if (!(x as { deleted?: boolean }).deleted && x.estId === estId && x.category === "materials") t += num(x.amount);
   return Math.round(t * 100) / 100;
 }
+/**
+ * Everything spent on one job, by kind: materials (category materials + legacy receipts on the estimate, same as jobExpensesTotal),
+ * labor (category "labor": subcontractors / day labor paid as an expense) and other (every other category linked to the job:
+ * tools, fuel, lead fees...). Used by Costs & profit so the profit counts every expense the owner tied to the job.
+ */
+export type JobSpend = { mat: number; labor: number; other: number; total: number };
+export function jobSpend(expenses: Expense[], estId: string, legacy: { amount?: number }[] = []): JobSpend {
+  const mat = jobExpensesTotal(estId ? expenses : [], estId, legacy); // no job id: an unsaved job has no linked expenses
+  let labor = 0, other = 0;
+  for (const x of expenses) {
+    if ((x as { deleted?: boolean }).deleted || !estId || x.estId !== estId || x.category === "materials") continue;
+    if (x.category === "labor") labor += num(x.amount); else other += num(x.amount);
+  }
+  return { mat, labor: r2(labor), other: r2(other), total: r2(mat + labor + other) };
+}
 /** Prototype `actualMaterials`: the listed receipts when there are any, otherwise the typed "real materials cost". */
 export const actualMaterialsFrom = (listed: number, typed?: number) => (listed > 0 ? listed : num(typed));
 

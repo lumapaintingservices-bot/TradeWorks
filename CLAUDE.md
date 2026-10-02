@@ -274,6 +274,15 @@ the license-number field and 3-day cancellation notice were proposed and dropped
   Ctrl+B opens the full menu over the page (sb-peek, src/ui/useMedia.ts); >= 1200 = full sidebar (foldable as before). From 768px up the
   page sits in an inset rounded panel (.main) on the sidebar color.
 
+Job expenses in Costs & profit (owner 2026-10-02: "an expense linked to an estimate doesn't show in Costs & profit, fake profit"; likely cause
+too: the iPhone job picker bug saved expenses with no job). lib/expenses.ts jobSpend (materials / labor = subcontractors / other, per job);
+jobEconomics(e, s, number | {mat, labor, other}) adds sub + other to the cost (a plain number = prototype behavior, parity tests unchanged);
+matEst returned. CostsTab: Real profit lists Subcontractors / Other job expenses; new card "Expenses for this job" (list, click to edit,
+"+ Add expense" opens ExpenseModal already on the job); Materials card shows Estimated / Real / Difference and hides the typed real cost when
+receipts exist. ExpenseModal moved to src/pages/expenses/ExpenseModal.tsx (prop `job`). Tests: jobSpend.test.ts, e2e/job-expenses.spec.ts.
+Part 2 (better materials estimate: per-job supplies, learn from real vs estimated, warn on sample paint prices) waits for the owner's screenshot
+of Dillon's Costs & profit + what was really spent. Note: default supplies add ~$95 to every cabinet job; paint prices are sample values.
+
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
 test a real estimate with photos.
