@@ -41,9 +41,15 @@ companies/{cid}/tasks/{id}           { title, date, time, note, estId, jobLabel 
 estimate.assign                      { checklist key: [workerId] }  who does each Job day line (Job day tab "Whole crew" picker, Team > Assign work)
 settings.crewLang                    "es" (default) | "en": language of the job checklist for the crew AND the Job day tab
 companies/{cid}/notes/{id}           { title, text, col (settings.noteCols id), order (number, fractional for drag & drop), prio (high|med|low|""), due?, estId?, jobLabel?, workerId?, by }  owners / admins only
-companies/{cid}/workers/{id}         { name, phone, role, rate, active, email?, photo?: {url, path} | null }  (photo file: companies/{cid}/avatars/{workerId}/; the worker may change only photo)
+companies/{cid}/workers/{id}         { name, phone, role, rate, active, email?, photo?: {url, path} | null, overtime? (false = no 1.5x past 40 h a week),
+                                       locConsent?: { on, at, v } (the worker's answer to the location notice) }
+                                     (photo file: companies/{cid}/avatars/{workerId}/; the worker may change only photo and locConsent)
                                      email = where Team > worker sent the app invitation (invites/{email} with workerId = this record)
-companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, taskId?, taskTitle? (the task the clock ran for), note, start?, end? (ISO clock-in/out times), inLoc?, outLoc? }
+companies/{cid}/hours/{id}           { workerId, date, hours, rate, estId, jobLabel?, taskId?, taskTitle? (the task the clock ran for), note, start?, end? (ISO clock-in/out times), inLoc?, outLoc?,
+                                       deleted?, deletedAt?, deletedBy? (the owner's delete keeps the record; no total counts it),
+                                       edits?: [{ at, by, what: edit|delete|restore, before?: { hours, date, rate, estId, note, workerId } }] }
+                                     workers add entries and never change / delete them (rules). inLoc / outLoc are removed after 90 days
+                                     (owner's Shell, src/data/locRetention.ts). Overtime: src/lib/team.ts overtime() (Mon-Sun week, 40 h, 0.5 x regular rate).
 companies/{cid}/payouts/{id}         { workerId, date, amount, method, note }
 companies/{cid}/expenses/{id}        { date, vendor, amount, category, source, method, note, estId, receiptPath,
                                        recurId, bankFp, bankDesc }

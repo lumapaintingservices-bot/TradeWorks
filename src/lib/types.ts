@@ -61,7 +61,11 @@ export type Worker = { id: string; name: string; phone?: string; role?: string; 
   /** E-mail the app invitation went to (Team > worker); their login is the members doc linked to this record. */
   email?: string;
   /** Profile photo (src/data/avatar.ts): set by the owner in Team or by the worker in Settings; null = removed. */
-  photo?: PhotoMini | null };
+  photo?: PhotoMini | null;
+  /** false = no overtime pay (a contractor, or exempt); missing / true = 1.5x past 40 h in a Monday-Sunday week (src/lib/team.ts). */
+  overtime?: boolean;
+  /** The worker's answer to saving their phone's location while on the clock (company.trackLocation): on = yes, v = notice version. */
+  locConsent?: { on: boolean; at: string; v: string } | null };
 export type HourEntry = { id: string; workerId: string; date: string; hours: number; rate: number; estId?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown;
   /** The job name saved with the job (see Task.jobLabel), for the worker timesheet. */
   jobLabel?: string;
@@ -70,7 +74,12 @@ export type HourEntry = { id: string; workerId: string; date: string; hours: num
   /** The task the time clock was running for. */
   taskId?: string; taskTitle?: string;
   /** Where the worker's phone was at clock-in / clock-out (src/lib/geo.ts). */
-  inLoc?: Loc; outLoc?: Loc };
+  inLoc?: Loc; outLoc?: Loc;
+  /** Removed by the owner: kept as a record (wage-hour law: keep time records), left out of every total. */
+  deleted?: boolean; deletedAt?: string; deletedBy?: string;
+  /** Changes the owner made after the entry was saved (newest last, at most HOUR_EDITS_MAX): who, when, what it was before. */
+  edits?: HourEdit[] };
+export type HourEdit = { at: string; by: string; what: "edit" | "delete" | "restore"; before?: Partial<Pick<HourEntry, "hours" | "date" | "rate" | "estId" | "note" | "workerId">> };
 export type Payout = { id: string; workerId: string; date: string; amount: number; method?: string; note?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 export type Expense = { id: string; date: string; vendor: string; amount: number; category: string; source?: string; method?: string; note?: string; estId?: string; receiptUrl?: string; receiptPath?: string; recurId?: string; bankFp?: string; bankDesc?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** A running clock. loc = where the worker clocked in; last = latest position while the app was open (src/lib/geo.ts). */

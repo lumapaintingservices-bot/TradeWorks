@@ -16,6 +16,7 @@ import { useNavBadges } from "../pages/FollowUps";
 import { useInvoices } from "../data/hooks";
 import { usePayLinkSync } from "../data/paylinks";
 import { useTeamPhotoSync } from "../data/teamPhotos";
+import { useLocationRetention } from "../data/locRetention";
 import { useChatInbox } from "../data/teamChat";
 import { useTaskInbox } from "../data/taskInbox";
 import { useFirestoreReconnect } from "../data/reconnect";
@@ -103,6 +104,7 @@ function AdminBadges({ children }: { children: ReactNode }) {
   useTeamPhotoSync(); // before / after photos workers take land on their jobs
   useCrewSync(); // each job's crew gets its copy of the job (My jobs) and their checklist ticks come back
   useDepositOnSign(); // deposit at signing: invoices + payment link as soon as the client signs
+  useLocationRetention(); // workers' positions on hours entries go after 90 days (location notice)
   const nb = useNavBadges();
   const { rows: invs } = useInvoices();
   const chats = useChatInbox(); // job team chats with news (and a toast when a message comes in)

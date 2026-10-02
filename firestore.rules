@@ -4,7 +4,8 @@ rules_version = '2';
 // Roles (companies/{cid}/members/{uid}.role), mirrored in src/lib/roles.ts:
 //   owner  everything, incl. members and roles
 //   admin  all business data; may invite / remove WORKERS only; cannot delete the company, touch owners or change roles
-//   worker only their own tasks (read + tick done), their own hours and clock, their own worker record, their own payments (read),
+//   worker only their own tasks (read + tick done), their own hours (add; never change or delete: the owner fixes them, with a
+//          history, and deletes are kept as records) and clock, their own worker record (photo, location consent), their own payments (read),
 //          their own job photos (add, see, delete; jobphotos, file in Storage at companies/{cid}/jobphotos/{workerId}/{id}.jpg),
 //          the job chats they were added to (jobchats/{estId}.members): read, write messages as themselves, update the preview,
 //          the jobs they are on the crew of (crewjobs/{estId}.crew): read, tick the checklist (done / doneBy only)
@@ -95,6 +96,11 @@ service cloud.firestore {
         && p.url is string && p.url.size() <= 2000
         && p.path is string && p.path.matches('companies/' + cid + '/avatars/' + wid + '/[A-Za-z0-9_-]+[.]jpg')
         && p.url.matches('https://firebasestorage[.]googleapis[.]com/v0/b/[^/?#]+/o/' + p.path.replace('/', '%2F') + '[?].*'));
+    }
+    // a worker's answer to the location notice: { on, at, v } (or none)
+    function locConsentOk(c) {
+      return c == null || (c is map && c.keys().hasOnly(['on', 'at', 'v']) && c.on is bool
+        && c.at is string && c.at.size() <= 40 && c.v is string && c.v.size() <= 40);
     }
     function companyOwnerUid(cid) { return get(/databases/$(db)/documents/companies/$(cid)).data.ownerUid; }
     function myEmail() { return ('email' in request.auth.token) ? request.auth.token.email.lower() : ''; }
@@ -221,8 +227,9 @@ service cloud.firestore {
 
         allow update: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            (col == 'hours' && resource.data.workerId == myWorkerId(cid) && request.resource.data.workerId == myWorkerId(cid) && hoursShapeOk()
-              && (request.resource.data.get('rate', null) == resource.data.get('rate', null) || request.resource.data.rate == workerRate(cid)))
+            // my hours: only the very same entry written again (a 2nd device clocking out the same shift); changes are the owner's
+            (col == 'hours' && resource.data.workerId == myWorkerId(cid)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'updatedAt']))
             || (col == 'clock' && id == myWorkerId(cid) && clockShapeOk())
             // a job chat I am in (and open): only the latest-message preview, as myself
             || (col == 'jobchats' && myWorkerId(cid) in resource.data.get('members', []) && !resource.data.get('closed', false)
@@ -233,10 +240,11 @@ service cloud.firestore {
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'doneBy', 'updatedAt'])
                 && request.resource.data.get('done', {}) is map && request.resource.data.get('done', {}).size() <= 500
                 && request.resource.data.get('doneBy', {}) is map && request.resource.data.get('doneBy', {}).size() <= 500)
-            // my own worker record: only my profile photo (Settings > Your profile)
+            // my own worker record: only my profile photo (Settings > Your profile) and my answer to the location notice
             || (col == 'workers' && id == myWorkerId(cid)
-                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo', 'updatedAt'])
-                && avatarOk(request.resource.data.get('photo', null), cid, id))
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photo', 'locConsent', 'updatedAt'])
+                && avatarOk(request.resource.data.get('photo', null), cid, id)
+                && locConsentOk(request.resource.data.get('locConsent', null)))
             // tick a task assigned to me as done (nothing else on it may change)
             || (col == 'tasks' && resource.data.get('workerId', '') == myWorkerId(cid)
                 && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'updatedAt']))
@@ -244,8 +252,7 @@ service cloud.firestore {
 
         allow delete: if col != 'members' && (admin(cid) || (
           isWorker(cid) && myWorkerId(cid) != '' && (
-            (col == 'hours' && resource.data.workerId == myWorkerId(cid))
-            || (col == 'clock' && id == myWorkerId(cid))
+            (col == 'clock' && id == myWorkerId(cid))
             || (col == 'jobphotos' && resource.data.workerId == myWorkerId(cid))   // the file stays: the owner's app cleans it up
           )));
       }

@@ -252,7 +252,18 @@ writes email + address). Linked from the request form (next to the contact conse
 signed copy and its e-mail, and the reminder e-mails (footer: reply "stop" + policy link; the reminders worker needs a redeploy to send it).
 Promises kept in the app: estimate.photoOk (Photos tab "The client allows us to show photos of the finished work"; "Our recent work" is disabled
 without it) and client.noAutoEmail (client profile switch "Automatic e-mails"; planEmails skips them, also by matching e-mail). Settings > Client link
-& payments > "Privacy policy for your clients" (link, missing address / e-mail warning, "have a lawyer read it once"). No rules change.
+& payments > "Privacy policy for your clients" (link, missing address / e-mail warning, "have a lawyer read it once"). No rules change. Merged (PR #40).
+Workers' records (owner 2026-10-01; backup tag backup-2026-10-01-before-worker-legal):
+- Location only with the worker's yes: worker.locConsent { on, at, v = LOC_CONSENT_V } answered on their Team page (notice: when, who sees it,
+  90 days, can change it, can clock in either way; "Clock in" asks first). No yes -> no position at clock in / out and no LocationPing
+  (geo.ts locAllowed). Owner's worker window shows the answer. Positions on hours entries are removed after LOC_KEEP_DAYS = 90 by the owner's
+  Shell (src/data/locRetention.ts, locExpired).
+- Hours are records: workers can add but never change or delete (rules; their × button is gone, a note says to tell the boss). The owner's
+  edits keep the old values (hour.edits, withEdit, HourHistory.tsx shown to owner and worker), deletes are soft (deleted / deletedAt /
+  deletedBy, softDelete / restoreEntry, Team > Hours "Deleted (n)" with Restore); useHours().rows leaves deleted entries out of every total.
+- Overtime (FLSA): 1.5x past 40 h in a Monday-Sunday week, extra = 0.5 x the week's regular rate (straight pay / hours) x overtime hours,
+  spread over the week's entries (team.ts overtime / entryPay); in Team totals, owed, hours table ("+OT"), labor by job, timesheets, dashboard
+  and reports. Per worker switch worker.overtime (default on; off for contractors / exempt). RULES MUST BE PUBLISHED after merge.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
