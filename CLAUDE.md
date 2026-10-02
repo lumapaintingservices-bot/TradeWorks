@@ -282,8 +282,15 @@ jobEconomics(e, s, number | {mat, labor, other}) adds sub + other to the cost (a
 matEst returned. CostsTab: Real profit lists Subcontractors / Other job expenses; new card "Expenses for this job" (list, click to edit,
 "+ Add expense" opens ExpenseModal already on the job); Materials card shows Estimated / Real / Difference and hides the typed real cost when
 receipts exist. ExpenseModal moved to src/pages/expenses/ExpenseModal.tsx (prop `job`). Tests: jobSpend.test.ts, e2e/job-expenses.spec.ts.
-Part 2 (better materials estimate: per-job supplies, learn from real vs estimated, warn on sample paint prices) waits for the owner's screenshot
-of Dillon's Costs & profit + what was really spent. Note: default supplies add ~$95 to every cabinet job; paint prices are sample values.
+Part 2, materials estimate closer to real (owner 2026-10-02; Dillon: estimated $342.50, really spent $153):
+- settings.materials.chargeUsed (switch, off = prototype): cost the exact gallons used, not whole quarts (leftovers go to the next job);
+  buy* (shopping list) unchanged. Costs tab shows "0.74 gal used (buy 0.75)".
+- settings.materials.realFactor (realFactorOf: 0.1-3, else 1 = prototype): calcMaterials returns baseCost + factor, totalCost = base x factor.
+  lib/materialsLearn.ts materialsLearning: jobs where the owner buys materials and the real cost is known (materials expenses, else
+  actualMaterialCost) -> total real / total estimated (baseCost, ignoring any older factor). Settings > Profit > Materials: switch +
+  "Learn from your real jobs" box (jobs list, "Use X% on my estimates", "Stop adjusting" = 1, then Save). Costs tab: "Adjusted to your
+  real jobs (X%)" line. Only internal cost / profit; client prices unchanged. Tests: materialsLearn.test.ts, e2e/job-expenses.spec.ts.
+  Advice given: default supplies (~$95 per cabinet job + sandpaper per door) and paint prices should be set to the owner's real ones.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

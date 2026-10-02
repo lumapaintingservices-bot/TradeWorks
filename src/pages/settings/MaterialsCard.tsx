@@ -1,4 +1,6 @@
-import { useSettings } from "../../data/hooks";
+import { useEstimates, useExpenses, useSettings } from "../../data/hooks";
+import { LEARN_MIN_JOBS, materialsLearning } from "../../lib/materialsLearn";
+import { realFactorOf } from "../../lib/estimate";
 import { useT } from "../../i18n";
 import { usesCabinetTools } from "../../lib/trades";
 import { money, num } from "../../lib/money";
@@ -64,6 +66,12 @@ export default function MaterialsCard() {
         <Num label={t("Primer price per gallon ($)", "Primer, precio por galón ($)")} value={m.wallPrimerCostPerGal} onChange={(n) => set({ wallPrimerCostPerGal: n })} step="1" />
         <Num label={t("Primer coats (0 if you rarely prime)", "Manos de primer (0 si casi no aplicas)")} value={m.wallPrimerCoats} onChange={(n) => set({ wallPrimerCoats: n })} step="1" />
       </Grid>
+      <Sub>{t("Make the estimate match what you really spend", "Que el estimado se parezca a lo que gastas de verdad")}</Sub>
+      <label className="chk" style={{ marginBottom: 6 }}><input type="checkbox" role="switch" className="sw" checked={!!m.chargeUsed} onChange={(e) => set({ chargeUsed: e.target.checked })} />
+        {t("Cost only the paint and primer the job uses", "Contar solo la pintura y el primer que usa el trabajo")}</label>
+      <Help>{t("On: a job that uses 0.6 gal costs 0.6 gal, because what is left over goes to your next job. The shopping list still tells you how much to buy. Off: every job pays for whole quarts.", "Activo: un trabajo que usa 0.6 gal cuesta 0.6 gal, porque lo que sobra va a tu siguiente trabajo. La lista de compras igual te dice cuánto comprar. Apagado: cada trabajo paga cuartos completos.")}</Help>
+      <LearnBox m={m} set={set} />
+
       <Help>{t("How many square feet each service paints per unit (a linear foot of baseboard counts as 0.6 sq ft, a door as 40) is built into the app.", "Cuántos pies cuadrados pinta cada servicio por unidad (un pie lineal de zócalo cuenta como 0.6 pies², una puerta como 40) ya viene incluido en la app.")}</Help>
       </> : <Help>{t("Add what you usually buy for a job. The cost is internal and never printed on the client's document.", "Agrega lo que sueles comprar para un trabajo. El costo es interno y nunca se imprime en el documento del cliente.")}</Help>}
 
@@ -85,5 +93,34 @@ export default function MaterialsCard() {
         ))}
       </div>
     </SaveCard>
+  );
+}
+
+/** Compares the estimate with the real materials cost of finished jobs and offers to adjust every estimate by that percentage. */
+function LearnBox({ m, set }: { m: Mat; set(p: Partial<Mat>): void }) {
+  const t = useT();
+  const { settings } = useSettings();
+  const { rows: ests } = useEstimates();
+  const { rows: exps } = useExpenses();
+  const L = materialsLearning(ests, exps, { ...settings, materials: m });
+  const using = realFactorOf(m), pct = (f: number) => Math.round(f * 100) + "%";
+  return (
+    <div className="st-learn">
+      <b>{t("Learn from your real jobs", "Aprender de tus trabajos reales")}</b>
+      {L.n === 0
+        ? <p className="muted">{t("When you add materials expenses to a job (Estimate > Costs & profit > Expenses for this job), the app compares them with the estimate and suggests an adjustment here.", "Cuando agregues gastos de materiales a un trabajo (Presupuesto > Costs & profit > Gastos de este trabajo), la app los compara con el estimado y aquí te sugiere un ajuste.")}</p>
+        : <>
+          <p>{t(`On ${L.n} job${L.n === 1 ? "" : "s"} you really spent ${money(L.real)} on materials; the calculator says ${money(L.est)}. Real = ${pct(L.factor)} of the estimate.`,
+            `En ${L.n} trabajo${L.n === 1 ? "" : "s"} gastaste de verdad ${money(L.real)} en materiales; la calculadora dice ${money(L.est)}. Real = ${pct(L.factor)} del estimado.`)}</p>
+          <div className="st-learn-rows">{L.rows.slice(0, 6).map((r) => <div key={r.id}><span>{r.number}{r.client ? " · " + r.client : ""}</span><span>{money(r.est)} → <b>{money(r.real)}</b></span></div>)}</div>
+          {L.n < LEARN_MIN_JOBS && <p className="muted">{t(`With fewer than ${LEARN_MIN_JOBS} jobs it may be a one-off. You can still use it and change it later.`, `Con menos de ${LEARN_MIN_JOBS} trabajos puede ser casualidad. Igual puedes usarlo y cambiarlo después.`)}</p>}
+        </>}
+      <div className="st-actions">
+        {L.n > 0 && Math.abs(L.factor - using) >= 0.01 && <button type="button" className="btn pri sm" onClick={() => set({ realFactor: L.factor })}>{t(`Use ${pct(L.factor)} on my estimates`, `Usar ${pct(L.factor)} en mis estimados`)}</button>}
+        {using !== 1 && <><span className="muted">{t(`Now using ${pct(using)} of the calculator.`, `Ahora se usa el ${pct(using)} de la calculadora.`)}</span>
+          <button type="button" className="btn sm" onClick={() => set({ realFactor: 1 })}>{t("Stop adjusting", "Dejar de ajustar")}</button></>}
+      </div>
+      {(L.n > 0 || using !== 1) && <p className="muted" style={{ marginBottom: 0 }}>{t("Press Save below to keep the change. It only changes your internal cost and profit, never the client's price.", "Toca Guardar abajo para que quede. Solo cambia tu costo y ganancia internos, nunca el precio del cliente.")}</p>}
+    </div>
   );
 }

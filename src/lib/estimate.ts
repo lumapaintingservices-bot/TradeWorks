@@ -121,12 +121,15 @@ export function jobSqft(e: Estimate, s: Settings) {
   return num(e.doors) * num(m.sqftPerDoor) + frameUnits(e) * num(m.frameSqftPerDoor) + boxUnits(e) * num(m.sqftPerBox) + num(e.drawers) * num(m.sqftPerDrawer);
 }
 
+/** settings.materials.realFactor when it is a sensible number (0.1 - 3), else 1. */
+export const realFactorOf = (m: Partial<Settings["materials"]>) => { const f = num(m.realFactor); return f >= 0.1 && f <= 3 ? Math.round(f * 100) / 100 : 1; };
+
 export function calcMaterials(e: Estimate, s: Settings) {
   if (!usesCabinetTools(s.trade)) { // the paint & supplies calculator is for painting only; other trades enter their real materials cost
     return {
       sqft: 0, primerGal: 0, paintGal: 0, buyPrimer: 0, buyPaint: 0, primerCost: 0, paintCost: 0,
       wallSqft: 0, wallGal: 0, buyWall: 0, wallCost: 0, wallPrimerGal: 0, buyWallPrimer: 0, wallPrimerCost: 0,
-      sundries: 0, supplyLines: [] as { name: string; units: number; basis: string; amt: number }[], totalCost: 0,
+      sundries: 0, supplyLines: [] as { name: string; units: number; basis: string; amt: number }[], totalCost: 0, baseCost: 0, factor: 1,
     };
   }
   const m = s.materials;
@@ -138,8 +141,9 @@ export function calcMaterials(e: Estimate, s: Settings) {
   const paintGal = ((sqft * num(m.paintCoats)) / cov) * waste;
   const buyPrimer = Math.ceil(primerGal * 4) / 4;
   const buyPaint = Math.ceil(paintGal * 4) / 4;
-  let primerCost = buyPrimer * num(m.primerCostPerGal);
-  let paintCost = buyPaint * num(m.paintCostPerGal);
+  const used = !!m.chargeUsed; // cost the gallons the job uses, not the cans bought
+  let primerCost = (used ? primerGal : buyPrimer) * num(m.primerCostPerGal);
+  let paintCost = (used ? paintGal : buyPaint) * num(m.paintCostPerGal);
   let supplies = 0;
   let supplyLines: { name: string; units: number; basis: string; amt: number }[] = [];
   (m.supplies || []).forEach((sp) => {
@@ -160,14 +164,17 @@ export function calcMaterials(e: Estimate, s: Settings) {
   const wallPrimerGal = ((wallSqft * num(m.wallPrimerCoats)) / wallCov) * waste;
   const buyWall = Math.ceil(wallGal * 4) / 4;
   const buyWallPrimer = Math.ceil(wallPrimerGal * 4) / 4;
-  let wallCost = Math.round(buyWall * num(m.wallPaintCostPerGal) * 100) / 100;
-  let wallPrimerCost = Math.round(buyWallPrimer * num(m.wallPrimerCostPerGal) * 100) / 100;
+  let wallCost = Math.round((used ? wallGal : buyWall) * num(m.wallPaintCostPerGal) * 100) / 100;
+  let wallPrimerCost = Math.round((used ? wallPrimerGal : buyWallPrimer) * num(m.wallPrimerCostPerGal) * 100) / 100;
 
   const buyer = e.matBuyer || "me";
   if (buyer === "paint" || buyer === "client") { primerCost = 0; paintCost = 0; wallCost = 0; wallPrimerCost = 0; }
   if (buyer === "client") { supplies = 0; supplyLines = supplyLines.map((l) => ({ ...l, amt: 0 })); }
-  const totalCost = Math.round((primerCost + paintCost + supplies + wallCost + wallPrimerCost) * 100) / 100;
+  const baseCost = Math.round((primerCost + paintCost + supplies + wallCost + wallPrimerCost) * 100) / 100;
+  const factor = realFactorOf(m);
+  const totalCost = factor === 1 ? baseCost : Math.round(baseCost * factor * 100) / 100;
   return {
+    baseCost, factor,
     sqft: Math.round(sqft * 10) / 10,
     primerGal: Math.round(primerGal * 100) / 100, paintGal: Math.round(paintGal * 100) / 100, buyPrimer, buyPaint,
     primerCost: Math.round(primerCost * 100) / 100, paintCost: Math.round(paintCost * 100) / 100,

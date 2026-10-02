@@ -156,6 +156,12 @@ export type Settings = {
     primerName: string; primerCostPerGal: number; paintName: string; paintCostPerGal: number;
     wallPaintName: string; wallPaintCostPerGal: number; wallCoverageSqftPerGal: number; wallCoats: number;
     wallPrimerName: string; wallPrimerCostPerGal: number; wallPrimerCoats: number; supplies: Supply[];
+    /** Cost only the paint / primer the job uses (exact gallons), not the whole quarts / gallons bought: leftovers go to the next job.
+        The shopping list still shows what to buy. Off (prototype behavior) when missing. */
+    chargeUsed?: boolean;
+    /** Learned from real jobs (lib/materialsLearn.ts): the estimated materials cost is multiplied by this (0.45 = real jobs cost 45 %
+        of the estimate). Missing / out of range = 1 (prototype behavior). */
+    realFactor?: number;
   };
   production: {
     laborMode: "solo" | "crew"; targetHourly: number; payBy: "hour" | "piece"; laborRate: number;
