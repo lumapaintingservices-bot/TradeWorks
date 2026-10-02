@@ -173,3 +173,18 @@
 .pt-card small{display:block;text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:8px}
 .pt-or{display:flex;align-items:center;gap:10px;color:var(--ink-3);font-size:12.5px;margin:16px 0 12px}
 .pt-or::before,.pt-or::after{content:"";flex:1;border-top:1px solid var(--line)}
+
+/* e-signature consent under the sign button (ESIGN / UETA) */
+.pt-esign{font-size:12px;line-height:1.5;color:#6B7280;margin:10px 0 0}
+
+/* signed copy (/p/:token/signed/:id) */
+.sc .pt-in{max-width:880px}
+.sc-h1{font-size:24px;margin:2px 0 4px}
+.sc-dl{display:grid;gap:0;margin:0}
+.sc-dl>div{display:grid;grid-template-columns:minmax(120px,34%) 1fr;gap:12px;padding:9px 0;border-top:1px solid #EEF0F3}
+.sc-dl dt{color:#6B7280;font-size:13px}
+.sc-dl dd{margin:0;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.sc-dl dd.sc-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;font-weight:500}
+.sc-doc{overflow-x:auto}
+@media(max-width:640px){.sc-dl>div{grid-template-columns:1fr;gap:2px}}
+@media print{.sc-noprint{display:none !important}.sc .pt-sec,.sc .pt-hero{box-shadow:none;border:0}}

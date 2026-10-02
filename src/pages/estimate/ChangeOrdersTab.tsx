@@ -87,6 +87,7 @@ export default function ChangeOrdersTab({ e, set, s }: TabProps) {
                     <p style={{ marginTop: 8 }}>{d}</p>
                     <p className="muted" style={{ fontSize: 12.5, marginTop: 4 }}>{t(`Signed by ${co.signedName || ""} on ${fmtDate(co.signedAt, lang)}`, `Firmado por ${co.signedName || ""} el ${fmtDate(co.signedAt, lang)}`)}{co.via === "link" ? t(", from the link", ", desde el enlace") : ""} · {num(co.hours)} h</p>
                     <div className="pills" style={{ marginTop: 10 }}>
+                      {co.sigCopy && e.portal && <a className="btn sm" href={`/p/${e.portal.token}/signed/${co.sigCopy}`} target="_blank" rel="noreferrer">🔒 {t("Signed copy", "Copia firmada")}</a>}
                       {inv ? <Link className="btn sm" to={`/invoices/${inv.id}/doc`} target="_blank">{t("Open invoice", "Abrir factura")} {inv.number}</Link>
                         : num(co.amount) > 0 && <button className="btn sm pri" onClick={() => makeInvoice(co)}>{t("Create invoice", "Crear factura")}</button>}
                     </div>

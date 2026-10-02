@@ -1,6 +1,6 @@
 // The invitation e-mail TradeWorks sends for a company (POST /api/invite/send). Pure functions: no I/O.
 
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 /** Display name for the From header: the company's name, never able to break the header. */
 export const fromHeader = (name, address) => `"${String(name || "TradeWorks").replace(/["<>\r\n\\]/g, "").slice(0, 70)}" <${address}>`;
 export const isEmail = (e) => typeof e === "string" && e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);

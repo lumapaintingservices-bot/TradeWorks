@@ -29,6 +29,10 @@ service cloud.firestore {
       allow update: if admin(resource.data.owner)
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client']);
       match /photos/{pid} { allow get: if true; allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner); }
+      // signatures are written by the server (functions/api/portal/sign.js): a visitor's update must leave client.sign and
+      // client.coSign exactly as they are, and once signed the picks too. Signed copies: get by token, list / delete by the company,
+      // written only by the server. Full version: firestore.rules; tests: rules-tests/rules.security.test.mjs.
+      match /signed/{sid} { allow get: if true; allow list, delete: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner); }
     }
 
     // invoice payment link (/pay/:token): get by token; owners/admins list theirs (where owner == cid);

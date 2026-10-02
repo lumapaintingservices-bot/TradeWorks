@@ -26,6 +26,9 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, "public/c2"), { name: "Two" });
   await setDoc(doc(d, "portal/tokA"), { owner: "c1", estId: "e1", data: "{}", client: { views: ["t"], chat: [] } });
   await setDoc(doc(d, "portal/tokA/photos/p1"), { data: "x" });
+  // a link the client already signed (by the server): signature, picks and the signed copy
+  await setDoc(doc(d, "portal/tokS"), { owner: "c1", estId: "e2", data: "{}", client: { picks: { u1: true }, sign: { name: "Ana", img: "data:image/png;base64,AA", at: "t", total: 10, server: true, copy: "est-1" }, coSign: { co1: { name: "Ana", img: "x", at: "t", server: true, copy: "co-co1-1" } } } });
+  await setDoc(doc(d, "portal/tokS/signed/est-1"), { kind: "est", name: "Ana", hash: "h" });
   await setDoc(doc(d, "calfeed/feedA"), { owner: "c1", ics: "BEGIN:VCALENDAR" });
   await setDoc(doc(d, "leads/L1"), { owner: "c1", name: "Ana", phone: "1", photos: ["p1"] });
   await setDoc(doc(d, "leads/L2"), { owner: "c1", name: "Bo", phone: "2", photos: [] });
@@ -73,9 +76,22 @@ await no("even the owner cannot list the whole collection", () => getDocs(collec
 await ok("visitor views: arrayUnion client.views", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.views": arrayUnion("2026-09-29T10:00:00Z") }));
 await ok("visitor picks an option", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.picks.u1": true }));
 await ok("visitor chats (arrayUnion)", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.chat": arrayUnion({ from: "client", text: "hi", at: "x" }) }));
-await ok("visitor signs", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.sign": { name: "Ana", img: "data:image/png;base64,AA", at: "x", total: 10 } }));
+// signatures are written only by the server (functions/api/portal/sign.js): a browser can never add, change or remove one
+await no("visitor writes a signature", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.sign": { name: "Ana", img: "data:image/png;base64,AA", at: "x", total: 10 } }));
+await no("visitor changes a signature", () => updateDoc(doc(fresh(), "portal/tokS"), { "client.sign.name": "Someone else" }));
+await no("visitor removes a signature", () => updateDoc(doc(fresh(), "portal/tokS"), { "client.sign": deleteField() }));
+await no("visitor changes the picks after signing", () => updateDoc(doc(fresh(), "portal/tokS"), { "client.picks.u1": false }));
+await no("visitor removes a change-order signature", () => updateDoc(doc(fresh(), "portal/tokS"), { "client.coSign.co1": deleteField() }));
+await ok("visitor still chats on a signed link", () => updateDoc(doc(fresh(), "portal/tokS"), { "client.chat": arrayUnion({ from: "client", text: "thanks", at: "x" }) }));
+await ok("the owner may remove a signature (Remove signature)", () => updateDoc(doc(own1, "portal/tokS"), { "client.sign": deleteField() }));
+await ok("anyone with the link reads the signed copy", () => getDoc(doc(anon, "portal/tokS/signed/est-1")));
+await no("nobody writes a signed copy from a browser", () => setDoc(doc(fresh(), "portal/tokS/signed/est-2"), { kind: "est" }));
+await no("not even the owner can change a signed copy", () => updateDoc(doc(own1, "portal/tokS/signed/est-1"), { name: "x" }));
+await no("strangers cannot list the signed copies", () => getDocs(collection(anon, "portal/tokS/signed")));
+await ok("the company lists its signed copies", () => getDocs(collection(own1, "portal/tokS/signed")));
+await no("another company cannot delete them", () => deleteDoc(doc(own2, "portal/tokS/signed/est-1")));
 await ok("visitor says the Zelle was sent", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.paid": { method: "Zelle", at: "x" } }));
-await ok("visitor approves a change order", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.coSign.co1": { name: "Ana", img: "x", at: "x" } }));
+await no("visitor writes a change-order signature", () => updateDoc(doc(fresh(), "portal/tokA"), { "client.coSign.co1": { name: "Ana", img: "x", at: "x" } }));
 await no("visitor rewrites the snapshot (data)", () => updateDoc(doc(fresh(), "portal/tokA"), { data: "{\"e\":{\"doors\":1}}" }));
 await no("visitor changes the owner", () => updateDoc(doc(fresh(), "portal/tokA"), { owner: "c2" }));
 await no("visitor changes estId", () => updateDoc(doc(fresh(), "portal/tokA"), { estId: "other" }));

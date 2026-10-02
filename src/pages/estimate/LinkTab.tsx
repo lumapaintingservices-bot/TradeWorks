@@ -98,7 +98,9 @@ export default function LinkTab({ e, set, s }: { e: Estimate; set(p: Partial<Est
               <b>{sig.name || e.clientName}</b>
               <span className="muted">{fmtDate(sigDay, lang)}{sig.at && !isNaN(new Date(sig.at).getTime()) ? " · " + new Date(sig.at).toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" }) : ""}
                 {" · "}{sig.via === "link" ? t("on the client link", "en el enlace del cliente") : t("in person", "en persona")}</span>
+              {sig.server && <span className="sig-proof">🔒 {t("Recorded by the TradeWorks server with its time, the client's IP and device. Nobody can change it.", "Registrada por el servidor de TradeWorks con su hora, la IP y el dispositivo del cliente. Nadie la puede cambiar.")}</span>}
               <div className="pills sig-acts">
+                {sig.copy && e.portal && <a className="btn sm" href={`/p/${e.portal.token}/signed/${sig.copy}`} target="_blank" rel="noreferrer">{t("Signed copy", "Copia firmada")}</a>}
                 <a className="btn sm" href={`/estimates/${e.id}/doc`} target="_blank" rel="noreferrer">{t("See it on the document", "Verla en el documento")}</a>
                 <button className="btn sm danger" onClick={removeSig}>{t("Remove signature", "Quitar firma")}</button>
               </div>

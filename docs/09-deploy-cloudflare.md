@@ -77,6 +77,9 @@ Publish again every time these two files change in GitHub.
 3. Invitation e-mails (POST /api/invite/send, functions/api/invite/send.js) need the Pages secret RESEND_API_KEY (the Resend key; the domain
    lumapaintingservices.com is verified there) next to FIREBASE_SERVICE_ACCOUNT. Optional text variable INVITE_FROM_ADDRESS (default
    invites@lumapaintingservices.com). Without the key the app says "E-mail isn't set up yet" and the copy-the-message box still works.
+   The same key sends the client their signed copy (POST /api/portal/sign, functions/api/portal/sign.js; optional DOCS_FROM_ADDRESS, default
+   documents@lumapaintingservices.com). Signing on the client link NEEDS FIREBASE_SERVICE_ACCOUNT (the server writes the signature); without
+   RESEND_API_KEY it still signs, it only skips the e-mail.
 4. Team invitations need the invited person to verify their e-mail once (the app sends the verification e-mail when they create the account, and shows "I verified my email").
 4. Optional but recommended: **Authentication > Settings > User actions** > turn on **Email enumeration protection**.
 

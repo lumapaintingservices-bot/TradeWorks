@@ -229,6 +229,19 @@ Simpler team + tasks (owner 2026-10-01; backup tag backup-2026-10-01-before-team
   Old clock entries keep their rounded hours (start / end are stored, so they could be recomputed if the owner wants).
 - Fixed: the invitation link's prefilled e-mail failed for addresses with an "s" (broken regex from PR #36); a date picker / combobox
   open while the window resized crashed. No rules change.
+Merged (PR #37); worker Team page spacing (PR #38).
+Owner asked 2026-10-01 for everything needed to make the app legal; checklist given in chat (lawyer, separate LLC, trademark, terms / privacy,
+e-signature, worker location consent + retention, hours audit trail + overtime, CAN-SPAM footer / unsubscribe, license # field, 3-day cancellation
+notice, showcase photo consent, account deletion, OSM attribution, subscription auto-renew rules). Owner picked first: lock the signature.
+Signature lock (backup tag backup-2026-10-01-before-signature-lock): the client link signs through POST /api/portal/sign (functions/api/portal/sign.js,
+functions/_lib/signCopy.js, tests): server time, total re-computed with the client's picks (must match what they saw), estimate or change order,
+once only (updateTime precondition, retried once); writes client.sign / client.coSign.{id} + client.picks with the service account and a copy
+portal/{token}/signed/{id} (snapshot, picks, name, drawing, IP, user agent, SHA-256) and e-mails the client their copy (Resend, their language,
+company address in the footer). Rules: visitors can no longer write / change / remove signatures or change picks after signing; signed copies are
+server-only (get by token, list / delete by the company). Portal page: e-sign consent text (ESIGN / UETA) under the sign buttons, "Signing…", signed
+time, "See your signed copy". Public page /p/:token/signed/:id (SignedCopy.tsx): record + full document with the signature, printable. Owner: Signed
+card shows the server proof and "Signed copy"; change orders too (co.sigCopy). Demo mode signs locally with a local copy (src/data/portalSign.ts).
+Delete company also deletes signed copies. RULES MUST BE PUBLISHED after merge (signatures from the old app version fail until the page reloads).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

@@ -275,21 +275,34 @@ service cloud.firestore {
     }
 
     // Client link: anyone with the secret token can open it; the client may only change the `client` field.
+    // Signatures (client.sign, client.coSign) are written only by the server (functions/api/portal/sign.js, service account),
+    // so from a browser nobody can add, change or remove one; owners / admins may still remove a signature ("Remove signature").
+    function portalClient() { return resource.data.get('client', {}); }
     match /portal/{token} {
       allow get: if true;
       allow create: if admin(request.resource.data.owner);
       allow delete: if admin(resource.data.owner);
       // owners/admins edit the snapshot but can never hand the link to another company;
-      // a visitor may only touch `client` (views, picks, sign, chat, paid, coSign), with sane list sizes
+      // a visitor may only touch `client` (views, picks, chat, paid), with sane list sizes; never the signatures, and once the
+      // estimate is signed no longer the option picks either
       allow update: if (admin(resource.data.owner) && request.resource.data.owner == resource.data.owner)
         || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['client'])
             && request.resource.data.client is map
             && request.resource.data.client.keys().hasOnly(['views', 'picks', 'sign', 'chat', 'paid', 'coSign'])
+            && request.resource.data.client.get('sign', null) == portalClient().get('sign', null)
+            && request.resource.data.client.get('coSign', null) == portalClient().get('coSign', null)
+            && (!('sign' in portalClient()) || request.resource.data.client.get('picks', null) == portalClient().get('picks', null))
             && request.resource.data.client.get('chat', []).size() <= 300
             && request.resource.data.client.get('views', []).size() <= 300);
       match /photos/{pid} {
         allow get: if true;
         allow write: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner);
+      }
+      // the copy of exactly what was signed (document, picks, name, drawing, server time, IP, device, fingerprint): written only
+      // by the server; whoever has the link reads it; the company lists them and may delete them (when the company is deleted)
+      match /signed/{sid} {
+        allow get: if true;
+        allow list, delete: if admin(get(/databases/$(db)/documents/portal/$(token)).data.owner);
       }
     }
 

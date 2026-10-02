@@ -24,10 +24,11 @@ export type PortalModel = {
        deposit?: { atSign: boolean; pay: DepositPay | null } };
 };
 export type ClientState = {
-  views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number };
+  /** Written by the server (functions/api/portal/sign.js): at = server time, copy = portal/{token}/signed/{copy}. */
+  views?: string[]; picks?: Record<string, boolean>; sign?: { name: string; img: string; at: string; total: number; server?: boolean; copy?: string };
   chat?: ChatMsg[]; paid?: { method: string; at: string };
   /** Change orders the client approved on the link, by change order id. */
-  coSign?: Record<string, { name: string; img: string; at: string }>;
+  coSign?: Record<string, { name: string; img: string; at: string; server?: boolean; copy?: string }>;
 };
 export type PortalDoc = { id: string; owner: string; estId: string; number?: string; data: string; client?: ClientState };
 
@@ -141,7 +142,8 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
   if (c.sign && okImg(c.sign.img) && !seen.sign) {
     seen.sign = true; changed = true;
     if (!e.signature) {
-      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: localDate(c.sign.at), via: "link", at: clip(c.sign.at, 40) };
+      e.signature = { name: clip(c.sign.name, MAX_NAME) || e.clientName, img: c.sign.img, date: localDate(c.sign.at), via: "link", at: clip(c.sign.at, 40),
+        ...(c.sign.copy && /^[A-Za-z0-9_-]{1,120}$/.test(String(c.sign.copy)) ? { copy: String(c.sign.copy) } : {}), ...(c.sign.server ? { server: true } : {}) };
       if (e.status === "Draft" || e.status === "Sent" || e.status === "Viewed") e.status = "Accepted";
       logAct(e, TT(`Signed and accepted from the link ($${clip(c.sign.total, 20)})`, `Firmó y aceptó desde el enlace ($${clip(c.sign.total, 20)})`));
       news = TT(`${who} signed the estimate!`, `¡${who} firmó el presupuesto!`);
@@ -161,7 +163,8 @@ export function portalApply(est: Estimate, c: ClientState | undefined, lang: "en
     if (!co || co.status === "draft") continue; // unknown or not offered to the client: ignore
     seenCo[id] = 1; changed = true;
     if (co.status === "signed") continue; // the owner already signed it here
-    co.status = "signed"; co.signedName = clip(sg.name, MAX_NAME) || e.clientName; co.signedAt = String(sg.at || nowISO()).slice(0, 10); co.sigImg = sg.img;
+    co.status = "signed"; co.signedName = clip(sg.name, MAX_NAME) || e.clientName; co.signedAt = localDate(sg.at || nowISO()); co.sigImg = sg.img;
+    if (sg.copy && /^[A-Za-z0-9_-]{1,120}$/.test(String(sg.copy))) co.sigCopy = String(sg.copy);
     (co as { via?: string }).via = "link";
     logAct(e, TT(`Change order #${co.n} approved from the link ($${num(co.amount)})`, `Orden de cambio #${co.n} aprobada desde el enlace ($${num(co.amount)})`));
     news = TT(`${who} approved change order #${co.n}!`, `¡${who} aprobó la orden de cambio #${co.n}!`);

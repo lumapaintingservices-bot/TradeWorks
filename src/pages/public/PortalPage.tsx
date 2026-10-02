@@ -3,6 +3,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { EstimateSheet } from "../../components/DocSheet";
 import { patchTop, subscribeTop } from "../../data/repo";
+import { signOnLink, type SignResult } from "../../data/portalSign";
 import { calcEstimate, payPlanOn } from "../../lib/estimate";
 import { fmtDate } from "../../lib/format";
 import { planAmounts } from "../../lib/invoices";
@@ -31,6 +32,10 @@ const PT = {
     firstDayL: "After the first day of work", schedH: "Your payments", schedHint: "We'll send you each invoice with a payment link when it's due. Nothing to pay now.",
     depH: "Pay the deposit", payDep: "Pay the deposit", payWays: "On the next page you choose how to pay.", depSoon: "Your deposit payment link is on its way — it will show here in a few minutes. We'll also send it to you.", depPaid: "Deposit received. Thank you!",
     bank: (d: string) => `Open your bank app → Zelle → send ${d} to the address above.`, notFound: "This link is no longer active. Please contact us.",
+    esign: "By tapping “Accept estimate”, you agree to sign it electronically. Your electronic signature counts the same as a handwritten one. You'll get a copy of what you signed.",
+    esignCo: "By tapping “Sign”, you agree to sign this change electronically. Your electronic signature counts the same as a handwritten one. You'll get a copy.",
+    signing: "Signing…", signedOn: "Signed on {0}", copyLink: "See your signed copy", copyMailed: "We e-mailed you a copy.",
+    alreadySigned: "This was already signed.", changedNow: "The estimate changed while you were looking at it. Check it again and sign.", coGone: "This change is no longer open.", signErr: "Couldn't sign. Try again.",
   },
   es: {
     estFor: "Presupuesto para", total: "Total", signedBy: "Aceptado por {0} el {1}", sentSign: "Firmado. {0} lo confirmará en breve.",
@@ -48,6 +53,10 @@ const PT = {
     firstDayL: "Al terminar el primer día de trabajo", schedH: "Sus pagos", schedHint: "Le enviaremos cada factura con su enlace de pago cuando toque. No tiene que pagar nada ahora.",
     depH: "Pague el depósito", payDep: "Pagar depósito", payWays: "En la siguiente página elige cómo pagar.", depSoon: "Su enlace para pagar el depósito viene en camino: aparecerá aquí en unos minutos. También se lo enviaremos.", depPaid: "Depósito recibido. ¡Gracias!",
     bank: (d: string) => `Abra la app de su banco → Zelle → envíe ${d} a la dirección de arriba.`, notFound: "Este link ya no está activo. Por favor contáctenos.",
+    esign: "Al tocar “Aceptar presupuesto”, usted acepta firmarlo en forma electrónica. Su firma electrónica vale igual que una firma a mano. Recibirá una copia de lo que firmó.",
+    esignCo: "Al tocar “Firmar”, usted acepta firmar este cambio en forma electrónica. Su firma electrónica vale igual que una firma a mano. Recibirá una copia.",
+    signing: "Firmando…", signedOn: "Firmado el {0}", copyLink: "Ver su copia firmada", copyMailed: "Le enviamos una copia por correo.",
+    alreadySigned: "Esto ya fue firmado.", changedNow: "El presupuesto cambió mientras lo miraba. Revíselo otra vez y firme.", coGone: "Este cambio ya no está abierto.", signErr: "No se pudo firmar. Inténtelo otra vez.",
   },
 };
 const now = () => new Date().toISOString();
@@ -71,6 +80,9 @@ export default function PortalPage() {
   const [nav, setNav] = useState("");
   const [ctaHide, setCtaHide] = useState(true);
   const viewed = useRef(false);
+  // signing goes through the server (src/data/portalSign.ts): one tap at a time, then what it answered (copy, e-mail)
+  const [signing, setSigning] = useState(false);
+  const [done, setDone] = useState<SignResult | null>(null);
   const msgsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { document.documentElement.classList.remove("tw-dark"); }, []);
@@ -117,16 +129,28 @@ export default function PortalPage() {
   const offline = () => say(P.offline);
 
   const toggle = (id: string, cur: boolean) => { if (signed) return; patchTop("portal", token, { set: { [`client.picks.${id}`]: !cur } }).catch(offline); };
-  const accept = () => {
+  const signErr = (err: unknown) => {
+    const x = String((err as Error)?.message || "");
+    say(x === "offline" ? P.offline : /already signed/i.test(x) ? P.alreadySigned : /changed while/i.test(x) ? P.changedNow : /no longer open/i.test(x) ? P.coGone : /name|box/i.test(x) ? P.need : P.signErr);
+  };
+  const accept = async () => {
+    if (signing) return;
     if (!name.trim() || !pad.current?.dirty()) { say(P.need); return; }
-    patchTop("portal", token, { set: { "client.sign": { name: name.trim(), img: pad.current.data(), at: now(), total: clientTotal(m, c) } } }).then(() => say(P.thanks)).catch(offline);
+    setSigning(true);
+    try { setDone(await signOnLink(token, { kind: "est", name: name.trim(), img: pad.current.data(), total: clientTotal(m, c), picks: c.picks || {}, lang: L })); say(P.thanks); }
+    catch (err) { signErr(err); }
+    finally { setSigning(false); }
   };
   const send = () => { const x = msg.trim(); if (!x) return; setMsg(""); patchTop("portal", token, { append: { "client.chat": { from: "client", text: x, at: now() } } }).catch(() => { setMsg(x); offline(); }); };
-  const approveCo = () => {
+  const approveCo = async () => {
+    if (signing) return;
     if (!coName.trim() || !coPad.current?.dirty()) { say(P.padNeed); return; }
-    const id = coId;
-    patchTop("portal", token, { set: { [`client.coSign.${id}`]: { name: coName.trim(), img: coPad.current.data(), at: now() } } }).then(() => setCoId("")).catch(offline);
+    setSigning(true);
+    try { await signOnLink(token, { kind: "co", coId, name: coName.trim(), img: coPad.current.data(), lang: L }); setCoId(""); }
+    catch (err) { signErr(err); }
+    finally { setSigning(false); }
   };
+  const copyHref = (id?: string) => (id && /^[A-Za-z0-9_-]+$/.test(id) ? `/p/${token}/signed/${id}` : "");
   const copy = (x: string) => { navigator.clipboard?.writeText(x).catch(() => {}); };
 
   const opts = (e.upgrades || []).filter(isSelectable);
@@ -210,10 +234,10 @@ export default function PortalPage() {
           </section>}
 
           {cos.length > 0 && <section className="pt-sec"><h2>{P.changes}</h2>
-            {cos.map((x) => { const done = !!c.coSign?.[x.id || ""]; return (
+            {cos.map((x) => { const cs = c.coSign?.[x.id || ""], done = !!cs; return (
               <div className="pt-co" key={x.id}><div><b>#{x.n}</b> {es ? x.descEs || x.desc : x.desc || x.descEs}</div>
                 <div className="row" style={{ marginTop: 8 }}><b className="num">{money(x.amount)}</b><div style={{ marginLeft: "auto" }} />
-                  {done ? <span className="pt-done">{P.coDone}</span> : <button className="btn pri sm" onClick={() => { setCoId(x.id || ""); setCoName(e.clientName || ""); }}>{P.coBtn}</button>}</div></div>); })}
+                  {done ? <span className="pt-done">{P.coDone}{copyHref(cs?.copy) && <> · <a href={copyHref(cs?.copy)} target="_blank" rel="noopener">{P.copyLink}</a></>}</span> : <button className="btn pri sm" onClick={() => { setCoId(x.id || ""); setCoName(e.clientName || ""); }}>{P.coBtn}</button>}</div></div>); })}
           </section>}
 
           <section className="pt-sec" id="ptSum"><h2>{P.summary}</h2>
@@ -260,13 +284,16 @@ export default function PortalPage() {
         <section className="pt-sec" id="ptSignSec">
           <h2>{P.sign}</h2>
           {ownerSigned ? <div className="pt-signed"><div className="pt-script">{e.signature?.name}</div><p>{signedLine(P.signedBy, e.signature?.name || "", fmtDate(e.signature?.date, L))}</p><p>{P.thanks}</p></div>
-            : c.sign ? <div className="pt-signed">{safeImgSrc(c.sign.img) && <img src={safeImgSrc(c.sign.img)} alt="" />}<p><b>{c.sign.name}</b></p><p>{P.thanks}</p></div>
+            : c.sign ? <div className="pt-signed">{safeImgSrc(c.sign.img) && <img src={safeImgSrc(c.sign.img)} alt="" />}<p><b>{c.sign.name}</b>{fmtWhen(c.sign.at) ? " · " + signedLine(P.signedOn, fmtWhen(c.sign.at), "") : ""}</p><p>{P.thanks}</p>
+              {copyHref(c.sign.copy) && <p><a className="btn" href={copyHref(c.sign.copy)} target="_blank" rel="noopener">{P.copyLink}</a></p>}
+              {done?.emailed && <p className="pt-hint">✓ {P.copyMailed}</p>}</div>
             : <>
               <p className="pt-hint">{P.signHint}</p>
               <label className="f"><span>{P.yourName}</span><input type="text" id="ptName" autoComplete="name" value={name} onChange={(ev) => setName(ev.target.value)} /></label>
               <SignaturePad ref={pad} className="pt-pad pt-pad-top" height={180} />
               <div className="row" style={{ marginTop: 10 }}><button className="btn sm" onClick={() => pad.current?.clear()}>{P.clear}</button><div style={{ marginLeft: "auto" }} />
-                <button className="btn pri" id="ptAccept" onClick={accept}>{P.accept} · <span className="num" id="ptSignTotal">{money(t.total)}</span></button></div>
+                <button className="btn pri" id="ptAccept" disabled={signing} onClick={accept}>{signing ? P.signing : <>{P.accept} · <span className="num" id="ptSignTotal">{money(t.total)}</span></>}</button></div>
+              <p className="pt-esign">{P.esign}</p>
             </>}
           {signed && (!depAtSign
             ? <div className="pt-pay"><h3>{P.schedH}</h3>
@@ -302,7 +329,8 @@ export default function PortalPage() {
             <SignaturePad ref={coPad} className="pt-pad" height={180} />
             <div className="row" style={{ marginTop: 8 }}><button className="btn sm" onClick={() => coPad.current?.clear()}>{P.clear}</button><span className="muted" style={{ fontSize: 12.5 }}>{P.padHint}</span></div>
             <label className="f" style={{ marginTop: 12 }}><span>{P.padName}</span><input type="text" value={coName} onChange={(ev) => setCoName(ev.target.value)} /></label>
-            <div className="row" style={{ marginTop: 14 }}><button className="btn pri" onClick={approveCo}>{P.padOk}</button></div>
+            <p className="pt-esign">{P.esignCo}</p>
+            <div className="row" style={{ marginTop: 10 }}><button className="btn pri" disabled={signing} onClick={approveCo}>{signing ? P.signing : P.padOk}</button></div>
           </div></div></div>}
       {zoom && <div className="plight" role="dialog" aria-modal onClick={() => setZoom(null)}><img src={safeImgSrc(zoom.url)} alt="" />{zoom.cap && <div className="cap">{zoom.cap}</div>}</div>}
       {toast && <div className="toast" role="status">{toast}</div>}

@@ -36,7 +36,8 @@ export type Estimate = {
   portalViews?: string[]; portalSeen?: { views: number; picks: string; sign: boolean; paid?: string; co?: Record<string, number> };
   activity?: { at: string; text: string }[];
   chat?: ChatMsg[]; chatUnread?: number;
-  signature?: { name: string; img: string; date: string; via: string; at: string } | null;
+  /** copy = id of the signed copy the server kept (portal/{token}/signed/{copy}); server = signed on the link through the server. */
+  signature?: { name: string; img: string; date: string; via: string; at: string; copy?: string; server?: boolean } | null;
   payClaim?: { method: string; at: string };
   sentAt?: string;
   snooze?: Record<string, string>; reviewAsked?: boolean; warrantyChecked?: boolean;
@@ -47,7 +48,7 @@ export type Estimate = {
   assign?: Record<string, string[]>;
   createdAt?: unknown; updatedAt?: unknown; companyId?: string;
 };
-export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string };
+export type ChangeOrder = { id?: string; n: number; desc?: string; descEs?: string; amount: number; hours?: number; status: string; signedName?: string; signedAt?: string; sigId?: string; sigImg?: string; /** the server's signed copy (link signatures) */ sigCopy?: string };
 export type Invoice = { id: string; number: string; estId: string; kind: "deposit" | "balance" | "co"; amount: number; date: string; status: "Unpaid" | "Paid"; paidDate?: string; coId?: string; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
 /** jobLabel: "EST-1001 · Ana Ruiz", saved with the job so a worker (who cannot read estimates) can name it. */
 export type Task = { id: string; title: string; date: string; time?: string; note?: string; estId?: string; jobLabel?: string; workerId?: string; done?: boolean; companyId?: string; createdAt?: unknown; updatedAt?: unknown };
