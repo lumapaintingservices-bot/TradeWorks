@@ -28,6 +28,7 @@ import { ErrorBoundary } from "../ui/ErrorBoundary";
 import { Toaster } from "../ui/Toaster";
 import { modKey, QuickMenu, SearchPalette } from "./QuickActions";
 import { NavUser, UserHead } from "./NavUser";
+import { useMedia } from "../ui/useMedia";
 import { ThemeSwitcher } from "../ui/ThemeSwitcher";
 
 
@@ -137,8 +138,16 @@ function ShellBody() {
   const [search, setSearch] = useState(false);              // Ctrl/Cmd+K
   const badges = useContext(Badges);
   const items = navFor(role);
-  // desktop sidebar folded to icons: the button at its top or Ctrl/Cmd+B (remembered on this device)
-  const mini = useUi((s) => s.sbMini), setMini = useUi((s) => s.setSbMini);
+  // Layout like shadcn dashboard-01: phones (< 768 px) get the top bar + bottom bar; tablets (768-1199 px) always get the icon
+  // rail, and its button opens the full menu over the page ("peek"); computers get the full sidebar, folded to icons with the
+  // button at its top or Ctrl/Cmd+B (remembered on this device).
+  const pinnedMini = useUi((s) => s.sbMini), setMini = useUi((s) => s.setSbMini);
+  const tablet = useMedia("(min-width: 768px) and (max-width: 1199px)");
+  const [peek, setPeek] = useState(false);
+  const mini = tablet ? !peek : pinnedMini;
+  const toggleMenu = () => (tablet ? setPeek((p) => !p) : setMini(!pinnedMini));
+  const toggleRef = useRef(toggleMenu); toggleRef.current = toggleMenu;
+  useEffect(() => { if (!tablet) setPeek(false); }, [tablet]);
   const [tipAt, setTipAt] = useState<{ text: string; top: number } | null>(null);
   const tip: Tip = (text, ev) => {
     const r = ev?.currentTarget.getBoundingClientRect();
@@ -148,14 +157,15 @@ function ShellBody() {
   const [wsTop, setWsTop] = useState(0);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b" && window.innerWidth >= 900) { e.preventDefault(); setMini(!useUi.getState().sbMini); }
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b" && window.innerWidth >= 768) { e.preventDefault(); toggleRef.current(); }
+      if (e.key === "Escape") setPeek(false);
       if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "k" && canNewRef.current) { e.preventDefault(); setQc(""); setSearch((o) => !o); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [setMini]);
+  }, []);
   useEffect(() => { setTipAt(null); }, [mini]);
-  useEffect(() => { setMore(false); setWs(false); setTipAt(null); setQc(""); }, [loc.pathname]);
+  useEffect(() => { setMore(false); setWs(false); setTipAt(null); setQc(""); setPeek(false); }, [loc.pathname]);
   useEffect(() => { if (!more) setWsMore(false); }, [more]);
   // public branding for the lead form (public/{companyId}); readable by anyone with the link, holds no private data.
   // Only owners/admins may write it (rules), so workers skip it.
@@ -168,7 +178,8 @@ function ShellBody() {
   const canNewRef = useRef(canNew); canNewRef.current = canNew; // search reads owner data: owners / admins only
 
   return (
-    <div className={"shell" + (mini ? " sb-mini" : "")}>
+    <div className={"shell" + (mini ? " sb-mini" : "") + (peek ? " sb-peek" : "")}>
+      {peek && <div className="sb-peek-back" onClick={() => setPeek(false)} />}
       <Mini.Provider value={{ mini, tip }}>
       <aside className="sb">
         <div className="sb-head">
@@ -176,7 +187,7 @@ function ShellBody() {
             <Logo /><div><b>TradeWorks</b><span>{t("Field service suite", "Gestión de servicios")}</span></div>
           </button>
           <MiniBtn className="sb-tog" label={mini ? t("Show menu (Ctrl+B)", "Mostrar menú (Ctrl+B)") : t("Hide menu (Ctrl+B)", "Esconder menú (Ctrl+B)")}
-            title={mini ? undefined : t("Hide menu (Ctrl+B)", "Esconder menú (Ctrl+B)")} aria-expanded={!mini} onClick={() => setMini(!mini)}><Icon name="sidebar" size={18} /></MiniBtn>
+            title={mini ? undefined : t("Hide menu (Ctrl+B)", "Esconder menú (Ctrl+B)")} aria-expanded={!mini} onClick={toggleMenu}><Icon name="sidebar" size={18} /></MiniBtn>
         </div>
         <div className="ws-wrap">
           <MiniBtn ref={wsBtn} className="ws" label={(company?.name || "") + " · " + t("Switch company", "Cambiar de empresa")} aria-haspopup="listbox" aria-expanded={ws}

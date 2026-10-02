@@ -69,8 +69,6 @@ delete-company button (creator only, typed name); trades (painting, cleaning, el
 landscaping, custom) with editable service catalog (`trades.data.ts`, `CatalogCard.tsx`); dashboard KPI cards per trade (`kpis.ts`).
 Docs: `docs/07-security-review.md`, `08-billing-setup.md`, `09-deploy-cloudflare.md`.
 
-**Not merged yet:** commit 80c4c77 (clearer sign-in error messages) on the dev branch.
-
 **Phase 8 (new features, owner chose 2026-09-30):**
 8a invoice payment link - DONE (not deployed): public `/pay/:token` (`paylink/{token}`, `src/lib/paylink.ts`, `src/data/paylinks.ts`,
 `PayPage.tsx`, `invoices/PayParts.tsx`); ways to pay = payment-method chips + `settings.payHandles` (Venmo, Cash App, PayPal, checks);
@@ -253,6 +251,17 @@ signed copy and its e-mail, and the reminder e-mails (footer: reply "stop" + pol
 Promises kept in the app: estimate.photoOk (Photos tab "The client allows us to show photos of the finished work"; "Our recent work" is disabled
 without it) and client.noAutoEmail (client profile switch "Automatic e-mails"; planEmails skips them, also by matching e-mail). Settings > Client link
 & payments > "Privacy policy for your clients" (link, missing address / e-mail warning, "have a lawyer read it once"). No rules change.
+
+Phone fixes + shadcn-style responsive layout (owner 2026-10-02, from the iPhone; owner said NOT to build the legal items for now —
+the license-number field and 3-day cancellation notice were proposed and dropped):
+- Combobox / Popover no longer close on every scroll / resize (iPhone Chrome: the job picker in the Expense window flashed and vanished
+  when the keyboard or browser bar moved); they follow the button and close only when it leaves the screen. Touch devices don't
+  auto-focus the combobox search (no keyboard covering the list).
+- Bottom bar height = 64px + safe area (it used to shrink when Chrome hid its toolbar); More sheet, modals (dvh) and page bottom padding
+  account for the safe area. Active bottom-bar item has a soft pill behind the icon.
+- Layout like shadcn dashboard-01: phone < 768px = top bar + bottom bar (was < 900); tablet 768-1199 = icon rail always, its button /
+  Ctrl+B opens the full menu over the page (sb-peek, src/ui/useMedia.ts); >= 1200 = full sidebar (foldable as before). From 768px up the
+  page sits in an inset rounded panel (.main) on the sidebar color.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

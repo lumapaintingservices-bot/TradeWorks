@@ -28,7 +28,7 @@
 .sb-tip{position:fixed;left:calc(var(--sidebar-mini) + 6px);z-index:60;transform:translateY(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:500;padding:5px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-pop)}
 
 /* folded to icons (desktop only; phones keep the bottom bar) */
-@media(min-width:900px){
+@media(min-width:768px){
   .sb,.main{transition:width .18s ease,margin-left .18s ease}
   .sb-mini .sb{width:var(--sidebar-mini);overflow-x:hidden}
   .sb-mini .main{margin-left:var(--sidebar-mini)}
@@ -53,21 +53,21 @@
 }
 @media(prefers-reduced-motion:reduce){.sb,.main{transition:none}}
 .mtop,.bnav,.more,.more-back{display:none}
-@media(max-width:899px){.sb{display:none}.main{margin-left:0}
+@media(max-width:767px){.sb{display:none}.main{margin-left:0}
   .mtop{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:40;height:var(--topbar-h);padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
   .mtop .sb-top{padding:0;margin-right:auto}.mtop .sb-top b{font-size:16px}
-  .bnav{display:flex;position:fixed;bottom:0;left:0;right:0;height:var(--bottomnav-h);z-index:45;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-  .bnav a,.bnav button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--ink-3);font-size:11px;text-decoration:none}
+  .bnav{display:flex;position:fixed;bottom:0;left:0;right:0;height:calc(var(--bottomnav-h) + env(safe-area-inset-bottom));box-sizing:border-box;z-index:45;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  .bnav a,.bnav button{flex:1 1 0;min-width:0;height:var(--bottomnav-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--ink-3);font-size:11px;text-decoration:none}
   .bnav .on{color:var(--ink);font-weight:600}.bnav .on svg{color:var(--acc)}
   .more-back{display:block;position:fixed;inset:0;z-index:43;background:rgba(11,13,18,.25)}
-  .more{display:block;position:fixed;left:0;right:0;bottom:var(--bottomnav-h);z-index:44;padding:0 10px 8px}
+  .more{display:block;position:fixed;left:0;right:0;bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom));z-index:44;padding:0 10px 8px}
   .more-in{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-pop);padding:6px;display:grid;gap:2px}
   .more-in .nav-item{width:100%;margin:0;font-size:15px;padding:12px}
   .more-in .nav-item.on{background:var(--surface-2);color:var(--ink);box-shadow:none}.more-in .nav-item.on svg{color:var(--acc)}
 }
 .nav-badge{font-style:normal;margin-left:auto;background:var(--acc);color:#fff;border-radius:999px;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;display:grid;place-items:center}
 .nav-item.on .nav-badge{background:#fff;color:var(--ink)}
-@media(max-width:899px){.bnav a{position:relative}.bnav .nav-badge{position:absolute;top:2px;left:54%;margin:0;min-width:16px;height:16px;font-size:10px;padding:0 4px}}
+@media(max-width:767px){.bnav a{position:relative}.bnav .nav-badge{position:absolute;top:2px;left:54%;margin:0;min-width:16px;height:16px;font-size:10px;padding:0 4px}}
 
 /* workspace switcher */
 .ws-wrap{position:relative;margin:0 14px 12px}
@@ -89,10 +89,10 @@
 .ws-more-name{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
 .ws-more-name span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);font-weight:600}
 .ws-more-name small{font-size:12px;color:var(--ink-3);font-weight:400}
-@media(max-width:899px){
+@media(max-width:767px){
   .more-in .ws-list{padding:2px 4px 6px 4px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2);margin:2px 0}
   .more-in .ws-opt{min-height:48px}
-  .more-in{max-height:calc(100vh - var(--bottomnav-h) - 24px);overflow-y:auto}
+  .more-in{max-height:calc(100vh - var(--bottomnav-h) - 24px);max-height:calc(100dvh - var(--bottomnav-h) - env(safe-area-inset-bottom) - 24px);overflow-y:auto}
 }
 
 /* sidebar bottom: Settings + the signed-in person (NavUser.tsx), idea from shadcn dashboard-01 */
@@ -118,7 +118,7 @@
 .nu-it svg{color:var(--ink-3)}
 .nu-it:hover,.nu-it:focus-visible{background:var(--surface-2);outline:0}
 .nu-theme{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 8px;font-size:14px}
-@media(min-width:900px){
+@media(min-width:768px){
   .sb-mini .nav-user{width:48px;margin:0 12px;padding:6px;justify-content:center}
   .sb-mini .nu-txt,.sb-mini .nu-chev{display:none}
 }
@@ -128,3 +128,26 @@
 .mu-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px 4px}
 .mu-row .btn{gap:6px}
 .sb{padding-bottom:0}
+
+/* ---------- responsive layout like shadcn dashboard-01 ----------
+   phone < 768: top bar + bottom bar · tablet 768-1199: icon rail, its button opens the full menu over the page ("peek")
+   computer >= 1200: full sidebar (foldable). From 768 up the page sits in an inset panel next to the sidebar. */
+@media(min-width:768px){
+  .shell{background:var(--surface)}
+  .sb{border-right:0}
+  .main{background:var(--bg);margin-top:8px;margin-right:8px;margin-bottom:8px;min-height:calc(100vh - 16px);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:0 1px 2px rgba(11,13,18,.04)}
+  .sb-peek .sb{width:var(--sidebar-w);z-index:50;box-shadow:var(--shadow-modal);border-right:1px solid var(--line)}
+  .sb-peek .main{margin-left:var(--sidebar-mini)}
+  .sb-peek-back{position:fixed;inset:0;z-index:49;background:rgba(11,13,18,.25);animation:ask-fade .12s ease-out}
+}
+@media(min-width:768px) and (max-width:1199px){.page{padding:24px}}
+html.tw-dark .main{box-shadow:none}
+
+/* phone bottom bar: the open page gets a soft pill behind its icon (shadcn / Material style) */
+@media(max-width:767px){
+  .bnav a,.bnav button{gap:3px;-webkit-tap-highlight-color:transparent}
+  .bnav svg{width:22px;height:22px}
+  .bnav a>svg,.bnav button>svg{box-sizing:content-box;padding:3px 14px;border-radius:999px;transition:background .15s ease}
+  .bnav .on>svg{background:var(--surface-2)}
+  html.tw-dark .bnav .on>svg{background:var(--line)}
+}
