@@ -13,6 +13,7 @@ import { mailtoHref, safeImgSrc, safeUrl } from "../../lib/safeUrl";
 import { nl2list, scopeGroups } from "../../lib/scope";
 import { SignaturePad, type PadHandle } from "../../ui/SignaturePad";
 import "./portal.css";
+import { privacyPath } from "../../lib/legal";
 
 /** Copy of the prototype's client page (PT). */
 const PT = {
@@ -293,7 +294,7 @@ export default function PortalPage() {
               <SignaturePad ref={pad} className="pt-pad pt-pad-top" height={180} />
               <div className="row" style={{ marginTop: 10 }}><button className="btn sm" onClick={() => pad.current?.clear()}>{P.clear}</button><div style={{ marginLeft: "auto" }} />
                 <button className="btn pri" id="ptAccept" disabled={signing} onClick={accept}>{signing ? P.signing : <>{P.accept} · <span className="num" id="ptSignTotal">{money(t.total)}</span></>}</button></div>
-              <p className="pt-esign">{P.esign}</p>
+              <p className="pt-esign">{P.esign}{doc.owner ? <> <a className="pt-priv" href={privacyPath(doc.owner, L)} target="_blank" rel="noopener noreferrer">{es ? "Política de privacidad" : "Privacy policy"}</a></> : null}</p>
             </>}
           {signed && (!depAtSign
             ? <div className="pt-pay"><h3>{P.schedH}</h3>
@@ -317,7 +318,7 @@ export default function PortalPage() {
         <footer className="pt-foot">
           {b.phone && <><a className="btn" href={`tel:${wa}`}>{P.call}</a><a className="btn wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer">WhatsApp</a></>}
           {mailtoHref(b.email) && <a className="btn" href={mailtoHref(b.email)}>{b.email}</a>}
-          <div className="pt-fine">{b.name || ""}{b.area ? ` · ${b.area}` : ""}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div>
+          <div className="pt-fine">{b.name || ""}{b.area ? ` · ${b.area}` : ""}{doc.owner ? <> · <a className="pt-priv" href={privacyPath(doc.owner, L)} target="_blank" rel="noopener noreferrer">{es ? "Política de privacidad" : "Privacy policy"}</a></> : null}</div><div className="tw-pow"><TwMark />Powered by TradeWorks</div>
         </footer>
       </div>
 

@@ -188,3 +188,4 @@
 .sc-doc{overflow-x:auto}
 @media(max-width:640px){.sc-dl>div{grid-template-columns:1fr;gap:2px}}
 @media print{.sc-noprint{display:none !important}.sc .pt-sec,.sc .pt-hero{box-shadow:none;border:0}}
+.pt a.pt-priv{color:var(--ink-2);text-decoration:underline;text-underline-offset:2px}

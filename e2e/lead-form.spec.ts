@@ -37,6 +37,8 @@ test("lead form to imported client to estimate", async ({ page, context }) => {
   await go(/^Continue/);                                                           // 6 -> contact
   await expect(lead.getByRole("heading", { name: "Where should we send your estimate?" })).toBeVisible();
   await expect(lead.locator(".lf-sum")).toContainText("3 doors · 2 drawers");
+  // the privacy policy is one tap away from the consent line
+  await expect(lead.getByRole("link", { name: "Privacy policy" })).toHaveAttribute("href", /^\/privacy\/[^/?]+\?lang=en$/);
 
   // validation: name + phone are required
   await go(/Send my request/);

@@ -161,7 +161,7 @@ function ShellBody() {
   // Only owners/admins may write it (rules), so workers skip it.
   useEffect(() => {
     if (!company || !can(role, "company.edit")) return;
-    setTop("public", company.id, { name: company.name, phone: company.phone, website: company.website, logoUrl: company.logoUrl, brandColor: company.brandColor, area: company.area, trade: normalizeTrade(company.trade) }, true).catch(() => {});
+    setTop("public", company.id, { name: company.name, phone: company.phone, email: company.email || "", address: company.address || "", website: company.website, logoUrl: company.logoUrl, brandColor: company.brandColor, area: company.area, trade: normalizeTrade(company.trade) }, true).catch(() => {});
   }, [company?.id, role, company?.name, company?.phone, company?.website, company?.logoUrl, company?.brandColor, company?.area, company?.trade]); // eslint-disable-line react-hooks/exhaustive-deps
   const newEstimate = () => nav("/estimates?new=1");
   const canNew = can(role, "data.all");

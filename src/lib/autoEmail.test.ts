@@ -108,3 +108,19 @@ describe("automatic e-mail plan", () => {
     expect(q.needsPayLink).toBe(false);
   });
 });
+
+describe("privacy: clients can ask to stop, every e-mail says how", () => {
+  const e1 = est({ status: "Accepted" });
+  it("a client who asked to stop gets no automatic e-mails (by their record or the same e-mail)", () => {
+    expect(planEmails(input({ estimates: [e1], invoices: [inv()] }))).toHaveLength(1);
+    expect(planEmails(input({ estimates: [e1], invoices: [inv()], clients: [client({ noAutoEmail: true })] }))).toHaveLength(0);
+    const other = est({ clientId: "", email: "ANA@x.com " });
+    expect(planEmails(input({ estimates: [other], invoices: [inv()], clients: [client({ id: "zz", noAutoEmail: true })] }))).toHaveLength(0);
+  });
+  it("the footer says how to stop and links the company's privacy policy", () => {
+    const p = planEmails(input({ estimates: [e1], invoices: [inv()], companyId: "co1" }));
+    expect(p[0].body).toContain("Reply “stop”");
+    expect(p[0].body).toContain("https://app.test/privacy/co1");
+    expect(planEmails(input({ estimates: [e1], invoices: [inv()] }))[0].body).not.toContain("/privacy/");
+  });
+});

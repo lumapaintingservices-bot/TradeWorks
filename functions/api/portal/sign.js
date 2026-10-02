@@ -72,7 +72,8 @@ export async function portalSign({ request, env }, deps = {}) {
 
     // the client's copy by e-mail (never fails the signature)
     let emailed = false;
-    const mail = signedEmail({ m, kind: inp.kind, co: ok.co, name: inp.name, at, amount, picks, tz: inp.tz, lang: inp.lang, url: `${appOrigin(request, env)}/p/${token}/signed/${id}` });
+    const mail = signedEmail({ m, kind: inp.kind, co: ok.co, name: inp.name, at, amount, picks, tz: inp.tz, lang: inp.lang, url: `${appOrigin(request, env)}/p/${token}/signed/${id}`,
+      privacyUrl: /^[A-Za-z0-9_-]{1,128}$/.test(String(doc.data.owner || "")) ? `${appOrigin(request, env)}/privacy/${doc.data.owner}` : "" });
     if (mail.to && env.RESEND_API_KEY) {
       const b = m.s.business || {};
       try {

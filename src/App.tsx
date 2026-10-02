@@ -21,6 +21,7 @@ import LeadForm from "./pages/public/LeadForm";
 import PortalPage from "./pages/public/PortalPage";
 import SignedCopy from "./pages/public/SignedCopy";
 import PayPage from "./pages/public/PayPage";
+import PrivacyPage from "./pages/public/PrivacyPage";
 import InvoiceDoc from "./pages/InvoiceDoc";
 import Invoices from "./pages/Invoices";
 import Pipeline from "./pages/Pipeline";
@@ -150,7 +151,7 @@ export default function App() {
   const theme = useUi((s) => s.theme);
   const { pathname } = useLocation();
   // client-facing pages (client link, lead form, estimate/invoice documents, work order) are always light, whatever the owner's theme
-  const clientPage = /^\/(p\/|request(\/|$)|(estimates|invoices)\/[^/]+\/(doc|work-order)(\/|$))/.test(pathname);
+  const clientPage = /^\/(p\/|pay\/|privacy\/|request(\/|$)|(estimates|invoices)\/[^/]+\/(doc|work-order)(\/|$))/.test(pathname);
   useEffect(() => {
     if (clientPage) { document.documentElement.classList.remove("tw-dark"); return; }
     applyTheme(theme);
@@ -165,6 +166,7 @@ export default function App() {
       <Route path="/p/:token" element={<PortalPage />} />
       <Route path="/p/:token/signed/:sid" element={<SignedCopy />} />
       <Route path="/pay/:token" element={<PayPage />} />
+      <Route path="/privacy/:cid" element={<PrivacyPage />} />
       <Route path="/request" element={<LeadForm />} />
       <Route path="/login" element={<AuthPage mode="signin" />} />
       <Route path="/signup" element={<AuthPage mode="signup" />} />

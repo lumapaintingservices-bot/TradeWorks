@@ -71,7 +71,7 @@ export function fmtWhen(iso, tz, lang) {
 const money = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** The e-mail with the client's copy (their language). -> { subject, html, text } */
-export function signedEmail({ m, kind, co, name, at, amount, picks, tz, lang, url }) {
+export function signedEmail({ m, kind, co, name, at, amount, picks, tz, lang, url, privacyUrl = "" }) {
   const es = lang === "es", b = m.s.business || {}, e = m.e;
   const T = (en, sp) => (es ? sp : en);
   const first = String(e.clientName || name || "").trim().split(/\s+/)[0] || "";
@@ -96,8 +96,8 @@ ${logo}<h1 style="font-size:20px;margin:0 0 10px">${esc(T(`Thank you, ${first}`,
 <table style="width:100%;border-collapse:collapse;font-size:14px">${rows.map(([k, v]) => `<tr><td style="padding:8px 0;border-top:1px solid #eef0f3;color:#6b7280;width:42%;vertical-align:top">${esc(k)}</td><td style="padding:8px 0;border-top:1px solid #eef0f3;font-weight:600">${esc(v)}</td></tr>`).join("")}</table>
 <p style="margin:22px 0 6px"><a href="${esc(url)}" style="display:inline-block;background:#0b0d12;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">${esc(T("See your signed copy", "Ver su copia firmada"))}</a></p>
 <p style="font-size:12px;color:#6b7280;line-height:1.5;margin:12px 0 0">${esc(T("The copy shows the full document as it was when you signed, with your signature and the signing record.", "La copia muestra el documento completo tal como estaba al firmar, con su firma y el registro de la firma."))}</p>
-</div><p style="font-size:12px;color:#6b7280;line-height:1.5;text-align:center;margin:14px 0 0">${esc(addr)}<br>${esc(T("Sent by TradeWorks for", "Enviado por TradeWorks de parte de"))} ${esc(b.name || "")}</p></div></body></html>`;
+</div><p style="font-size:12px;color:#6b7280;line-height:1.5;text-align:center;margin:14px 0 0">${esc(addr)}<br>${privacyUrl ? `<a href="${esc(privacyUrl)}" style="color:#6b7280">${esc(T("Privacy policy", "Política de privacidad"))}</a> · ` : ""}${esc(T("Sent by TradeWorks for", "Enviado por TradeWorks de parte de"))} ${esc(b.name || "")}</p></div></body></html>`;
   const text = [T(`Thank you, ${first}.`, `Gracias, ${first}.`), T(`This is your copy of the ${what} you signed with ${b.name || "us"}.`, `Esta es su copia del ${what} que firmó con ${b.name || "nosotros"}.`), "",
-    ...rows.map(([k, v]) => `${k}: ${v}`), "", T("See your signed copy: ", "Ver su copia firmada: ") + url, "", addr].join("\n");
+    ...rows.map(([k, v]) => `${k}: ${v}`), "", T("See your signed copy: ", "Ver su copia firmada: ") + url, "", addr, ...(privacyUrl ? [T("Privacy policy: ", "Política de privacidad: ") + privacyUrl] : [])].join("\n");
   return { subject, html, text, to: isEmail(String(e.email || "").trim().toLowerCase()) ? String(e.email).trim().toLowerCase() : "" };
 }

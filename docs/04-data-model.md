@@ -20,7 +20,7 @@ companies/{cid}/settings/main        { pricing, payment, tax, discounts[], numbe
                                        autoEmail{on,kinds[]}, invoiceDueDays, referral{on,amount,rewardEn,rewardEs}, cardPay{on},
                                        goal{sales}, dashCards[],
                                        recurring[], bankRules[], expCats[], calOn, calToken, showcase[] }
-companies/{cid}/clients/{id}         { name, phone, email, address, source, lang, note, lead, archived, archivedAt,
+companies/{cid}/clients/{id}         { name, phone, email, address, source, lang, note, lead, archived, archivedAt, noAutoEmail (asked to stop automatic e-mails),
                                        createdAt, photos[], referredBy, refReward{amount,paidAt,method,expenseId}, web{service,city,message,heard,details} }
 companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId, clientName, phone, email, address,
                                        docLang, jobType, doors, drawers, frames, boxes, frameMode, boxMode, spec, specEs,
@@ -29,7 +29,7 @@ companies/{cid}/estimates/{id}       { number, date, validDays, status, clientId
                                        depositPct, payPlanOn, payPlan[], days, startDate, leadSource,
                                        scopeEn, scopeEs, termsEn, termsEs, notes, crewNotes,
                                        materialsMode, materialsList[], showMaterials, matBuyer, laborMode, extraHrs,
-                                       expenses[] (legacy receipts), photos[{id,kind,caption,inWork}], showPhotos,
+                                       expenses[] (legacy receipts), photos[{id,kind,caption,inWork}], showPhotos, photoOk (client allows "Our recent work"),
                                        signature{name,img,date,via,at}, sentAt, portal{token}, portalViews[], portalSeen{},
                                        activity[], chat[], changeOrders[], check{key:iso}, jobTasks[{id,day,text}],
                                        colors[{area,brand,color,sheen,code}], payClaim, reviewAsked, warrantyChecked, snooze{},
@@ -82,7 +82,7 @@ paylink/{token}                      { owner(cid), invId, data (PayModel JSON: i
 leads/{id}                           { owner(cid), name, phone, email, city, address, service, message, heard, lang,
                                        photos[pid], details{v,types[],cab{},intr{},ext{},other,tierCab,tierWall,when,date,contact,src,ref}, at, page, imported }
 leads/{id}/photos/{pid}              { data, at }
-public/{companyId}                   { name, phone, website, instagram, reviews, logoUrl, brandColor }
+public/{companyId}                   { name, phone, email, address, website, area, trade, logoUrl, brandColor }  (request form, /privacy/:cid contact)
 calfeed/{token}                      { owner, ics, updatedAt }
 showcase/{companyId}/items/{id}      { url, caption, at }
 ```

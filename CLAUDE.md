@@ -242,6 +242,17 @@ server-only (get by token, list / delete by the company). Portal page: e-sign co
 time, "See your signed copy". Public page /p/:token/signed/:id (SignedCopy.tsx): record + full document with the signature, printable. Owner: Signed
 card shows the server proof and "Signed copy"; change orders too (co.sigCopy). Demo mode signs locally with a local copy (src/data/portalSign.ts).
 Delete company also deletes signed copies. RULES MUST BE PUBLISHED after merge (signatures from the old app version fail until the page reloads).
+Merged (PR #39); rules published (checked 2026-10-01: console rules = main).
+Client privacy policy (owner 2026-10-01: "only I use the app for now", so the policy is for HIS clients; the owner's TradeWorks platform policy draft
+(Downloads/elgal.pdf, placeholders) waits until TradeWorks is sold to other companies). src/lib/legal.ts (clientPrivacy EN / ES, CLIENT_PRIVACY_DATE,
++ test) built from that draft, made true to the app (signature records with IP / device, Stripe, providers TradeWorks / Firebase / Cloudflare /
+Stripe / Resend / OpenStreetMap, no selling, 30-day answers, up to 7 years for contracts, e-sign section). Public page /privacy/:cid (PrivacyPage.tsx,
+legal.css: company header, effective date, contents, printable, EN / ES, tables stack on phones); company details from public/{cid} (Shell now also
+writes email + address). Linked from the request form (next to the contact consent), the client link (footer + e-sign text), the payment link, the
+signed copy and its e-mail, and the reminder e-mails (footer: reply "stop" + policy link; the reminders worker needs a redeploy to send it).
+Promises kept in the app: estimate.photoOk (Photos tab "The client allows us to show photos of the finished work"; "Our recent work" is disabled
+without it) and client.noAutoEmail (client profile switch "Automatic e-mails"; planEmails skips them, also by matching e-mail). Settings > Client link
+& payments > "Privacy policy for your clients" (link, missing address / e-mail warning, "have a lawyer read it once"). No rules change.
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);

@@ -7,7 +7,7 @@ import type { DepositPay } from "./deposit";
 
 /** Fields that must never reach the client's phone. */
 export const PORTAL_STRIP = ["expenses", "actualPrimerGal", "actualPaintGal", "actualMaterialCost", "activity", "snooze", "portalSeen",
-  "chat", "chatUnread", "extraHrs", "crewNotes", "leadSource", "portalViews", "reviewAsked", "portal", "laborMode", "payClaim", "createdAt", "updatedAt", "companyId"];
+  "chat", "chatUnread", "extraHrs", "crewNotes", "photoOk", "leadSource", "portalViews", "reviewAsked", "portal", "laborMode", "payClaim", "createdAt", "updatedAt", "companyId"];
 
 export type Brand = { name: string; phone: string; email: string; website: string; area: string; logoUrl: string; brandColor: string; address?: string; hours?: string; hoursEs?: string };
 /** Only the public branding fields of a company (never billing fields or owner ids). */

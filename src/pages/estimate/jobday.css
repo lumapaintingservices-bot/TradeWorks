@@ -61,6 +61,10 @@ pre.jd-shop{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:14
 .ph-work{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2);cursor:pointer}
 .ph-work input{width:18px;height:18px;padding:0;flex:none;--chk:var(--ok);--chk-ink:#fff}
 .ph-ups{margin-top:12px}
+.ph-ok{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface-2);cursor:pointer;font-size:13.5px}
+.ph-ok input{width:20px;height:20px;flex:none;padding:0;margin-top:1px;--chk:var(--ok);--chk-ink:#fff}
+.ph-ok span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ph-ok small{font-size:12.5px;color:var(--ink-3);line-height:1.45}
 .ph-by{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px)}
 
 @media(max-width:640px){
