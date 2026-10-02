@@ -7,7 +7,7 @@
 .ts-pick span{font-size:13px;color:var(--ink-3)}
 .ts-pick b{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .ts-pick small{color:var(--ink-3);font-size:12.5px}
-.ts-sum{grid-template-columns:repeat(3,1fr)}
+.tm-tiles.ts-sum{grid-template-columns:repeat(3,1fr)}
 .ts-jobs{list-style:none;margin:0;padding:6px 24px 16px}
 .ts-jobs li{padding:10px 0;border-top:1px solid var(--line)}
 .ts-jobs li:first-child{border-top:none}
@@ -29,7 +29,7 @@
 .ts-pay{padding:9px 0;border-top:1px solid var(--line)}
 .ts-pay:first-child{border-top:none}
 @media (max-width:640px){
-  .ts-sum{grid-template-columns:repeat(3,1fr);gap:8px}
+  .tm-tiles.ts-sum{grid-template-columns:repeat(3,1fr);gap:8px}
   .ts-jobs,.ts-days{padding:4px 14px 14px}
   .ts-ent{grid-template-columns:1fr auto;gap:2px 10px}
   .ts-ent .ts-job{grid-column:1/2;grid-row:2;font-size:12.5px}
