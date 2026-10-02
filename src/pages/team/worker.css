@@ -6,7 +6,10 @@
 .wk-clock-t .wk-run{color:var(--ok)}
 .wk-clock-t small{font-size:12.5px}
 .wk-btn{height:46px;padding:0 24px;font-size:15px;flex:none}
-.wk-tiles{grid-template-columns:repeat(3,1fr)}
+/* .tm-tiles.wk-tiles: beats Team.css .tm-tiles (4 columns, 2 under 900px) whatever order the two files load in */
+.tm-tiles.wk-tiles{grid-template-columns:repeat(3,1fr)}
+/* the period pills: a gap under the photos card above */
+.wk-ph+.toolbar{margin-top:16px}
 .wk-tasks{padding:4px 24px 12px}
 .wk-task{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line-2)}
 .wk-task:last-child{border-bottom:0}
@@ -21,7 +24,7 @@
 @media(max-width:640px){
   .wk-clock{padding:14px 16px;flex-direction:column;align-items:stretch}
   .wk-btn{width:100%;justify-content:center}
-  .wk-tiles{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tm-tiles.wk-tiles{grid-template-columns:1fr 1fr 1fr;gap:8px}
   .wk-tiles .tm-tile{padding:10px 10px}
   .wk-tiles .tm-tile b{font-size:17px}
   .wk-tiles .tm-tile small{display:none}
