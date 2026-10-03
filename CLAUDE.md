@@ -309,7 +309,7 @@ redundant; shadcn"): src/ui/RangeSelect.tsx (one "📅 This month ▾" button, P
 Reports, Dashboard Money / Charts / Sources (ChartsPills now renders RangeSelect), Team, Timesheet, worker Team page. Expenses page: header
 = "⋯" menu (Recurring expenses, Import bank CSV) + "+ Expense"; toolbar = period + "All expenses / By job" tabs; By job = lib expensesByJob
 (+ test): per job count, materials, other, total, bar, business expenses last; a job row opens /estimates/:id?tab=exp. RowMenu follows its
-button on scroll / resize like Combobox. e2e updated (expenses, job-expenses). Not merged yet.
+button on scroll / resize like Combobox. e2e updated (expenses, job-expenses). Merged (PR #46, 2026-10-03).
 
 Follow-ups in one place + signatures without opening the estimate (owner 2026-10-03: "Who to write to today is on Pipeline and Dashboard;
 it doesn't update when a client signs"): FollowUpList now only on Dashboard > Today (next to "What your clients did", like the prototype);
@@ -318,7 +318,7 @@ usePortalInbox (Shell, owners / admins): one subscribeTop per watched client lin
 rules don't allow listing portal docs), portalApply + save when the estimate is not open in the editor (openEditors set registered by
 EstimateEditor), toast only for a new signature. So the stage, follow-ups and deposit at signing follow at once (before: only when the
 estimate was opened). EstimateEditor: the pending 500 ms save now runs on unmount instead of being dropped. e2e: portal-inbox.spec.ts.
-Not merged yet (same branch as the period dropdown work).
+Merged (PR #46, 2026-10-03, with the period dropdown work).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
