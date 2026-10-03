@@ -19,6 +19,8 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
   const [editing, setEditing] = useState<Expense | "new" | null>(null);
   const m = calcMaterials(e, s);
   const solo = x.mode === "solo";
+  // "Cost only what the job uses" on: show the gallons used and what to buy
+  const gal = (used: number, buy: number) => (s.materials.chargeUsed ? t(`${used} gal used (buy ${buy})`, `${used} gal usados (comprar ${buy})`) : `${buy} gal`);
   const painting = usesCabinetTools(s.trade);
   const good = solo ? x.perHour >= x.targetHourly : x.margin >= x.target;
   const mid = solo ? x.perHour >= x.targetHourly * 0.75 : x.margin >= x.target - 15;
@@ -62,10 +64,12 @@ export default function CostsTab({ e, set, s, lang }: TabProps) {
         <label className="f" style={{ maxWidth: 320 }}>{t("Who buys the materials", "Quién compra los materiales")}<select value={e.matBuyer} onChange={(ev) => set({ matBuyer: ev.target.value as Estimate["matBuyer"] })}>
           <option value="me">{t("Me", "Yo")}</option>{painting && <option value="paint">{t("Client buys the paint", "El cliente compra la pintura")}</option>}<option value="client">{t("Client buys everything", "El cliente compra todo")}</option></select></label>
         {m.sqft > 0 && <Row dim a={t(`Cabinet surface · ${m.sqft} sq ft`, `Superficie de gabinetes · ${m.sqft} pie²`)} b="" />}
-        {m.buyPrimer > 0 && <Row a={`${s.materials.primerName} · ${m.buyPrimer} gal`} b={money(m.primerCost)} />}
-        {m.buyPaint > 0 && <Row a={`${s.materials.paintName} · ${m.buyPaint} gal`} b={money(m.paintCost)} />}
-        {m.buyWall > 0 && <Row a={`${s.materials.wallPaintName} · ${m.buyWall} gal`} b={money(m.wallCost)} />}
+        {m.buyPrimer > 0 && <Row a={`${s.materials.primerName} · ${gal(m.primerGal, m.buyPrimer)}`} b={money(m.primerCost)} />}
+        {m.buyPaint > 0 && <Row a={`${s.materials.paintName} · ${gal(m.paintGal, m.buyPaint)}`} b={money(m.paintCost)} />}
+        {m.buyWall > 0 && <Row a={`${s.materials.wallPaintName} · ${gal(m.wallGal, m.buyWall)}`} b={money(m.wallCost)} />}
         {m.supplyLines.map((l) => <Row key={l.name} dim a={`${l.name} × ${l.units}`} b={money(l.amt)} />)}
+        {m.factor !== 1 && m.baseCost > 0 && <Row a={t(`Adjusted to your real jobs (${Math.round(m.factor * 100)}%)`, `Ajustado a tus trabajos reales (${Math.round(m.factor * 100)}%)`)}
+          b={(m.totalCost < m.baseCost ? "− " : "+ ") + money(Math.abs(m.baseCost - m.totalCost))} />}
         {spent.mat > 0
           ? <p className="muted" style={{ fontSize: 12.5, marginTop: 14 }}>{lang === "es" ? `La ganancia usa tus gastos de materiales de este trabajo (${money(spent.mat)}) en lugar del estimado.` : `Profit uses this job's materials expenses (${money(spent.mat)}) instead of the estimate.`}</p>
           : <>

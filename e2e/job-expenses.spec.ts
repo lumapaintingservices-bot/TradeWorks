@@ -41,4 +41,20 @@ test("expenses added on a job change its real profit", async ({ page }) => {
   await page.goto("/expenses");
   await expect(page.locator("table tbody tr", { hasText: "Jose helper" })).toContainText("EST-");
   expect(estId).toBeTruthy();
+
+  // Settings > Materials learns from this job: real $95.50 vs the calculator, and offers to use that percentage
+  await page.goto("/settings?section=profit");
+  const learn = page.locator(".st-learn");
+  await expect(learn).toContainText("On 1 job you really spent $95.50 on materials");
+  const card2 = page.locator("#materials");
+  await learn.getByRole("button", { name: /^Use \d+% on my estimates$/ }).click();
+  await page.getByRole("switch", { name: "Cost only the paint and primer the job uses" }).check();
+  await card2.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(learn).toContainText("Now using");
+
+  // the estimate's materials now show the adjustment and the gallons used
+  await page.goto(`/estimates/${estId}`);
+  await page.getByRole("button", { name: "Costs & profit" }).click();
+  await expect(page.locator(".totline", { hasText: "Adjusted to your real jobs" })).toBeVisible();
+  await expect(page.locator(".totline", { hasText: "gal used (buy" }).first()).toBeVisible();
 });
