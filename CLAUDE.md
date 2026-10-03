@@ -292,6 +292,11 @@ Part 2, materials estimate closer to real — merged (PR #43, 2026-10-03) (owner
   real jobs (X%)" line. Only internal cost / profit; client prices unchanged. Tests: materialsLearn.test.ts, e2e/job-expenses.spec.ts.
   Advice given: default supplies (~$95 per cabinet job + sandpaper per door) and paint prices should be set to the owner's real ones.
 
+Scope lines (owner 2026-10-03: text with a line break mid-sentence printed as two bullets): lib/scope.ts joinBrokenLines, used by nl2list
+(document, client link, work order, Job day checklist) and "Make standard": a line starting lowercase, without its own bullet mark, joins the
+line above unless that one ends . ! ? : ; or is a heading; skipped when most lines start lowercase; " ." -> ".". ScopeTab: "Preview · N
+bullets" under each scope / terms box (same nl2list) + clearer hint. Tests: scope.test.ts, e2e/scope-lines.spec.ts. Merged (PR #44, 2026-10-03).
+
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
 test a real estimate with photos.

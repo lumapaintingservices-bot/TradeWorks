@@ -4,12 +4,13 @@ import { applyTypePreset, jobTypeLabel, jobTypeOf } from "../../lib/estimate";
 import type { Settings } from "../../lib/types";
 import type { TabProps } from "./types";
 import { ask } from "../../ui/confirm";
+import { isScopeHead, joinBrokenLines, nl2list } from "../../lib/scope";
 
 export default function ScopeTab({ e, set, s, saveStandard }: TabProps & { saveStandard(patch: Partial<Settings>): Promise<void> }) {
   const t = useT();
   const toast = useUi((x) => x.toast);
   const type = jobTypeOf(e);
-  const lines = (x: string) => x.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lines = (x: string) => joinBrokenLines(x);
 
   const makeStandard = async () => {
     const label = jobTypeLabel(type).toLowerCase();
@@ -29,10 +30,10 @@ export default function ScopeTab({ e, set, s, saveStandard }: TabProps & { saveS
         <span style={{ display: "flex", gap: 8 }}>
           <button className="btn sm" onClick={async () => { if (await ask(t("Reset spec, scope and terms to the standard for this job type?", "¿Restablecer especificación, alcance y términos al estándar de este tipo?"))) set(applyTypePreset(e, s, type)); }}>{t("Reset", "Restablecer")}</button>
           <button className="btn sm" onClick={makeStandard}>{t("Make standard", "Hacer estándar")}</button></span></div>
-        <div className="card-b"><p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>{t('One line per bullet. A line like "Day 1 — Prep" or ending in ":" becomes a heading.', 'Una línea por punto. Una línea como "Día 1 — Preparar" o que termine en ":" es un título.')}</p>
+        <div className="card-b"><p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>{t('One line per bullet (press Enter only to start a new bullet; a line that starts in lowercase joins the one above). A line like "Day 1 — Prep" or ending in ":" becomes a heading. Open "Preview" to see the bullets as the client will.', 'Una línea por punto (toca Enter solo para empezar otro punto; una línea que empieza en minúscula se une a la de arriba). Una línea como "Día 1 — Preparar" o que termine en ":" es un título. Abre "Vista previa" para ver los puntos como los verá el cliente.')}</p>
           <div className="grid2">
-            <label className="f">English<textarea rows={10} value={e.scopeEn} onChange={(ev) => set({ scopeEn: ev.target.value })} /></label>
-            <label className="f">Español<textarea rows={10} value={e.scopeEs} onChange={(ev) => set({ scopeEs: ev.target.value })} /></label>
+            <div><label className="f">English<textarea rows={10} value={e.scopeEn} onChange={(ev) => set({ scopeEn: ev.target.value })} /></label><Preview text={e.scopeEn} /></div>
+            <div><label className="f">Español<textarea rows={10} value={e.scopeEs} onChange={(ev) => set({ scopeEs: ev.target.value })} /></label><Preview text={e.scopeEs} /></div>
           </div></div></div>
       <div className="card"><div className="card-h"><h2>{t("Terms", "Términos")}</h2></div><div className="card-b">
         <div className="grid2">
@@ -44,5 +45,19 @@ export default function ScopeTab({ e, set, s, saveStandard }: TabProps & { saveS
         <label className="f">{t("Private notes for the crew (never shown to the client)", "Notas privadas para el equipo (nunca las ve el cliente)")}<textarea rows={3} value={e.crewNotes} onChange={(ev) => set({ crewNotes: ev.target.value })} /></label>
       </div></div>
     </div>
+  );
+}
+
+/** The bullets exactly as the document / client link will show them (same nl2list), folded by default. */
+function Preview({ text }: { text: string }) {
+  const t = useT();
+  const list = nl2list(text);
+  if (!list.length) return null;
+  const bullets = list.filter((x) => !isScopeHead(x)).length;
+  return (
+    <details className="sc-prev">
+      <summary>{t(`Preview · ${bullets} bullet${bullets === 1 ? "" : "s"} on the document`, `Vista previa · ${bullets} punto${bullets === 1 ? "" : "s"} en el documento`)}</summary>
+      <ul>{list.map((x, i) => isScopeHead(x) ? <li key={i} className="h">{x.replace(/:$/, "")}</li> : <li key={i}>{x}</li>)}</ul>
+    </details>
   );
 }
