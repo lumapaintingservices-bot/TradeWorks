@@ -33,11 +33,29 @@ export function nlSentences(line: string): string[] {
   return out;
 }
 
+const BULLET = /^\s*(?:[•·*–—]+|-\s)/;
+const startsLower = (l: string) => /^[a-zà-öø-ÿ]/.test(l);
+/**
+ * Text pasted or typed with a line break in the middle of a sentence ("…hallway, living room" / "dining area, kitchen…") used to become
+ * two bullets. A line that starts with a lowercase letter (and no bullet mark of its own) now continues the line above it, unless that
+ * line ends a sentence (. ! ? : ;) or is a heading. Skipped when most lines start lowercase (someone who writes every bullet that way).
+ */
+export function joinBrokenLines(text: string): string[] {
+  const raw = String(text || "").split("\n").map((l) => ({ marked: BULLET.test(l), t: l.replace(/^[\s•·*–—]+/, "").replace(/^-\s+/, "").trim() })).filter((l) => l.t);
+  const lower = raw.filter((l) => startsLower(l.t)).length;
+  if (lower * 2 > raw.length) return raw.map((l) => l.t);
+  const out: string[] = [];
+  for (const l of raw) {
+    const prev = out[out.length - 1];
+    if (prev !== undefined && !l.marked && startsLower(l.t) && !/[.!?:;]$/.test(prev) && !isScopeHead(prev)) out[out.length - 1] = prev + " " + l.t;
+    else out.push(l.t);
+  }
+  return out.map((l) => l.replace(/\s+([.,;:!?])(?=\s|$)/g, "$1"));
+}
+
 export function nl2list(s: string): string[] {
   const out: string[] = [];
-  String(s || "").split("\n").forEach((line) => {
-    line = line.replace(/^[\s•·*–—]+/, "").replace(/^-\s+/, "").trim();
-    if (!line) return;
+  joinBrokenLines(s).forEach((line) => {
     nlSentences(line).forEach((p) => { if (p) out.push(p); });
   });
   return out;

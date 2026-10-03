@@ -76,3 +76,10 @@
 .cost-cmp span{font-size:12px;color:var(--ink-3)}
 .cost-cmp b{font-size:16px;font-variant-numeric:tabular-nums}
 .cost-cmp .under b{color:var(--ok)}.cost-cmp .over b{color:var(--bad)}
+
+/* Scope & terms: the bullets as the document shows them */
+.sc-prev{margin:-4px 0 12px;font-size:13px}
+.sc-prev summary{cursor:pointer;color:var(--ink-3);font-weight:500;padding:4px 0}
+.sc-prev ul{margin:6px 0 0;padding:10px 12px 10px 28px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);display:flex;flex-direction:column;gap:4px}
+.sc-prev li{line-height:1.4}
+.sc-prev li.h{list-style:none;margin-left:-16px;font-weight:600;margin-top:4px}
