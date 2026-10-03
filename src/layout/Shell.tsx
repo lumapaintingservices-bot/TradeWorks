@@ -22,6 +22,7 @@ import { useTaskInbox } from "../data/taskInbox";
 import { useFirestoreReconnect } from "../data/reconnect";
 import { useCrewSync } from "../data/crew";
 import { useDepositOnSign } from "../data/deposit";
+import { usePortalInbox } from "../data/portalInbox";
 import { navFor, type NavItem } from "./nav";
 import "./shell.css";
 import LocationPing from "../pages/team/LocationPing";
@@ -104,6 +105,7 @@ function AdminBadges({ children }: { children: ReactNode }) {
   usePayLinkSync(); // invoice payment links: keep the public copies fresh and pick up "I paid" claims
   useTeamPhotoSync(); // before / after photos workers take land on their jobs
   useCrewSync(); // each job's crew gets its copy of the job (My jobs) and their checklist ticks come back
+  usePortalInbox(); // what clients do on their links (signed, opened, wrote) reaches the estimate even when it is not open
   useDepositOnSign(); // deposit at signing: invoices + payment link as soon as the client signs
   useLocationRetention(); // workers' positions on hours entries go after 90 days (location notice)
   const nb = useNavBadges();

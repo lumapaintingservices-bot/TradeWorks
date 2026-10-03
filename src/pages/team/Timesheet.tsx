@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { RangeSelect } from "../../ui/RangeSelect";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthProvider";
 import LineChart from "../../components/LineChart";
@@ -108,8 +109,7 @@ function TimesheetBody({ worker, hours, payouts, labelOf, self }: { worker: Work
         </div>
       </section>
 
-      <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
-        <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...RANGE_LABEL[k])}</button>))}</div></div>
+      <div className="toolbar"><RangeSelect items={RANGE_KEYS.map((k) => [k, t(...RANGE_LABEL[k])] as [RangeKey, string])} value={range} onChange={(k) => setRange(k as RangeKey)} label={t("Period", "Periodo")} /></div>
 
       <div className="tm-tiles ts-sum">
         <div className="card tm-tile"><span>{t("Hours", "Horas")}</span><b>{hrs(inRange.hours)}</b><small>{t(...RANGE_LABEL[range])}</small></div>

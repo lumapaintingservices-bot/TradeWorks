@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { RangeSelect } from "../ui/RangeSelect";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { useClients, useClock, useCrewJobs, useEstimates, useHours, useInvoices, usePayouts, useSettings, useTasks, useWorkers } from "../data/hooks";
@@ -253,8 +254,7 @@ function OwnerTeam() {
         <>
           <TeamMap workers={workers} clocks={clocks} hours={hours} ests={ests} invoices={invoices} label={mapLabel} patchEst={patchEst} now={now} />
 
-          <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
-            <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...rangeLabel[k])}</button>))}</div></div>
+          <div className="toolbar"><RangeSelect items={RANGE_KEYS.map((k) => [k, t(...rangeLabel[k])] as [RangeKey, string])} value={range} onChange={(k) => setRange(k as RangeKey)} label={t("Period", "Periodo")} /></div>
 
           <div className="tm-tiles">
             <div className="card tm-tile"><span>{t("Hours", "Horas")}</span><b>{hrs(tot.h)}</b></div>

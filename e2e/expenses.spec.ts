@@ -25,7 +25,8 @@ test("add an expense, import a bank CSV, dashboard numbers change", async ({ pag
 
   // ---- bank statement: 7 charges, $842.22 (the payment line is not a charge)
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "Import bank CSV" }).click();
+  await page.getByRole("button", { name: /^More: recurring/ }).click();   // the "⋯" menu next to "+ Expense"
+  await page.getByRole("menuitem", { name: "Import bank CSV" }).click();
   await page.locator('input[type="file"]').setInputFiles(FIXTURES + "chase-card.csv");
   const dlg = page.getByRole("dialog");
   await expect(dlg).toContainText("7 charges · 7 selected · $842.22");
@@ -41,7 +42,8 @@ test("add an expense, import a bank CSV, dashboard numbers change", async ({ pag
 
   // the same file again: everything is a duplicate and starts unchecked
   await page.goto("/expenses");
-  await page.getByRole("button", { name: "Import bank CSV" }).click();
+  await page.getByRole("button", { name: /^More: recurring/ }).click();   // the "⋯" menu next to "+ Expense"
+  await page.getByRole("menuitem", { name: "Import bank CSV" }).click();
   await page.locator('input[type="file"]').setInputFiles(FIXTURES + "chase-card.csv");
   await expect(page.getByRole("dialog")).toContainText("0 selected");
   await expect(page.getByRole("button", { name: /^Import 0 expenses/ })).toBeDisabled();

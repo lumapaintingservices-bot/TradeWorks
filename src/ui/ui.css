@@ -236,3 +236,7 @@ label.f>.dtp{font-weight:400}
 div.f.dur{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin-bottom:14px}
 .dur-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .dur-row .ig input{font-size:15px}
+/* RangeSelect: one dropdown button for the period */
+.rs-btn{display:inline-flex;align-items:center;gap:8px}
+.rs-btn svg{color:var(--ink-3);flex:none}
+.rs-btn .rs-v{font-weight:600;color:var(--ink);white-space:nowrap}

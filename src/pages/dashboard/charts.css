@@ -17,9 +17,8 @@ button.cx-tile .cx-m.link{text-decoration:underline}
 .cx-grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .cx-grid2>.cx-card{margin-bottom:0}
 .cx-grid2+.cx-grid2,.cx-grid2+.cx-card,.cx-card+.cx-grid2{margin-top:16px}
-.tabs.cx-pills{margin-bottom:16px;display:flex;width:max-content;max-width:100%}
-.tabs.cx-pills.sm{margin:0;padding:3px}
-.tabs.cx-pills.sm button{padding:5px 11px;font-size:13px}
+.cx-pills{margin-bottom:16px;display:flex}
+.cx-pills.sm{margin:0}
 .cx-empty{font-size:13.5px;padding:8px 0}
 
 /* horizontal bars (funnel, close rate by ..., where the money went) */

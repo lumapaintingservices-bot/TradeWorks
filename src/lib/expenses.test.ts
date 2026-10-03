@@ -273,3 +273,13 @@ describe("bank CSV fixtures (two or more layouts)", () => {
     expect(learnRules([home], learned).filter((r) => r.match === "the home depot")).toEqual([{ match: "the home depot", category: "materials", source: "", vendor: "THE HOME DEPOT" }]);
   });
 });
+
+describe("expensesByJob", () => {
+  it("groups by job, business expenses last, biggest first", async () => {
+    const { expensesByJob } = await import("./expenses");
+    const row = (estId: string, cat: string, amount: number, date: string) => ({ id: estId + cat + amount, estId, cat, amount, date, vendor: "", method: "", note: "", source: "", receiptUrl: "" });
+    const g = expensesByJob([row("e1", "materials", 100, "2026-10-01"), row("e1", "labor", 50.5, "2026-10-03"), row("", "fuel", 900, "2026-10-02"), row("e2", "materials", 400, "2026-09-01")]);
+    expect(g.map((x) => x.estId)).toEqual(["e2", "e1", ""]);
+    expect(g[1]).toEqual({ estId: "e1", n: 2, materials: 100, other: 50.5, total: 150.5, last: "2026-10-03" });
+  });
+});

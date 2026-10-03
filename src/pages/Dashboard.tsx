@@ -29,7 +29,7 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="tabs">{TABS.map(([k, en, es]) => <button key={k} className={tab === k ? "on" : ""} onClick={() => pick(k)}>{t(en, es)}</button>)}</div>
-      {tab === "overview" && <OverviewTab />}
+      {tab === "overview" && <OverviewTab onToday={() => pick("today")} />}
       {tab === "today" && <TodayTab />}
       {tab === "money" && <MoneyTab />}
       {tab === "charts" && <ChartsTab />}

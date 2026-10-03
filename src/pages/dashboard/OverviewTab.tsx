@@ -15,7 +15,7 @@ import { money } from "../../lib/money";
 import { useUi } from "../../store/ui";
 import { Avatar } from "../../ui/Avatar";
 import { Icon } from "../../ui/Icon";
-import { FollowUpList } from "../FollowUps";
+import { useFollowUps } from "../FollowUps";
 import GoalCard from "./GoalCard";
 import { anyKpiDef, fmtKpi, kpiResult } from "../../lib/kpis";
 import KpiLibrary, { dashCardsOf } from "./KpiLibrary";
@@ -34,7 +34,7 @@ function Bar({ label, amount, pct, color }: { label: string; amount: number; pct
   );
 }
 
-export default function OverviewTab() {
+export default function OverviewTab({ onToday }: { onToday(): void }) {
   const t = useT();
   const lang = useUi((s) => s.lang);
   const es = lang === "es";
@@ -176,9 +176,25 @@ export default function OverviewTab() {
         </section>
       </div>
 
-      <div className="db-fu"><FollowUpList limit={5} /></div>
+      <TodayNudge onOpen={onToday} />
 
       {lib && <KpiLibrary ctx={ctx} onClose={() => setLib(false)} />}
     </>
+  );
+}
+
+/** "Who to write to today" lives in the Today tab (with what your clients did); here only a one-line reminder with the count. */
+function TodayNudge({ onOpen }: { onOpen(): void }) {
+  const t = useT();
+  const { items } = useFollowUps();
+  if (!items.length) return null;
+  const n = items.length;
+  return (
+    <button type="button" className="card db-nudge" onClick={onOpen}>
+      <span className="db-nudge-n">{n}</span>
+      <span className="db-nudge-t"><b>{t(`${n === 1 ? "person" : "people"} to write to today`, `${n === 1 ? "persona" : "personas"} a quién escribirle hoy`)}</b>
+        <small>{items.slice(0, 3).map((f) => f.who).filter(Boolean).join(" · ")}</small></span>
+      <span className="db-nudge-go">{t("Open Today", "Abrir Hoy")} →</span>
+    </button>
   );
 }

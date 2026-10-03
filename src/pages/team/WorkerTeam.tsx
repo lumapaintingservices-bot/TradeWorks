@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RangeSelect } from "../../ui/RangeSelect";
 import { useAuth } from "../../auth/AuthProvider";
 import { useClock, useCrewJobs, useHours, useTasks, useWorkers } from "../../data/hooks";
 import { crewJobOptions } from "../../lib/crew";
@@ -179,8 +180,7 @@ function WorkerBody({ workerId }: { workerId: string }) {
 
       <WorkerPhotos workerId={workerId} tasks={tasks} clock={clock} extraJobs={photoJobs} />
 
-      <div className="toolbar"><div className="pills">{RANGE_KEYS.map((k) => (
-        <button key={k} className={"pill" + (range === k ? " on" : "")} onClick={() => setRange(k)}>{t(...RANGE_LABEL[k])}</button>))}</div></div>
+      <div className="toolbar"><RangeSelect items={RANGE_KEYS.map((k) => [k, t(...RANGE_LABEL[k])] as [RangeKey, string])} value={range} onChange={(k) => setRange(k as RangeKey)} label={t("Period", "Periodo")} /></div>
 
       <div className="tm-tiles wk-tiles">
         <div className="card tm-tile"><span>{t("My hours", "Mis horas")}</span><b>{hrs(sumHours(list))}</b><small>{t(...RANGE_LABEL[range])}</small></div>

@@ -1,6 +1,23 @@
 /* Expenses page — tokens only. Category chips use the same tinted tiles as badges. */
 .ex-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
-.ex-range{margin-bottom:16px}
+.ex-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.ex-view{margin:0}
+.ex-actions .rm-btn{height:38px;width:38px;padding:0;font-size:18px}
+/* By job */
+.ex-jobs{padding:4px 0;overflow:hidden}
+.exj-row{display:flex;align-items:center;gap:14px;width:100%;padding:12px 18px;border:0;border-bottom:1px solid var(--line-2);background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.exj-row:last-child{border-bottom:0}
+.exj-row:hover{background:var(--surface-2)}
+.exj-row.static{cursor:default}.exj-row.static:hover{background:none}
+.exj-row.total{background:var(--surface-2)}
+.exj-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.exj-main b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.exj-main small{font-size:12.5px;color:var(--ink-3)}
+.exj-bar{display:block;height:5px;border-radius:999px;background:var(--line-2);overflow:hidden;margin-top:3px;max-width:420px}
+.exj-bar i{display:block;height:100%;border-radius:999px;background:var(--chart-main, var(--acc))}
+.exj-amt{display:flex;align-items:center;gap:6px;font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.exj-amt svg{color:var(--ink-3)}
+@media(max-width:640px){.exj-row{padding:12px 14px}}
 .ex-custom{display:flex;gap:12px;flex-wrap:wrap;margin:-8px 0 12px}
 .ex-custom label.f{margin-bottom:0}.ex-custom input{width:170px}
 .ex-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:16px}
