@@ -56,7 +56,9 @@ export default function Pipeline() {
     const by: Record<string, Estimate[]> = {};
     STAGES.forEach((s) => { by[s.k] = []; });
     estimates.forEach((e) => { const st = jobStatus(e, invoices); (by[st] || by.Draft).push(e); }); // Declined sits in Draft, like the prototype
-    Object.values(by).forEach((l) => l.sort((a, b) => ms(b.updatedAt) - ms(a.updatedAt)));
+    // declined jobs (kept in Draft, like the prototype) go to the bottom of the column
+    const dec = (e: Estimate) => (jobStatus(e, invoices) === "Declined" ? 1 : 0);
+    Object.values(by).forEach((l) => l.sort((a, b) => dec(a) - dec(b) || ms(b.updatedAt) - ms(a.updatedAt)));
     return by;
   }, [estimates, invoices]);
   const totalOf = (e: Estimate) => calcEstimate(e, settings).total;
@@ -70,7 +72,10 @@ export default function Pipeline() {
     await saveClient({ ...c, archived: true, archivedAt: new Date().toISOString() } as never);
     toast(t("Removed. You can put it back from “Removed leads”.", "Quitado. Lo puedes regresar desde “Leads quitados”."));
   }
-  const jump = (i: number) => boardRef.current?.children[i]?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  // phones show one stage at a time (the stage buttons pick it); bigger screens show the whole board
+  const countOf = (k: Stage) => (k === "lead" ? leads.length : cols[k].length);
+  const [picked, setPicked] = useState<Stage | null>(null);
+  const sel: Stage = picked || STAGES.find((x) => countOf(x.k) > 0)?.k || "lead";
 
   function estCard(e: Estimate, stage: Stage) {
     const st = jobStatus(e, invoices), declined = st === "Declined";
@@ -141,11 +146,10 @@ export default function Pipeline() {
       </div>
 
 
-      <div className="pipe-jump" role="tablist">
-        {STAGES.map((s, i) => {
-          const n = s.k === "lead" ? leads.length : cols[s.k].length;
-          return <button key={s.k} className="pill" onClick={() => jump(i)}>{t(s.en, s.es)} · {n}</button>;
-        })}
+      <div className="pipe-jump" role="tablist" aria-label={t("Stage", "Etapa")}>
+        {STAGES.map((s) => (
+          <button key={s.k} role="tab" aria-selected={sel === s.k} className={sel === s.k ? "on" : ""} onClick={() => setPicked(s.k)}>{t(s.en, s.es)} <span>{countOf(s.k)}</span></button>
+        ))}
       </div>
       <div className="pipe-board" ref={boardRef}>
         {STAGES.map((s) => {
@@ -153,7 +157,7 @@ export default function Pipeline() {
           const n = s.k === "lead" ? leads.length : list.length;
           const sum = list.reduce((a, e) => a + totalOf(e), 0);
           return (
-            <div className="pipe-col" key={s.k}>
+            <div className={"pipe-col" + (sel === s.k ? " sel" : "")} key={s.k}>
               <div className={"pipe-h " + s.k.replace(/ /g, "")}><b>{t(s.en, s.es)}</b><span>{n}{sum ? ` · ${money(sum)}` : ""}</span></div>
               <div className="pipe-cards">
                 {n === 0 ? <div className="pipe-empty">{t("Empty", "Vacío")}</div> : s.k === "lead" ? leads.map(leadCard) : list.map((e) => estCard(e, s.k))}
