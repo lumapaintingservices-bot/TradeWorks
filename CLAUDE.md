@@ -302,7 +302,7 @@ lib/jobLedger.ts (+ test): tiles job price / spent so far / profit so far / marg
 (materials est = calcMaterials vs real receipts; team labor est = crewCost in crew mode, real = logged hours x pay incl. the job's share of
 the week's overtime; subcontractors and every other category real only), bars, total diff only when every spent kind has an estimate;
 receipts list (thumbnail, method, note, filter pills by category, tap to edit, + Add expense, Export CSV incl. team hours); team hours on the
-job (worker, date, hours, pay, OT) vs planned hours. e2e in job-expenses.spec.ts. Not merged yet.
+job (worker, date, hours, pay, OT) vs planned hours. e2e in job-expenses.spec.ts. Merged (PR #45, 2026-10-03).
 
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
