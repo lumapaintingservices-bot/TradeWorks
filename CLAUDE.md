@@ -311,6 +311,15 @@ Reports, Dashboard Money / Charts / Sources (ChartsPills now renders RangeSelect
 (+ test): per job count, materials, other, total, bar, business expenses last; a job row opens /estimates/:id?tab=exp. RowMenu follows its
 button on scroll / resize like Combobox. e2e updated (expenses, job-expenses). Not merged yet.
 
+Follow-ups in one place + signatures without opening the estimate (owner 2026-10-03: "Who to write to today is on Pipeline and Dashboard;
+it doesn't update when a client signs"): FollowUpList now only on Dashboard > Today (next to "What your clients did", like the prototype);
+removed from Pipeline and Overview; Overview shows a one-line TodayNudge (count + first names, opens Today). src/data/portalInbox.ts
+usePortalInbox (Shell, owners / admins): one subscribeTop per watched client link (estimates with portal.token, not Paid in Full / Declined;
+rules don't allow listing portal docs), portalApply + save when the estimate is not open in the editor (openEditors set registered by
+EstimateEditor), toast only for a new signature. So the stage, follow-ups and deposit at signing follow at once (before: only when the
+estimate was opened). EstimateEditor: the pending 500 ms save now runs on unmount instead of being dropped. e2e: portal-inbox.spec.ts.
+Not merged yet (same branch as the period dropdown work).
+
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
 test a real estimate with photos.

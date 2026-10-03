@@ -13,7 +13,6 @@ import { useUi } from "../store/ui";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { statusLabel } from "../ui/StatusBadge";
-import { FollowUpList } from "./FollowUps";
 import { ask } from "../ui/confirm";
 import { PhoneInput } from "../ui/PhoneInput";
 import "./Pipeline.css";
@@ -141,7 +140,6 @@ export default function Pipeline() {
         </div>
       </div>
 
-      <FollowUpList limit={5} />
 
       <div className="pipe-jump" role="tablist">
         {STAGES.map((s, i) => {

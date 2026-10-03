@@ -16,6 +16,7 @@ import { subscribeTop } from "../../data/repo";
 import { useTeamPhotosInto } from "../../data/teamPhotos";
 import { useCrewTicksInto } from "../../data/crew";
 import { portalApply, type PortalDoc } from "../../lib/portal";
+import { openEditors } from "../../data/portalInbox";
 import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
 import ExpensesTab from "./ExpensesTab";
@@ -63,10 +64,13 @@ export default function EstimateEditor() {
     if (found && loadedId.current !== id) { loadedId.current = id!; setE(found); }
   }, [rows, id]);
 
+  // the last edit waits 500 ms before it is saved; leaving the page sooner saves it right away (it used to be dropped)
+  const pending = useRef<(() => Promise<void>) | null>(null);
   const commit = (next: Estimate) => {
     setSaved("saving");
     clearTimeout(timer.current);
-    timer.current = setTimeout(async () => {
+    const run = async () => {
+      pending.current = null;
       let out = next;
       const nm = next.clientName.trim();
       if (!next.clientId && nm) { // ensureClient: a typed name becomes a client
@@ -78,12 +82,16 @@ export default function EstimateEditor() {
         if (c && (c.name !== nm || c.phone !== next.phone || c.email !== next.email || c.address !== next.address)) await saveClient({ ...c, name: nm || c.name, phone: next.phone, email: next.email, address: next.address });
       }
       await save(out); setSaved("saved");
-    }, 500);
+    };
+    pending.current = run;
+    timer.current = setTimeout(run, 500);
   };
   const set = (p: Partial<Estimate>) => setE((cur) => { if (!cur) return cur; const next = { ...cur, ...p }; commit(next); return next; });
-  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(syncTimer.current); }, []);
+  useEffect(() => () => { clearTimeout(timer.current); clearTimeout(syncTimer.current); pending.current?.().catch(() => {}); }, []);
 
-  // what the client does on the link (views, picks, signature, chat, Zelle claim) flows into this estimate
+  // what the client does on the link (views, picks, signature, chat, Zelle claim) flows into this estimate; while it is open
+  // the Shell's portal inbox (src/data/portalInbox.ts) leaves it to the editor
+  useEffect(() => { if (!id) return; openEditors.add(id); return () => { openEditors.delete(id); }; }, [id]);
   const token = e?.portal?.token;
   useEffect(() => {
     if (!token) return;
