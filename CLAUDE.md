@@ -282,7 +282,7 @@ jobEconomics(e, s, number | {mat, labor, other}) adds sub + other to the cost (a
 matEst returned. CostsTab: Real profit lists Subcontractors / Other job expenses; new card "Expenses for this job" (list, click to edit,
 "+ Add expense" opens ExpenseModal already on the job); Materials card shows Estimated / Real / Difference and hides the typed real cost when
 receipts exist. ExpenseModal moved to src/pages/expenses/ExpenseModal.tsx (prop `job`). Tests: jobSpend.test.ts, e2e/job-expenses.spec.ts. Merged (PR #42, 2026-10-02).
-Part 2, materials estimate closer to real — NOT merged yet, on the dev branch (owner merged only part 1) (owner 2026-10-02; Dillon: estimated $342.50, really spent $153):
+Part 2, materials estimate closer to real — merged (PR #43, 2026-10-03) (owner 2026-10-02; Dillon: estimated $342.50, really spent $153):
 - settings.materials.chargeUsed (switch, off = prototype): cost the exact gallons used, not whole quarts (leftovers go to the next job);
   buy* (shopping list) unchanged. Costs tab shows "0.74 gal used (buy 0.75)".
 - settings.materials.realFactor (realFactorOf: 0.1-3, else 1 = prototype): calcMaterials returns baseCost + factor, totalCost = base x factor.
