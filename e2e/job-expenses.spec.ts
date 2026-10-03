@@ -35,6 +35,20 @@ test("expenses added on a job change its real profit", async ({ page }) => {
   await expect(page.locator(".totline", { hasText: "Subcontractors (expenses)" })).toContainText("$300.00");
   await expect(card.locator(".card-h b")).toHaveText("$395.50");
 
+  // the Expenses tab: budget vs actual, every receipt, profit so far, CSV
+  await page.getByRole("button", { name: "Expenses", exact: true }).click();
+  await expect(page.locator(".jl-tiles .tile", { hasText: "Spent so far" })).toContainText("$395.50");
+  const bva = page.locator(".jl-bva");
+  await expect(bva.locator(".jl-bva-r", { hasText: "Materials" })).toContainText("$95.50");
+  await expect(bva.locator(".jl-bva-r", { hasText: "Subcontractors" })).toContainText("$300.00");
+  await expect(page.locator(".jl-row", { hasText: "Jose helper" })).toContainText("$300.00");
+  await page.getByRole("button", { name: /^Materials · 1$/ }).click();
+  await expect(page.locator(".card", { hasText: "Receipts & expenses" }).locator("button.jl-row")).toHaveCount(1);
+  const dl = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export CSV" }).click();
+  expect((await dl).suggestedFilename()).toMatch(/-expenses\.csv$/);
+  await page.getByRole("button", { name: "Costs & profit" }).click();
+
   // the expense shows on the Expenses page linked to the job
   const after = Number((await keep.innerText()).replace(/[^0-9.-]/g, ""));
   expect(after).toBeLessThan(before);

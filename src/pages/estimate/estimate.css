@@ -83,3 +83,37 @@
 .sc-prev ul{margin:6px 0 0;padding:10px 12px 10px 28px;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);display:flex;flex-direction:column;gap:4px}
 .sc-prev li{line-height:1.4}
 .sc-prev li.h{list-style:none;margin-left:-16px;font-weight:600;margin-top:4px}
+
+/* Expenses tab: the job's spending in detail */
+.jl-tiles{grid-template-columns:repeat(4,1fr);margin-bottom:0}
+@media(max-width:640px){.jl-tiles{grid-template-columns:1fr 1fr}}
+.jl-note{font-size:12.5px;margin:0}
+.jl-bva{display:flex;flex-direction:column;font-size:14px}
+.jl-bva-h,.jl-bva-r{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-2)}
+.jl-bva-h{font-size:12px;color:var(--ink-3);font-weight:500;padding-top:0}
+.jl-bva-h span:not(:first-child),.jl-bva-r>span:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.jl-bva-r.total{border-bottom:0;font-weight:600}
+.jl-lbl{display:flex;flex-direction:column;gap:6px;min-width:0}
+.jl-bar{position:relative;display:block;height:6px;border-radius:999px;background:var(--line-2);overflow:hidden}
+.jl-bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px}
+.jl-bar .est{background:var(--line)}
+.jl-bar .real{background:var(--ok)}.jl-bar .real.over{background:var(--bad)}
+.jl-over{color:var(--bad)}.jl-under{color:var(--ok)}
+.jl-acts{display:flex;gap:8px}
+.jl-pills{margin-bottom:12px}
+.jl-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.jl-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;border:0;border-bottom:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.jl-row:last-child{border-bottom:0}
+.jl-row:hover{background:var(--surface-2)}
+.jl-row.static{cursor:default}.jl-row.static:hover{background:var(--surface)}
+.jl-row.total{background:var(--surface-2)}
+.jl-thumb{width:40px;height:40px;flex:none;border-radius:8px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;font-size:18px}
+.jl-thumb img{width:100%;height:100%;object-fit:cover}
+.jl-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.jl-main b{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jl-main small{font-size:12.5px;color:var(--ink-3)}
+.jl-main .jl-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jl-amt{font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+@media(max-width:640px){.jl-bva-h,.jl-bva-r{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:6px;font-size:13px}.card-h .jl-acts .btn{padding:0 10px}}
+.jl-acts .btn{white-space:nowrap}
+@media(max-width:640px){.card-h:has(.jl-acts){flex-wrap:wrap;gap:8px}}
