@@ -6,7 +6,7 @@ import { useEstimates, useExpenses, usePayouts, useSettings } from "../data/hook
 import { useT } from "../i18n";
 import { uid, todayISO } from "../lib/estimate";
 import {
-  allExpenseRows, buildBankItems, catTone, cleanVendor, expCatLabel, expCats, expenseTotals, inBounds, isMarketingCat, learnRules,
+  allExpenseRows, buildBankItems, expensesByJob, catTone, cleanVendor, expCatLabel, expCats, expenseTotals, inBounds, isMarketingCat, learnRules,
   METHOD_ES, parseBankFile, rangeBounds, runRecurring,
   type BankFile, type BankItem, type BankRule, type DateOrder, type ExpenseRow, type RangeKey, type RecurringRule,
 } from "../lib/expenses";
@@ -18,6 +18,8 @@ import { EmptyState } from "../ui/EmptyState";
 import { Icon } from "../ui/Icon";
 import { Modal } from "../ui/Modal";
 import { useUrlFlag } from "../ui/useUrlFlag";
+import { RowMenu } from "../ui/RowMenu";
+import { RangeSelect } from "../ui/RangeSelect";
 import { ask } from "../ui/confirm";
 import { useTableSort } from "../ui/useTableSort";
 import "./Expenses.css";
@@ -53,6 +55,7 @@ export default function Expenses() {
   const [custom, setCustom] = useState({ from: today.slice(0, 7) + "-01", to: today });
   const [q, setQ] = useState(""); const [cat, setCat] = useState("all"); const [limit, setLimit] = useState(PAGE);
   const [editing, setEditing] = useState<Expense | "new" | null>(null);
+  const [view, setView] = useState<"list" | "jobs">("list");
   useUrlFlag("new", () => setEditing("new")); // Quick create
   const [showRec, setShowRec] = useState(false); const [sp, setSp] = useSearchParams();
   const [showImport, setShowImport] = useState(sp.get("import") === "1");
@@ -96,14 +99,20 @@ export default function Expenses() {
       <div className="page-h">
         <div><h1>{t("Expenses", "Gastos")}</h1><p>{t("Everything you spend, with receipts and the job it was for.", "Todo lo que gastas, con recibos y el trabajo al que pertenece.")}</p></div>
         <div className="ex-actions">
-          <button className="btn" onClick={() => setShowRec(true)}>{t("Recurring", "Recurrentes")}</button>
-          <button className="btn" onClick={() => setShowImport(true)}>{t("Import bank CSV", "Importar CSV del banco")}</button>
+          <RowMenu label={t("More: recurring, bank import", "Más: recurrentes, importar banco")} items={[
+            { label: t("Recurring expenses", "Gastos recurrentes"), icon: "refresh", onClick: () => setShowRec(true) },
+            { label: t("Import bank CSV", "Importar CSV del banco"), icon: "upload", onClick: () => setShowImport(true) },
+          ]} />
           <button className="btn pri" onClick={() => setEditing("new")}><Icon name="plus" />{t("Expense", "Gasto")}</button>
         </div>
       </div>
 
-      <div className="tabs ex-range" role="tablist">
-        {RANGES.map((r) => <button key={r.k} role="tab" aria-selected={range === r.k} className={range === r.k ? "on" : ""} onClick={() => setRange(r.k)}>{es ? r.es : r.en}</button>)}
+      <div className="ex-bar">
+        <RangeSelect items={RANGES.map((r) => [r.k, es ? r.es : r.en] as [RangeKey, string])} value={range} onChange={(k) => { setRange(k); setLimit(PAGE); }} label={t("Period", "Periodo")} />
+        <div className="tabs ex-view" role="tablist">
+          <button role="tab" aria-selected={view === "list"} className={view === "list" ? "on" : ""} onClick={() => setView("list")}>{t("All expenses", "Todos los gastos")}</button>
+          <button role="tab" aria-selected={view === "jobs"} className={view === "jobs" ? "on" : ""} onClick={() => setView("jobs")}>{t("By job", "Por trabajo")}</button>
+        </div>
       </div>
       {range === "custom" && (
         <div className="ex-custom">
@@ -132,7 +141,7 @@ export default function Expenses() {
               {cats.map((c) => <option key={c.id} value={c.id}>{es ? c.es : c.en}</option>)}
             </select>
           </div>
-          {shown.length === 0 ? (
+          {view === "jobs" ? <ByJob rows={shown} ests={ests} es={es} onOpen={(id) => nav(`/estimates/${id}?tab=exp`)} /> : shown.length === 0 ? (
             <div className="card"><p className="muted" style={{ padding: 24 }}>{t("No expenses in this period. Add one, or import your bank statement.", "No hay gastos en este periodo. Agrega uno o importa el estado de cuenta del banco.")}</p></div>
           ) : (
             <>
@@ -304,5 +313,31 @@ function BankImportModal({ onClose }: { onClose(): void }) {
         </div>
       )}
     </Modal>
+  );
+}
+
+/** "By job": what each job has spent in the period (materials / everything else), biggest first; tap opens the job's Expenses tab. */
+function ByJob({ rows, ests, es, onOpen }: { rows: ExpenseRow[]; ests: Estimate[]; es: boolean; onOpen(estId: string): void }) {
+  const t = useT();
+  const groups = useMemo(() => expensesByJob(rows), [rows]);
+  const est = useMemo(() => new Map(ests.map((e) => [e.id, e])), [ests]);
+  if (!groups.length) return <div className="card"><p className="muted" style={{ padding: 24 }}>{t("No expenses in this period.", "No hay gastos en este periodo.")}</p></div>;
+  const max = Math.max(1, ...groups.map((g) => g.total));
+  return (
+    <div className="card ex-jobs">
+      {groups.map((g) => {
+        const e = est.get(g.estId);
+        const title = g.estId ? (e ? `${e.number} · ${e.clientName || t("No client", "Sin cliente")}` : t("Deleted job", "Trabajo borrado")) : t("No job — business expenses", "Sin trabajo — gastos del negocio");
+        const body = <>
+          <span className="exj-main"><b>{title}</b>
+            <small>{t(`${g.n} expense${g.n === 1 ? "" : "s"}`, `${g.n} gasto${g.n === 1 ? "" : "s"}`)}{g.materials > 0 ? " · " + t("materials", "materiales") + " " + money(g.materials) : ""}{g.other > 0 ? " · " + t("other", "otros") + " " + money(g.other) : ""}</small>
+            <i className="exj-bar"><i style={{ width: `${(g.total / max) * 100}%` }} /></i></span>
+          <span className="exj-amt">{money(g.total)}{g.estId && e ? <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="m9 6 6 6-6 6" /></svg> : null}</span></>;
+        return g.estId && e
+          ? <button key={g.estId} type="button" className="exj-row" onClick={() => onOpen(g.estId)} aria-label={(es ? "Abrir gastos de " : "Open expenses of ") + title}>{body}</button>
+          : <div key={g.estId || "_none"} className="exj-row static">{body}</div>;
+      })}
+      <div className="exj-row static total"><span className="exj-main"><b>{t("Total", "Total")}</b></span><span className="exj-amt">{money(r2(groups.reduce((a, g) => a + g.total, 0)))}</span></div>
+    </div>
   );
 }

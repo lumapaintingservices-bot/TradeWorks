@@ -1,5 +1,7 @@
 // Small shared building blocks of the Money / Charts / Sources tabs and the Reports page (styles in charts.css, prefix cx-).
 import type { ReactNode } from "react";
+import { useUi } from "../../store/ui";
+import { RangeSelect } from "../../ui/RangeSelect";
 import { money, num } from "../../lib/money";
 import "./charts.css";
 
@@ -29,12 +31,10 @@ export function ChartsCard({ title, sub, right, children, flush }: { title: Reac
 }
 
 /** Segmented pills (same look as the page tabs). */
+/** The period picker of the charts / reports pages: one dropdown button (RangeSelect), the same on every page. */
 export function ChartsPills<K extends string>({ items, value, onChange, small }: { items: [K, string][]; value: K; onChange: (k: K) => void; small?: boolean }) {
-  return (
-    <div className={"tabs cx-pills" + (small ? " sm" : "")} role="tablist">
-      {items.map(([k, label]) => <button key={k} role="tab" aria-selected={value === k} className={value === k ? "on" : ""} onClick={() => onChange(k)}>{label}</button>)}
-    </div>
-  );
+  const es = useUi((u) => u.lang) === "es";
+  return <div className={"cx-pills" + (small ? " sm" : "")}><RangeSelect items={items} value={value} onChange={onChange} small={small} label={es ? "Periodo" : "Period"} /></div>;
 }
 
 /** Horizontal bar row: label, track filled to `pct` (0-100), and a right-hand value with optional muted extra. */

@@ -54,6 +54,16 @@ test("expenses added on a job change its real profit", async ({ page }) => {
   expect(after).toBeLessThan(before);
   await page.goto("/expenses");
   await expect(page.locator("table tbody tr", { hasText: "Jose helper" })).toContainText("EST-");
+  // one period button (dropdown) and the "By job" view, which opens the job's Expenses tab
+  await page.getByRole("button", { name: "Period" }).click();
+  await page.getByRole("listbox").getByRole("option", { name: "All", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Period" })).toContainText("All");
+  await page.getByRole("tab", { name: "By job" }).click();
+  const jobRow = page.locator(".exj-row", { hasText: "Dillon Test" });
+  await expect(jobRow).toContainText("$395.50");
+  await jobRow.click();
+  await page.waitForURL(/tab=exp/);
+  await expect(page.locator(".jl-tiles")).toBeVisible();
   expect(estId).toBeTruthy();
 
   // Settings > Materials learns from this job: real $95.50 vs the calculator, and offers to use that percentage

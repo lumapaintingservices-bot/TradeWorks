@@ -30,11 +30,12 @@ export function RowMenu({ items, label }: { items: RowItem[]; label?: string }) 
         bs[(i + (e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length]?.focus();
       }
     };
-    const move = () => close();
+    // follow the button on scroll / resize (phones: the browser bar), close only when it leaves the screen
+    const move = (e: Event) => { if (e.target instanceof Node && menu.current?.contains(e.target)) return; const r = btn.current?.getBoundingClientRect(); if (!r || r.bottom < 0 || r.top > window.innerHeight) close(); else open(); };
     document.addEventListener("mousedown", away); document.addEventListener("keydown", key, true);
     window.addEventListener("resize", move); window.addEventListener("scroll", move, true);
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", key, true); window.removeEventListener("resize", move); window.removeEventListener("scroll", move, true); };
-  }, [pos]);
+  }, [!!pos]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!list.length) return null;
   return (
     <span className="rm" onClick={(e) => e.stopPropagation()}>

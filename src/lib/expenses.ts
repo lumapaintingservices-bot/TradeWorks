@@ -94,6 +94,20 @@ export function allExpenseRows(expenses: Expense[], estimates: Estimate[] = []):
   }
   return rows;
 }
+/** Expenses page, "By job" view: rows grouped by job (estId "" = business expenses with no job), biggest total first. */
+export type JobGroup = { estId: string; n: number; materials: number; other: number; total: number; last: string };
+export function expensesByJob(rows: ExpenseRow[]): JobGroup[] {
+  const m = new Map<string, JobGroup>();
+  for (const r of rows) {
+    const k = r.estId || "";
+    const g = m.get(k) || m.set(k, { estId: k, n: 0, materials: 0, other: 0, total: 0, last: "" }).get(k)!;
+    g.n++; g.total += r.amount;
+    if (r.cat === "materials") g.materials += r.amount; else g.other += r.amount;
+    if (String(r.date) > g.last) g.last = String(r.date);
+  }
+  return [...m.values()].map((g) => ({ ...g, materials: r2(g.materials), other: r2(g.other), total: r2(g.total) }))
+    .sort((a, b) => (a.estId ? 0 : 1) - (b.estId ? 0 : 1) || b.total - a.total);
+}
 export const rowsInRange = (rows: ExpenseRow[], b: Bounds) => rows.filter((r) => inBounds(r.date, b));
 
 export type ExpenseTotals = { spent: number; ledger: number; team: number; materials: number; marketing: number; other: number };
