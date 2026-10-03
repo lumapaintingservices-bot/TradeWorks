@@ -18,6 +18,7 @@ import { useCrewTicksInto } from "../../data/crew";
 import { portalApply, type PortalDoc } from "../../lib/portal";
 import ChangeOrdersTab from "./ChangeOrdersTab";
 import CostsTab from "./CostsTab";
+import ExpensesTab from "./ExpensesTab";
 import InvoicesTab from "./InvoicesTab";
 import JobDayTab from "./JobDayTab";
 import PhotosTab from "./PhotosTab";
@@ -32,7 +33,7 @@ import { Combobox } from "../../ui/Combobox";
 import { DatePicker } from "../../ui/DatePicker";
 
 const TABS = [
-  ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0],
+  ["pricing", "Pricing", "Precios", 0], ["scope", "Scope & notes", "Alcance y notas", 0], ["costs", "Costs & profit", "Costos y ganancia", 0], ["exp", "Expenses", "Gastos", 0],
   ["co", "Change orders", "Cambios", 0], ["inv", "Invoices", "Facturas", 0], ["link", "Link & chat", "Enlace y chat", 0],
   ["photos", "Photos", "Fotos", 0], ["jobday", "Job day", "Día de trabajo", 0],
 ] as const;
@@ -206,6 +207,7 @@ export default function EstimateEditor() {
           {tab === "pricing" && <PricingTab {...props} />}
           {tab === "scope" && <ScopeTab {...props} saveStandard={update} />}
           {tab === "costs" && <CostsTab {...props} />}
+          {tab === "exp" && <ExpensesTab {...props} />}
           {tab === "link" && <LinkTab {...props} />}
           {tab === "co" && <ChangeOrdersTab {...props} />}
           {tab === "inv" && <InvoicesTab {...props} />}
