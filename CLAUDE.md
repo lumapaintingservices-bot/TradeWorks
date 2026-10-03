@@ -320,6 +320,10 @@ EstimateEditor), toast only for a new signature. So the stage, follow-ups and de
 estimate was opened). EstimateEditor: the pending 500 ms save now runs on unmount instead of being dropped. e2e: portal-inbox.spec.ts.
 Merged (PR #46, 2026-10-03, with the period dropdown work).
 
+Fix (owner 2026-10-03, iPhone): Expenses period button and "All expenses / By job" were at different heights in production (base .tabs
+margin-bottom:24px won over .ex-view because CSS chunk order differs in the build). Now .ex-bar .tabs.ex-view (higher specificity), both 40px.
+Lesson: when overriding .tabs / .btn from a page CSS file, use a more specific selector — lazy chunks can load before base.css. Not merged yet.
+
 **Owner to-dos to confirm:** Google enabled in Firebase Auth > Sign-in method; API-key restriction saved
 (referrers: tradeworks-app.pages.dev, tradeworks-99ba7.firebaseapp.com, tradeworks-99ba7.web.app);
 test a real estimate with photos.
